@@ -45,6 +45,7 @@
   pip install Pillow==9.5.0 
   ```
 
+### Variante 1: Demo-Daten zum Testen herunterladen (kein Training nötig)
 - Demo-Daten vom [zugehörigen Google Drive](https://tex.stackexchange.com/questions/12806/guidelines-for-customizing-biblatex-styles) laden und innerhalb des Repos entpacken
   Im Repo-Verzeichnis (`ROCA`) sollten daraufhin die drei Verzeichnisse `Models`, `Data` und `Outputs` liegen
 - Im Verzeichnis `Data` ebenfalls die drei ZIP-Dateien `Dataset.zip`, `Images.zip` und `Rendering.zip` entpacken
@@ -98,6 +99,27 @@
   ├── requirements.txt
   └── setup.sh
   ````
+
+### Variante 2: Neuronales Netz selbst trainieren
+#### ShapeNet-Datensatz herunterladen
+- Auf https://shapenet.org/signup/ registrieren
+- Auf https://huggingface.co/join registrieren
+- Unter https://huggingface.co/datasets/ShapeNet/ShapeNetCore Zugriff auf Datensatz anfragen
+- Unter https://huggingface.co/settings/keys einen SSH-Key für git-Zugriff hinzufügen
+- git lfs installieren
+  ```bash
+  sudo apt install git-lfs
+  git lfs install
+  ```
+- Datensatz herunterladen
+  ```bash
+  git clone git@hf.co:datasets/ShapeNet/ShapeNetCore datasets/ShapeNetCore/raw
+  ```
+- Datensatz entpacken
+  ```bash
+  unzip 'datasets/ShapeNetCore/raw/*.zip' -d datasets/ShapeNetCore/
+  ```
+
 
 ## Demo ausführen
 Die Demo (ausgeführt auf den Daten in Ordner 'network/assets/')
