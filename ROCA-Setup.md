@@ -27,7 +27,6 @@
   open3d==0.13.0
   trimesh==3.9.35
   rtree==0.9.7
-  numpy==1.22.4
   ```
 
 - Conda-Umgebung einrichten und Abhängigkeiten installieren
@@ -38,11 +37,11 @@
   Rückfragen mit `y` und `Enter` bestätigen
 - `pytorch3d` nachinstallieren, da `setup.sh` eine nicht existierende Variante installieren möchte
   ```bash
-  conda install pytorch3d -c pytorch3d 
+  conda install pytorch3d -c pytorch3d
   ```
-- `Pillow` downgraden, da mit torchvision eine zu neue Version intalliert wird
+- `Pillow und numpy` downgraden, da mit torchvision eine zu neue Version intalliert wird
   ```bash
-  pip install Pillow==9.5.0 
+  pip install Pillow==9.5.0 numpy==1.22.4
   ```
 
 ### Variante 1: Demo-Daten zum Testen herunterladen (kein Training nötig)
@@ -113,13 +112,59 @@
   ```
 - Datensatz herunterladen
   ```bash
-  git clone git@hf.co:datasets/ShapeNet/ShapeNetCore datasets/ShapeNetCore/raw
+  git clone git@hf.co:datasets/ShapeNet/ShapeNetCore ~/Data/ShapeNetCore.v2/raw
   ```
 - Datensatz entpacken
   ```bash
-  unzip 'datasets/ShapeNetCore/raw/*.zip' -d datasets/ShapeNetCore/
+  unzip '~/Data/ShapeNetCore.v2/raw/*.zip' -d ~/Data/ShapeNetCore.v2
   ```
 
+#### Scan2CAD-Datensatz herunterladen
+- Auf https://goo.gl/forms/gJRMjzj05whyJDlO2 registrieren
+- Datensatz herunterladen und entpacken
+  ```bash
+  mkdir -p ~/Data/Scan2CAD/raw/
+  curl -L http://kaldir.vc.in.tum.de/scan2cad_download_link -o ~/Data/Scan2CAD/raw/Scan2CAD.zip
+  unzip ~/Data/Scan2CAD/raw/Scan2CAD.zip -d ~/Data/Scan2CAD
+  ```
+
+#### ScanNet (ScanNet25k)-Datensatz herunterladen
+- Die [ScanNet Terms of Use](http://kaldir.vc.in.tum.de/scannet/ScanNet_TOS.pdf) ausfüllen und an <scannet@googlegroups.com> senden.
+- Download-Skript herunterladen und ausführbar machen
+  ```bash
+  mkdir -p ~/Data/ScanNet25k/raw/
+  curl -L http://kaldir.vc.in.tum.de/scannet/download-scannet.py -o ~/Data/ScanNet25k/raw/download-scannet.py
+  chmod +x ~/Data/ScanNet25k/raw/download-scannet.py
+  ```
+- ScanNet25k herunterladen
+  ```bash
+  python ~/Data/ScanNet25k/raw/download-scannet.py -o ~/Data/ScanNet25k/raw/ --preprocessed_frames
+  unzip ~/Data/ScanNet25k/raw/tasks/scannet_frames_25k.zip -d ~/Data/ScanNet25k/tasks
+  ```
+
+#### Scan2CADRasterizer-lib erstellen
+```bash
+git clone https://github.com/cangumeli/Scan2CADRasterizer/tree/main
+cd Scan2CADRasterizer
+pip install .
+cp build/lib.linux-x86_64-cpython-38/scan2cad_rasterizer.cpython-38-x86_64-linux-gnu.so ../renderer/scan2cad_rasterizer.cpython-38-x86_64-linux-gnu.so
+cd ..
+rm -rf Scan2CADRasterizer
+```
+
+#### Daten vorbereiten
+```bash
+cd renderer
+sh run.sh
+cd ..
+```
+
+#### Netz trainieren
+```bash
+cd network
+sh run.sh
+cd ..
+```
 
 ## Demo ausführen
 Die Demo (ausgeführt auf den Daten in Ordner 'network/assets/')
