@@ -98,6 +98,18 @@
   ├── requirements.txt
   └── setup.sh
   ````
+  
+#### Demo ausführen
+Die Demo (ausgeführt auf den Daten in Ordner 'network/assets/')
+```bash
+cd network
+python demo.py --model_path ../Models/model_best.pth --data_dir ../Data/Dataset --config_path ../Models/config.yaml
+```
+oder wenn alle trainierten CAD-Modelle (außer Tische) berücksichtigt werden sollen und nicht nur Objekte in der Szene
+```bash
+cd network
+python demo.py --model_path ../Models/model_best.pth --data_dir ../Data/Dataset --config_path ../Models/config.yaml --wild
+```
 
 ### Variante 2: Neuronales Netz selbst trainieren
 #### ShapeNet-Datensatz herunterladen
@@ -163,17 +175,16 @@ cd ..
 ```bash
 cd network
 sh run.sh
-cd ..
 ```
 
-## Demo ausführen
+#### Demo ausführen
 Die Demo (ausgeführt auf den Daten in Ordner 'network/assets/')
 ```bash
-python demo.py --model_path ../Models/model_best.pth --data_dir ../Data/Dataset --config_path ../Models/config.yaml
+python demo.py --model_path output/model_final.pth --data_dir ~/Data/Dataset --config_path output/config.yaml
 ```
 oder wenn alle trainierten CAD-Modelle (außer Tische) berücksichtigt werden sollen und nicht nur Objekte in der Szene
 ```bash
-python demo.py --model_path ../Models/model_best.pth --data_dir ../Data/Dataset --config_path ../Models/config.yaml --wild
+python demo.py --model_path output/model_final.pth --data_dir ~/Data/Dataset --config_path output/config.yaml --wild
 ```
 
 # Quellen
