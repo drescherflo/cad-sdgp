@@ -1,0 +1,52 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    //"variables": {
+    //    "isaacSimInstallFolder": "${userHome}/.local/share/ov/pkg/isaac_sim-2022.2.1"
+    //},
+    "configurations": [
+        {
+            "name": "Python: Current File",
+            "type": "python",
+            "request": "launch",
+            "program": "${file}",
+            "console": "integratedTerminal",
+            "env": {
+                "RESOURCE_NAME": "IsaacSim"
+            },
+            "python": "${config:isaacSimInstallFolder}/kit/python/bin/python3",
+            "envFile": "${config:isaacSimInstallFolder}/.vscode/.standalone_examples.env",
+            "preLaunchTask": "setup_python_env"
+        },
+        {
+            "name": "Python: Attach (windows-x86_64/linux-x86_64)",
+            "type": "python",
+            "request": "attach",
+            "port": 3000,
+            "host": "localhost"
+        },
+        {
+            "name": "(Linux) isaac-sim",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${config:isaacSimInstallFolder}/kit/kit",
+            "args": ["${config:isaacSimInstallFolder}/apps/omni.isaac.sim.kit",
+                "--ext-folder", "${config:isaacSimInstallFolder}/exts",
+                "--ext-folder", "${config:isaacSimInstallFolder}/apps"],
+            "stopAtEntry": false,
+            "cwd": "${config:isaacSimInstallFolder}",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            "setupCommands": [
+                {
+                    "description": "Enable pretty-printing for gdb",
+                    "text": "-enable-pretty-printing",
+                    "ignoreFailures": true
+                }
+            ]
+        }
+    ]
+}
