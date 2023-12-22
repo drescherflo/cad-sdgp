@@ -49,7 +49,7 @@ Dementsprechend funktioniert auch IntelliSense nicht korrekt.
   - `~/.local/share/ov/pkg/isaac_sim-2023.1.1/kit/exts/`
   - `~/.local/share/ov/pkg/isaac_sim-2023.1.1/kit/extscore/`
 - Außerdem folgende Verzeichnisse zur Liste hinzufügen:
-  - `~/.local/share/ov/pkg/isaac_sim-2022.2.1/kit/kernel/py`
+  - `~/.local/share/ov/pkg/isaac_sim-2023.1.1/kit/kernel/py`
   - `~/.local/share/ov/pkg/isaac_sim-2023.1.1/kit/python/lib/python3.10/site-packages`
 - Alle Fenster durch Klick auf `OK` schließen
 
