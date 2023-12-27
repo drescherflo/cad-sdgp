@@ -33,54 +33,72 @@ from omni.isaac.core.objects import DynamicCuboid
 
 
 
-# def register_random_cubes():
-#     def place_cubes():
-#         # Register cubes with replicator
-#         cubes = [rep.create.cube(scale=(0.1, 0.1, 0.1)) for _ in range(2)]
-#         cubes_grp = rep.create.group(cubes, semantics=[("class", "cone")])
-#         with cubes_grp:
-#             rep.modify.pose(position=rep.distribution.uniform((-1, -1, 0.5), (1, 1, 0.5)))
-#         return cubes_grp.node
-#
-#     rep.randomizer.register(place_cubes)
-#
+def register_random_replicator_cubes():
+    def place_replicator_cubes():
+        # Register cubes with replicator
+        cubes = [rep.create.cube(scale=(0.1, 0.1, 0.1)) for _ in range(2)]
+        cubes_grp = rep.create.group(cubes, semantics=[("class", "cube")])
+        with cubes_grp:
+            rep.modify.pose(position=rep.distribution.uniform((-1, -1, 0.5), (1, 1, 0.5)))
+        return cubes_grp.node
+
+    # Register
+    rep.randomizer.register(place_replicator_cubes)
+
 
 # Run simulation
 def main():
-    ## Setup simulation
-    # Create new stage
+    #### Setup simulation
+    ### Create new stage
     create_new_stage()
 
-    # Create world
+    ### Create world
     world = World()
     scene = world.scene
 
-    simulation_app.update()
-#    scene.add_default_ground_plane()
+    ### Add ground plane to scene
+    scene.add_default_ground_plane()
 
-    rep.create.cone(count=100, position=rep.distribution.uniform((-100, -100, -100), (100, 100, 100)), semantics=[("class", "cube")])
+    #### Code snippets
+    ### Create 100 cones with replicator
+    #rep.create.cone(count=100, position=rep.distribution.uniform((-100, -100, -100), (100, 100, 100)), semantics=[("class", "cone")])
 
-    # Add cubes with physics
-    #cubes = []
-    #for i in range(5):
-    #    cubes.append(DynamicCuboid(prim_path=f"/cubes/cube{i}", name=f"cube{i}", position=np.array([0, 0, 0.5 + i]), scale=np.array([0.1, 0.1, 0.1])))
-    #    scene.add(cubes[i])
 
-    # Run Simulation for 100000 steps
-    #for i in range(100000):
+    ### Add cubes from replicator with registration function and semantic labels and randomized position
+    ## Register replicator graph nodes
+    register_random_replicator_cubes()
+
+    ## Register randomizer functions to run on every frame
+    with rep.trigger.on_frame():
+        rep.randomizer.place_replicator_cubes()
+
+
+    ### Add 5 cubes with physics (so called cuboids) from isaac core objects
+    # cubes = []
+    # for i in range(5):
+    #     cubes.append(DynamicCuboid(prim_path=f"/cubes/cube{i}", name=f"cube{i}", position=np.array([0, 0, 0.5 + i]), scale=np.array([0.1, 0.1, 0.1])))
+    #     scene.add(cubes[i])
+
+    #### Generate replicator graphs without triggering writing
+    rep.orchestrator.preview()
+
+    #### Run replicator for 100 frames
+    #rep.orchestrator.run(num_frames=100)
+
+    #### Run replicator for one step/frame
+    #rep.orchestrator.step()
+
+    #### Run (Physics) Simulation for 100000 steps
+    # for i in range(100000):
     #    world.step(render=True, step_sim=True)
 
-
-
-    # Register replicator graph nodes
-    #register_random_cubes()
-
-    # Run replicator on every frame
-    #with rep.trigger.on_frame():
-    #    rep.randomizer.place_cubes()
-
+    #### Replicator run-loop (only for testing, do NOT use this when generating data)
     while (True):
-        simulation_app.update()
+        rep.orchestrator.step()
+
+    #### Isaac Sim run-loop (only for testing, do NOT use this when generating data)
+    #while (True):
+    #    simulation_app.update()
 
 
 if __name__ == "__main__":
