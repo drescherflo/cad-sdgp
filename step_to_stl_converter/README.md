@@ -21,7 +21,7 @@ source setup.sh
    ```bash
    conda activate step_to_stl
    ``` 
-4. **Führen Sie das Skript aus:** Verwenden Sie den folgenden Befehl, wobei Sie die Pfade zu den Verzeichnissen entsprechend anpassen:
+3. **Führen Sie das Skript aus:** Verwenden Sie den folgenden Befehl, wobei Sie die Pfade zu den Verzeichnissen entsprechend anpassen:
    ```bash
    python step_to_stl.py --input_dir [Pfad_zum_Eingabe-Verzeichnis] --output_dir [Pfad_zum_Ausgabe-Verzeichnis]
    ```
