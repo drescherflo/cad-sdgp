@@ -37,7 +37,7 @@ from omni.isaac.core.objects import DynamicCuboid
 from omni.isaac.core.utils.semantics import add_update_semantics
 import omni.isaac.core.utils.stage as stage_utils
 from omni.isaac.core.scenes import Scene
-from omni.isaac.core.prims import RigidPrim, XFormPrim
+from omni.isaac.core.prims import RigidPrim, XFormPrim, GeometryPrim
 
 
 def register_random_replicator_cubes():
@@ -90,19 +90,21 @@ def register_random_replicator_usd_cad_model():
     rep.randomizer.register(place_replicator_models)
 
 
-def register_random_isaac_sim_usd_cad_model(scene: Scene) -> None:
+def register_random_isaac_sim_usd_cad_model(world: World) -> None:
     # Create prims
     xform_prims = []
     for i in range(2):
         prim_name = f"simple_object{i}"
         prim_path = "/simple_objects/" + prim_name
-        xform_prim = prims.create_prim(prim_path=prim_path, usd_path="CAD Models/STL_converted/MA Simple Object_stl.usd", scale=[0.001, 0.001, 0.001])
+        xform_prim = prims.create_prim(prim_path=prim_path, usd_path="CAD Models/STL_converted/MA Simple Object_stl.usd", scale=[0.001, 0.001, 0.001], position=[0, 0, i])  # XFormPrim for rendering
         xform_prims.append(xform_prim)
-        #usd_prim = stage_utils.add_reference_to_stage("CAD Models/STL_converted/MA Simple Object_stl.usd", prim_path)
-        #rigid_prim = RigidPrim(prim_path=prim_path, name=prim_name, scale=[0.001, 0.001, 0.001])
-        #xform_prims.append(rigid_prim)
-        #scene.add(xform_prims[i])
+        rigid_prim = RigidPrim(prim_path=prim_path, name=prim_name + "_rigid")  # RigidPrim for Physics
+        geometry_prim = GeometryPrim(prim_path=prim_path, name=prim_name + "_geometry", collision=True)  # GeometryPrim for Collisions
 
+        world.scene.add(rigid_prim)  # Register in world's scene to run physics simulation
+        world.scene.add(geometry_prim)  # Register in world's scene to run physics simulation
+    # Reset the world to handle the physics of the newly created rigid prims
+    world.reset()
 
     # Apply semantics
     for xform_prim in xform_prims:
@@ -166,8 +168,8 @@ def main():
     #     rep.randomizer.place_replicator_models()
 
     ####################################################################
-    ### Add 2 CAD Models with replicator with semantic labels and randomized position
-    register_random_isaac_sim_usd_cad_model(scene)
+    ### Add 2 CAD Models with isaac sim with pyhsics, semantic labels and randomized position
+    register_random_isaac_sim_usd_cad_model(world)
 
     ## Register randomizer functions to run on every frame
     with rep.trigger.on_frame():
@@ -175,7 +177,7 @@ def main():
 
     ####################################################################
     #### Generate replicator graphs without triggering writing
-    rep.orchestrator.preview()
+    # rep.orchestrator.preview()
 
     ####################################################################
     #### Run replicator for 100 frames
@@ -186,18 +188,18 @@ def main():
     # rep.orchestrator.step()
 
     ####################################################################
-    #### Run (Physics) Simulation for 100000 steps
-    # for i in range(100000):
-    #    world.step(render=True, step_sim=True)
+    #### Run (Physics) Simulation for 1000 steps
+    for i in range(1000):
+       world.step(render=True, step_sim=True)
 
     ####################################################################
     #### Replicator run-loop (only for testing, do NOT use this when generating data)
-    while (True):
+    while True:
         rep.orchestrator.step()
 
     ####################################################################
     #### Isaac Sim run-loop (only for testing, do NOT use this when generating data)
-    while (True):
+    while True:
        simulation_app.update()
 
 
