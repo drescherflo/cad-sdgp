@@ -35,6 +35,9 @@ from omni.isaac.core.utils.rotations import euler_angles_to_quat
 from omni.isaac.core.utils.stage import get_current_stage, create_new_stage
 from omni.isaac.core.objects import DynamicCuboid
 from omni.isaac.core.utils.semantics import add_update_semantics
+import omni.isaac.core.utils.stage as stage_utils
+from omni.isaac.core.scenes import Scene
+from omni.isaac.core.prims import RigidPrim, XFormPrim
 
 
 def register_random_replicator_cubes():
@@ -74,7 +77,7 @@ def register_random_isaac_sim_cubes(scene):
 
 
 # Run simulation
-def register_random_usd_cad_model():
+def register_random_replicator_usd_cad_model():
     def place_replicator_models():
         # Load cad models with replicator
         models = rep.create.from_usd(usd="CAD Models/STL_converted/MA Simple Object_stl.usd", semantics=[("class", "simple_object")], count=2)
@@ -85,6 +88,35 @@ def register_random_usd_cad_model():
 
     # Register randomization function
     rep.randomizer.register(place_replicator_models)
+
+
+def register_random_isaac_sim_usd_cad_model(scene: Scene) -> None:
+    # Create prims
+    xform_prims = []
+    for i in range(2):
+        prim_name = f"simple_object{i}"
+        prim_path = "/simple_objects/" + prim_name
+        xform_prim = prims.create_prim(prim_path=prim_path, usd_path="CAD Models/STL_converted/MA Simple Object_stl.usd", scale=[0.001, 0.001, 0.001])
+        xform_prims.append(xform_prim)
+        #usd_prim = stage_utils.add_reference_to_stage("CAD Models/STL_converted/MA Simple Object_stl.usd", prim_path)
+        #rigid_prim = RigidPrim(prim_path=prim_path, name=prim_name, scale=[0.001, 0.001, 0.001])
+        #xform_prims.append(rigid_prim)
+        #scene.add(xform_prims[i])
+
+
+    # Apply semantics
+    for xform_prim in xform_prims:
+        add_update_semantics(xform_prim, semantic_label="simple_object", type_label="class")
+
+    # Define randomization function
+    def place_isaac_sim_cad_models():
+        prims_as_rep_prims = rep.get.xform(path_pattern="/simple_objects/simple_object*")  # !!! get.xform needs to be used, because else replicator will also return subdirs, materials, etc of the matching prims
+        with prims_as_rep_prims:
+            rep.modify.pose(position=rep.distribution.uniform((-1, -1, 0), (1, 1, 0)))
+        return prims_as_rep_prims
+
+    # Register randomization function
+    rep.randomizer.register(place_isaac_sim_cad_models)
 
 
 def main():
@@ -127,11 +159,19 @@ def main():
 
     ####################################################################
     ### Add 2 CAD Models with replicator with semantic labels and randomized position
-    register_random_usd_cad_model()
+    # register_random_replicator_usd_cad_model()
+
+    ## Register randomizer functions to run on every frame
+    # with rep.trigger.on_frame():
+    #     rep.randomizer.place_replicator_models()
+
+    ####################################################################
+    ### Add 2 CAD Models with replicator with semantic labels and randomized position
+    register_random_isaac_sim_usd_cad_model(scene)
 
     ## Register randomizer functions to run on every frame
     with rep.trigger.on_frame():
-        rep.randomizer.place_replicator_models()
+        rep.randomizer.place_isaac_sim_cad_models()
 
     ####################################################################
     #### Generate replicator graphs without triggering writing
