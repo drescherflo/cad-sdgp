@@ -12,22 +12,22 @@ def get_step_files_in_dir(directory):
 
 def main():
     # Create argument parser
-    parser = argparse.ArgumentParser(description="Konvertiert STEP-Dateien zu STL-Dateien")
-    parser.add_argument("--input_dir", help="Pfad zum Eingabe-Verzeichnis mit .stp-Dateien")
-    parser.add_argument("--output_dir", help="Pfad zum Ausgabe-Verzeichnis für .stl-Dateien")
+    parser = argparse.ArgumentParser(description="Converts STEP files to STL files")
+    parser.add_argument("--input_dir", help="Input directory containing .stp files or .step files")
+    parser.add_argument("--output_dir", help="Output directory for .stl files")
 
     # Parse args
     args = parser.parse_args()
     if args.input_dir is None:
-        print("Kein Eingabe-Verzeichnis via --input_dir angegeben. Programm wird beendet")
+        print("No input directory provided via --input_dir. Exiting...")
         exit(-1)
     if args.output_dir is None:
-        print("Kein Ausgabe-Verzeichnis via --output_dir angegeben. Programm wird beendet")
+        print("No output directory provided via --output_dir. Exiting...")
         exit(-1)
 
     # Test if input dir and output dir exist
     if not os.path.isdir(args.input_dir):
-        print("Eingabe-Verzeichnis existiert nicht. Programm wird beendet")
+        print("Input directory does not exist. Exiting...")
         exit(-1)
     if not os.path.isdir(args.output_dir):
         os.makedirs(args.output_dir)
