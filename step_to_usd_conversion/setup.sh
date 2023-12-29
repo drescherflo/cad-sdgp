@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Create and activate conda environment
-conda create -n roca python=3.10
-source activate pyoccenv
+yes | conda create -n pyoccenv python=3.10
+conda activate pyoccenv
 
 # Install pythonocc-core
-conda install -c conda-forge pythonocc-core=7.7.2
+yes | conda install -c conda-forge pythonocc-core=7.7.2

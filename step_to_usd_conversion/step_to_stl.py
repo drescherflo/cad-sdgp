@@ -1,15 +1,12 @@
 import argparse
 import os
 
-from OCC.STEPControl import STEPControl_Reader
-from OCC.StlAPI import StlAPI_Writer
+from OCC.Extend.DataExchange import read_step_file, write_stl_file
 
 
-def get_files_in_dir(directory):
-    """
-    Listet alle Dateien im angegebenen Verzeichnis auf.
-    """
-    files = [f for f in os.listdir(directory) if os.path.isfile(os.path.join(directory, f))]
+def get_step_files_in_dir(directory):
+    files = [f for f in os.listdir(directory) if
+             (os.path.isfile(os.path.join(directory, f)) and f.endswith((".stp", ".step")))]
     return files
 
 
@@ -36,22 +33,18 @@ def main():
         os.makedirs(args.output_dir)
 
     # Convert stp files to stl files
-    files = get_files_in_dir(args.input_dir)
+    files = get_step_files_in_dir(args.input_dir)
     for file in files:
+        print("Processing file: " + file)
         # Prepare paths
         input_file_path = os.path.join(args.input_dir, file)
-        output_file_path = os.path.join(args.output_dir, file).replace(".stp", ".stl")
+        output_file_path = os.path.join(args.output_dir, file).replace(".stp", ".stl").replace(".step", ".stl")
 
         # Read stp file
-        step_reader = STEPControl_Reader()
-        step_reader.ReadFile(input_file_path)
-        step_reader.TransferRoot()
-        shape = step_reader.Shape()
+        shape = read_step_file(input_file_path)
 
-        # Convert and save as stl file
-        stl_writer = StlAPI_Writer()
-        stl_writer.SetASCIIMode(True)
-        stl_writer.Write(shape, output_file_path)
+        # Convert and save as (high quality) stl file
+        write_stl_file(shape, output_file_path, mode="binary", linear_deflection=0.001, angular_deflection=0.001)
 
 
 if __name__ == "__main__":
