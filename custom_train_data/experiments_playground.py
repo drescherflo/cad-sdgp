@@ -115,6 +115,7 @@ def register_random_isaac_sim_usd_cad_model(world: World) -> None:
         prims_as_rep_prims = rep.get.xform(path_pattern="/simple_objects/simple_object*")  # !!! get.xform needs to be used, because else replicator will also return subdirs, materials, etc of the matching prims
         with prims_as_rep_prims:
             rep.modify.pose(position=rep.distribution.uniform((-1, -1, 0), (1, 1, 0)))
+            rep.randomizer.color(colors=rep.distribution.uniform((0, 0, 0), (1, 1, 1)))
         return prims_as_rep_prims
 
     # Register randomization function
@@ -168,7 +169,7 @@ def main():
     #     rep.randomizer.place_replicator_models()
 
     ####################################################################
-    ### Add 2 CAD Models with isaac sim with pyhsics, semantic labels and randomized position
+    ### Add 2 CAD Models with isaac sim with pyhsics, collisions, semantic labels, randomized position and randomized color
     register_random_isaac_sim_usd_cad_model(world)
 
     ## Register randomizer functions to run on every frame
