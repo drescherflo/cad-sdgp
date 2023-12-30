@@ -80,7 +80,7 @@ def register_random_isaac_sim_cubes(scene):
 def register_random_replicator_usd_cad_model():
     def place_replicator_models():
         # Load cad models with replicator
-        models = rep.create.from_usd(usd="CAD Models/STL_converted/MA Simple Object_stl.usd", semantics=[("class", "simple_object")], count=2)
+        models = rep.create.from_usd(usd="CAD Models/OBJ_converted/MA Simple Object_obj.usd", semantics=[("class", "simple_object")], count=2)
         with models:
             rep.modify.pose(position=rep.distribution.uniform((-1, -1, 0.5), (1, 1, 0.5)))
             rep.modify._scale(scale=(0.001, 0.001, 0.001))  # Set correct scale (unit of step file is mm, but isaac sim uses m)
@@ -96,7 +96,7 @@ def register_random_isaac_sim_usd_cad_model(world: World) -> None:
     for i in range(2):
         prim_name = f"simple_object{i}"
         prim_path = "/simple_objects/" + prim_name
-        xform_prim = prims.create_prim(prim_path=prim_path, usd_path="CAD Models/STL_converted/MA Simple Object_stl.usd", scale=[0.001, 0.001, 0.001], position=[0, 0, i])  # XFormPrim for rendering
+        xform_prim = prims.create_prim(prim_path=prim_path, usd_path="CAD Models/OBJ_converted/MA Simple Object_obj.usd", scale=[0.001, 0.001, 0.001], position=[0, 0, i])  # XFormPrim for rendering
         xform_prims.append(xform_prim)
         rigid_prim = RigidPrim(prim_path=prim_path, name=prim_name + "_rigid")  # RigidPrim for Physics
         geometry_prim = GeometryPrim(prim_path=prim_path, name=prim_name + "_geometry", collision=True)  # GeometryPrim for Collisions
