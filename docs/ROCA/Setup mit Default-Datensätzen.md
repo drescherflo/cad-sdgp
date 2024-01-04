@@ -1,4 +1,4 @@
-# ROCA Setup
+# ROCA Setup mit Default-Datensätzen
 ## Anaconda installieren
 - Aktuellen Installer von [Website](https://www.anaconda.com/download#downloads) laden
   Zum Zeitpunkt der Erstellung dieser Anleitung ist dies https://repo.anaconda.com/archive/Anaconda3-2023.09-0-Linux-x86_64.sh
