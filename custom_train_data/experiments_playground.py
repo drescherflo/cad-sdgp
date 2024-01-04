@@ -1,3 +1,7 @@
+"""
+This script was used to learn the interaction with Isaac Sim and Omniverse Replicator and can therefore be ignored
+"""
+
 import os
 
 print(os.environ["CARB_APP_PATH"])
