@@ -28,6 +28,8 @@ from omni.isaac.core.utils.stage import create_new_stage
 from omni.isaac.core import World
 from omni.isaac.core.utils import prims
 from omni.isaac.core.utils.semantics import add_update_semantics
+from omni.isaac.sensor import Camera
+from omni.isaac.core.utils.rotations import euler_angles_to_quat
 
 
 def main():
@@ -53,8 +55,8 @@ def main():
         add_update_semantics(xform_prim, semantic_label="simple_object", type_label="class")
 
     # Add camera
-    camera = rep.create.camera(position=(0, 0, 5), look_at=(0, 0, 0))  # Look at (0, 0, 0) without weird rotations applied
-    render_product = rep.create.render_product(camera=camera, resolution=(480, 360))
+    camera = rep.create.camera(position=(0, 0, 5), rotation=(-90, -90, 0))  # Look at (0, 0, 0) with x axis to the right
+    render_product = rep.create.render_product(camera=camera, resolution=(1920, 1080))
 
     # Initialize and attach writer
     out_dir = os.getcwd() + "/temp_replicator_out"
