@@ -3,9 +3,8 @@ import os
 import shutil
 
 from OCC.Extend.DataExchange import read_step_file, write_stl_file
-from src.stl_to_obj.stl_reader import StlReader
-from src.stl_to_obj.stl_obj_convertor import StlVertexConvertor, StlNormalConvertor
-from src.stl_to_obj.obj_writer import ObjWriter
+from stl import mesh
+import numpy as np
 
 
 def get_step_files_in_dir(directory):
@@ -65,35 +64,15 @@ def main():
         write_stl_file(shape, tmp_file_path, mode="ascii", linear_deflection=0.001, angular_deflection=0.001)
 
         # Convert tmp stl to obj
-        # Code from https://github.com/shivamkadukar/stl_obj_convertor/blob/main/src/stl_to_obj/run_stl_to_obj.py (08.01.2024) with minor modifications
-        reader = StlReader()
-        vertex_convertor = StlVertexConvertor()
-        normal_convertor = StlNormalConvertor()
-        writer = ObjWriter()
+        stl_mesh = mesh.Mesh.from_file(tmp_file_path)
+        with open(output_file_path, 'w') as f:
+            # Write vertices
+            for v in np.vstack(stl_mesh.vectors):
+                f.write(f'v {v[0]} {v[1]} {v[2]}\n')
 
-        with open(tmp_file_path, 'r') as read_file:
-            for line in read_file:
-                reader.search_vertices(line)
-                reader.search_normals(line)
-
-        vertex_convertor.vertex_index(reader.searched_vertices)
-        vertex_convertor.unique_vertex_index(reader.searched_vertices)
-
-        normal_convertor.normal_index(reader.searched_normals)
-        normal_convertor.unique_normal_index(reader.searched_normals)
-
-        # Remove exponential representation to fix a segfault in NVIDIA's USD conversion script
-        v_s = convert_exponential_to_decimal(vertex_convertor.v_list)
-        vn_s = convert_exponential_to_decimal(normal_convertor.vn_list)
-
-        with open(output_file_path, 'w') as write_file:
-            writer.write(
-                write_file,
-                v_s,
-                vn_s,
-                vertex_convertor.v_index,
-                normal_convertor.vn_index
-            )
+            # Write faces
+            for i in range(len(stl_mesh.vectors)):
+                f.write(f'f {3 * i + 1} {3 * i + 2} {3 * i + 3}\n')
 
     # Remove tmp dir
     shutil.rmtree(tmp_dir)
@@ -101,3 +80,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    print("Done!")

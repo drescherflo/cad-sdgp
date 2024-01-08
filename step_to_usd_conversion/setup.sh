@@ -10,4 +10,4 @@ yes | conda install -c conda-forge pythonocc-core=7.7.2
 
 # Install stl-obj-convertor
 yes | pip install --upgrade pip
-yes | pip install stl-obj-convertor
+yes | pip install numpy-stl
