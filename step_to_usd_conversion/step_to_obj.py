@@ -14,6 +14,16 @@ def get_step_files_in_dir(directory):
     return files
 
 
+def convert_exponential_to_decimal(input_strings):
+    converted_strings = []
+    for string in input_strings:
+        numbers = string.split()  # Split at space
+        converted_numbers = ['{:.8f}'.format(float(num)) for num in numbers]  # Convert string to float
+        converted_string = '  '.join(converted_numbers)  # Convert back to string
+        converted_strings.append(converted_string)
+    return converted_strings
+
+
 def main():
     # Set vars
     tmp_dir = "tmp/"
@@ -72,11 +82,15 @@ def main():
         normal_convertor.normal_index(reader.searched_normals)
         normal_convertor.unique_normal_index(reader.searched_normals)
 
+        # Remove exponential representation to fix a segfault in NVIDIA's USD conversion script
+        v_s = convert_exponential_to_decimal(vertex_convertor.v_list)
+        vn_s = convert_exponential_to_decimal(normal_convertor.vn_list)
+
         with open(output_file_path, 'w') as write_file:
             writer.write(
                 write_file,
-                vertex_convertor.v_list,
-                normal_convertor.vn_list,
+                v_s,
+                vn_s,
                 vertex_convertor.v_index,
                 normal_convertor.vn_index
             )
