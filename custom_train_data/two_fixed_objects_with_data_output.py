@@ -33,7 +33,7 @@ def main():
     scene = world.scene
 
     ## Setup physics
-    simulation_context = SimulationContext(stage_units_in_meters=1.0)
+    #simulation_context = SimulationContext(stage_units_in_meters=1.0)
 
     ## Add ground plane to scene
     scene.add_default_ground_plane()
@@ -95,11 +95,9 @@ def main():
     #rep.orchestrator.run_until_complete(num_frames=1)
 
     # Isaac Sim run-loop (only for testing, do NOT use this when generating data)
-    simulation_context.initialize_physics()
-
-    simulation_context.play()
+    world.reset()  # This is required instead of sim_app.update for ros publishers to work
     while simulation_app.is_running():
-        simulation_context.step(render=True)  # This is required instead of sim_app.update for ros publishers to work
+        world.step(render=True)  # This is required instead of sim_app.update for ros publishers to work
 
 
 if __name__ == '__main__':
