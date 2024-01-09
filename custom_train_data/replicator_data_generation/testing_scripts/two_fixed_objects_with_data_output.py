@@ -52,7 +52,7 @@ def main():
     # Initialize and attach basic writer
     out_dir = os.getcwd() + "/temp_replicator_out"
     train_data_writer = rep.WriterRegistry.get("BasicWriter")
-    train_data_writer.initialize(output_dir=out_dir, rgb=True, distance_to_camera=True,  distance_to_image_plane=True, camera_params=True, image_output_format="jpg")
+    train_data_writer.initialize(output_dir=out_dir, rgb=True, distance_to_camera=True,  distance_to_image_plane=True, camera_params=True, image_output_format="png")
     train_data_writer.attach([render_product])
 
     # Initialize and attach camera info publisher writer
