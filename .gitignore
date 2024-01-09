@@ -1,5 +1,6 @@
-# Ignore contents in temporory replicator output
+# Ignore contents in temporory replicator and conversion output (directories used for testing)
 temp_replicator_out/
+temp_roca_out/
 
 # Created by https://www.toptal.com/developers/gitignore/api/c++,ros2,linux,macos,csharp,python,windows,notepadpp,pycharm+all,visualstudio,visualstudiocode,pycharm+iml
 # Edit at https://www.toptal.com/developers/gitignore?templates=c++,ros2,linux,macos,csharp,python,windows,notepadpp,pycharm+all,visualstudio,visualstudiocode,pycharm+iml

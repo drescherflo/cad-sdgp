@@ -84,7 +84,7 @@ def main():
     simulation_app.update()
 
     # Capture training data
-    num_frames = 1
+    num_frames = 2
     for i in range(num_frames):
         print(f"Writing frame {str(i + 1)} of {num_frames}")
         rep.orchestrator.step(rt_subframes=32)  # Generate 32 subframes for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
