@@ -32,9 +32,6 @@ def main():
     world = World()
     scene = world.scene
 
-    ## Setup physics
-    #simulation_context = SimulationContext(stage_units_in_meters=1.0)
-
     ## Add ground plane to scene
     scene.add_default_ground_plane()
 
@@ -54,9 +51,9 @@ def main():
 
     # Initialize and attach basic writer
     out_dir = os.getcwd() + "/temp_replicator_out"
-    writer = rep.WriterRegistry.get("BasicWriter")
-    writer.initialize(output_dir=out_dir, rgb=True, distance_to_camera=True,  distance_to_image_plane=True, camera_params=True, image_output_format="jpg")
-    writer.attach([render_product])
+    train_data_writer = rep.WriterRegistry.get("BasicWriter")
+    train_data_writer.initialize(output_dir=out_dir, rgb=True, distance_to_camera=True,  distance_to_image_plane=True, camera_params=True, image_output_format="jpg")
+    train_data_writer.attach([render_product])
 
     # Initialize and attach camera info publisher writer
     topic_name = "camera_info"
@@ -68,7 +65,6 @@ def main():
     step_size = int(60/pub_freq)
 
     pub_writer = rep.writers.get("ROS2PublishCameraInfo")
-
     pub_writer.initialize(
         frameId=frame_id,
         nodeNamespace=node_namespace,
@@ -77,22 +73,24 @@ def main():
         stereoOffset=stereo_offset,
     )
     pub_writer.attach([render_product])
+
+    # Set Execution of render_product to 60 Hz
     gate_path = omni.syntheticdata.SyntheticData._get_node_path(
         "PostProcessDispatch" + "IsaacSimulationGate", render_product.path
     )
-
-    # Set step input of the Isaac Simulation Gate nodes upstream of ROS publishers to control their execution rate
     og.Controller.attribute(gate_path + ".inputs:step").set(step_size)
 
     # Render once
     simulation_app.update()
 
-    # Capture data
+    # Capture training data
     num_frames = 1
     for i in range(num_frames):
         print(f"Writing frame {str(i + 1)} of {num_frames}")
         rep.orchestrator.step(rt_subframes=32)  # Generate 32 subframes for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
-    #rep.orchestrator.run_until_complete(num_frames=1)
+
+    # Detach train_data_writer to prevent generation of more frames than specified because of OmniGraph registration
+    train_data_writer.detach()
 
     # Isaac Sim run-loop (only for testing, do NOT use this when generating data)
     world.reset()  # This is required instead of sim_app.update for ros publishers to work
