@@ -53,5 +53,55 @@ Dementsprechend funktioniert auch IntelliSense nicht korrekt.
   - `~/.local/share/ov/pkg/isaac_sim-2023.1.1/kit/python/lib/python3.10/site-packages`
 - Alle Fenster durch Klick auf `OK` schließen
 
+## Lokale ROS2-Installation in Isaac Sim verwenden
+- `vision_msgs` installieren
+  ```bash
+  sudo apt install ros-humble-vision-msgs
+  ```
+- Falls noch nicht automatisch durch Eintrag in '~/.bashrc' geschehen: ROS-Umgebung laden
+  ```bash
+  source /opt/ros/humble/setup.bash
+  ```
+- Datei `fastdds.xml` in `~/.ros` erstellen und korrekten Inhalt eintragen
+  ```bash
+  mkdir ~/.ros
+  echo '
+  <?xml version="1.0" encoding="UTF-8" ?>
+
+  <license>Copyright (c) 2022, NVIDIA CORPORATION.  All rights reserved.
+  NVIDIA CORPORATION and its licensors retain all intellectual property
+  and proprietary rights in and to this software, related documentation
+  and any modifications thereto.  Any use, reproduction, disclosure or
+  distribution of this software and related documentation without an express
+  license agreement from NVIDIA CORPORATION is strictly prohibited.</license>
+
+
+  <profiles xmlns="http://www.eprosima.com/XMLSchemas/fastRTPS_Profiles" >
+      <transport_descriptors>
+          <transport_descriptor>
+              <transport_id>UdpTransport</transport_id>
+              <type>UDPv4</type>
+          </transport_descriptor>
+      </transport_descriptors>
+
+      <participant profile_name="udp_transport_profile" is_default_profile="true">
+          <rtps>
+              <userTransports>
+                  <transport_id>UdpTransport</transport_id>
+              </userTransports>
+              <useBuiltinTransports>false</useBuiltinTransports>
+          </rtps>
+      </participant>
+  </profiles>
+  ' > ~/.ros/fastdds.xml
+  ```
+- .bashrc anpassen und neuladen
+  ```bash
+  echo 'export FASTRTPS_DEFAULT_PROFILES_FILE=~/.ros/fastdds.xml' >> ~/.bashrc
+  source ~/.bashrc
+  ```
+- Falls NUCLEUS-Launcher verwendet wird: Im NUCLEUS-Launcher unter `Extra Args` `export FASTRTPS_DEFAULT_PROFILES_FILE=~/.ros/fastdds.xml` eintragen
+
 # Quellen
 - https://forums.developer.nvidia.com/t/setup-pycharm-to-work-with-isaac-sim-solution/226050/4 (20.12.2023)
+- https://docs.omniverse.nvidia.com/isaacsim/latest/installation/install_ros.html#running-native-ros (09.01.2024)
