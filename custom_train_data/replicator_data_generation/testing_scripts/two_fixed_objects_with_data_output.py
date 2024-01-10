@@ -37,9 +37,10 @@ def main():
 
     # Add objects
     usd_path = "CAD Models/OBJ_converted/MA Simple Object_obj.usd"
+    prim_path_start = usd_path.split("/")[-1].replace(" ", "_").removesuffix(".usd")
     xform_prims = []
-    xform_prims.append(prims.create_prim(prim_path="/simple_object_1", usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[-1, -0.5, 0]))
-    xform_prims.append(prims.create_prim(prim_path="/simple_object_2", usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[+1, +0.5, 0]))
+    xform_prims.append(prims.create_prim(prim_path=f"/{prim_path_start}_1", usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[-1, -0.5, 0]))
+    xform_prims.append(prims.create_prim(prim_path=f"/{prim_path_start}_2", usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[+1, +0.5, 0]))
 
     # Apply semantics
     for xform_prim in xform_prims:
@@ -89,13 +90,13 @@ def main():
         print(f"Writing frame {str(i + 1)} of {num_frames}")
         rep.orchestrator.step(rt_subframes=32)  # Generate 32 subframes for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
 
-    # Detach train_data_writer to prevent generation of more frames than specified because of OmniGraph registration
+    # Detach train_data_writer to prevent generation of more frames than specified because of OmniGraph registration for ROS publisher
     train_data_writer.detach()
 
-    # Isaac Sim run-loop (only for testing, do NOT use this when generating data)
-    world.reset()  # This is required instead of sim_app.update for ros publishers to work
-    while simulation_app.is_running():
-        world.step(render=True)  # This is required instead of sim_app.update for ros publishers to work
+    # Isaac Sim run-loop (only for testing and ROS publishing, do NOT use this when generating data)
+    #world.reset()  # This is required instead of sim_app.update for ros publishers to work
+    #while simulation_app.is_running():
+    #    world.step(render=True)  # This is required instead of sim_app.update for ros publishers to work
 
 
 if __name__ == '__main__':
