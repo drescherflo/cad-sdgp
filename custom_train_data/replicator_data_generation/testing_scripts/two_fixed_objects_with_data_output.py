@@ -4,6 +4,7 @@ This script was used to create repeatable / debuggable input data for the ROCA t
 
 # Launch Isaac Sim
 import os
+import json
 import numpy as np
 from omni.isaac.kit import SimulationApp
 
@@ -15,6 +16,7 @@ import omni.replicator.core as rep
 import omni.graph.core as og
 from omni.isaac.core.utils.stage import create_new_stage
 from omni.isaac.core import World, SimulationContext
+from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.utils import prims, extensions
 from omni.isaac.core.utils.semantics import add_update_semantics
 from omni.isaac.sensor import Camera
@@ -24,6 +26,8 @@ from omni.isaac.core.utils.rotations import euler_angles_to_quat
 extensions.enable_extension("omni.isaac.ros2_bridge")
 
 def main():
+    out_dir = os.getcwd() + "/temp_replicator_out"
+
     # Setup simulation
     ## Create new stage
     create_new_stage()
@@ -66,10 +70,13 @@ def main():
     render_product = rep.create.render_product(camera=camera, resolution=(1920, 1080))
 
     # Initialize and attach basic writer
-    out_dir = os.getcwd() + "/temp_replicator_out"
     train_data_writer = rep.WriterRegistry.get("BasicWriter")
     train_data_writer.initialize(output_dir=out_dir, rgb=True, distance_to_camera=True,  distance_to_image_plane=True, camera_params=True, image_output_format="png")
     train_data_writer.attach([render_product])
+
+    # Initialize and attach bounding box 2d tight annotator to detect which objects are visible in the image
+    bbox_2d_tight_annotator = rep.AnnotatorRegistry.get_annotator("bounding_box_2d_tight")
+    bbox_2d_tight_annotator.attach(render_product)
 
     # Initialize and attach camera info publisher writer
     topic_name = "camera_info"
@@ -101,9 +108,38 @@ def main():
 
     # Capture training data
     num_frames = 2
-    for i in range(num_frames):
-        print(f"Writing frame {str(i + 1)} of {num_frames}")
+    for frame_nr in range(num_frames):
+        print(f"Writing frame {str(frame_nr + 1)} of {num_frames}")
+
+        # Execute orchestrator to run "randomization" and capture data with writers
         rep.orchestrator.step(rt_subframes=32)  # Generate 32 subframes for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
+
+        # Store world pose of visible objects in the image
+        bbox_data = bbox_2d_tight_annotator.get_data()
+        visible_prims_paths = bbox_data["info"]["primPaths"]
+        objs_and_world_poses = []
+        for prim_path in visible_prims_paths:
+            prim = XFormPrim(prim_path=prim_path)
+            prim_pose = prim.get_world_pose()
+            obj_and_pose = {
+                "obj_path": prim_path_to_obj_path[prim_path],
+                "pose": {
+                    "position": {
+                        "x": prim_pose[0][0].astype(float),
+                        "y": prim_pose[0][1].astype(float),
+                        "z": prim_pose[0][2].astype(float)
+                    },
+                    "orientation": {
+                        "w": prim_pose[1][0].astype(float),
+                        "x": prim_pose[1][1].astype(float),
+                        "y": prim_pose[1][2].astype(float),
+                        "z": prim_pose[1][3].astype(float),
+                    }
+                }
+            }
+            objs_and_world_poses.append(obj_and_pose)
+        with open(f"{out_dir}/world_pose_visible_objects_{frame_nr:04d}.json", "w") as f:
+            json.dump(objs_and_world_poses, f)
 
     # Detach train_data_writer to prevent generation of more frames than specified because of OmniGraph registration for ROS publisher
     train_data_writer.detach()
