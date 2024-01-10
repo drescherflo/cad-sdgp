@@ -117,7 +117,7 @@ Hinweise:
 # Zu erzeugende Dateien für Erzeugung von eigenen Trainingsdaten
 - Data/ScanNet25k/tasks/scannet_frames_25k/scene*/intrinsics_color.txt
 - Data/ScanNet25k/tasks/scannet_frames_25k/scene*/color/*.jpg
-- Data/ScanNet25k/tasks/scannet_frames_25k/scene*/scene*/pose/*.txt
+- Data/ScanNet25k/tasks/scannet_frames_25k/scene*/pose/*.txt
 - Data/Scan2CAD/full_annotations.json
   - id_scan
   - trs

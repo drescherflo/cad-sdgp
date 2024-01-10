@@ -4,6 +4,7 @@ import os
 import glob
 import json
 import argparse
+import numpy as np
 from PIL import Image
 from sklearn.model_selection import train_test_split
 
@@ -34,6 +35,9 @@ def replicator_intrinsics_to_scannet(rep_data_path: str, roca_data_path: str, sc
     - rep_data_path (str): Path to the folder containing camera_params_*.json files.
     - roca_data_path (str): Path to the output folder where ScanNet25k/tasks/scannet_frames_25k/scene{NR}/intrinsics_color.txt files will be saved.
     - scene_numbers (list[str]): List of scene numbers
+
+    Returns:
+    None
     """
 
     # Iterate through all scene_numbers
@@ -70,6 +74,9 @@ def replicator_image_to_scannet(rep_data_path: str, roca_data_path: str, scene_n
     - rep_data_path (str): Path to the folder containing rgb_{nr}.png files.
     - roca_data_path (str): Path to the output folder where images will be saved in the format ScanNet25k/tasks/scannet_frames_25k/scene{NR}/color/000000.jpg.
     - scene_numbers (list[str]): List of scene numbers
+
+    Returns:
+    None
     """
 
     # Iterate through all scene_numbers
@@ -94,6 +101,9 @@ def copy_obj_files(roca_data_path: str, obj_path: str) -> None:
     - rep_data_path (str): Not used in this function, but included for consistency.
     - roca_data_path (str): ROCA data path where .obj files will be copied to.
     - obj_path (str): Path to the folder containing [ModelName].obj files.
+
+    Returns:
+    None
     """
 
     # Find all .obj files in the obj_path
@@ -122,6 +132,9 @@ def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scen
     - rep_data_path (str): Path to the folder containing world_pose_visible_objects_[nr].json files.
     - roca_data_path (str): ROCA data path where the Scan2CAD/full_annotations.json will be saved.
     - scene_numbers (list[str]): List of scene numbers as strings.
+
+    Returns:
+    None
     """
 
     annotations = []
@@ -195,6 +208,9 @@ def generate_metadata_taxonomy_9(roca_metadata_path: str, labels: list[str]) -> 
     Args:
     - roca_metadata_path (str): The file path where the taxonomy file will be saved.
     - labels (list[str]): A list of labels to include in the taxonomy file.
+
+    Returns:
+    None
     """
 
     taxonomy = [{"name": label, "shapenet": label} for label in labels]
@@ -208,6 +224,9 @@ def write_list_to_txt(output_path: str, string_list: list[str]) -> None:
     Args:
     - output_path (str): The file path where the text file will be saved.
     - string_list (list[str]): A list of strings to be written to the file.
+
+    Returns:
+    None
     """
 
     with open(output_path, "w") as f:
@@ -224,6 +243,9 @@ def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str])
     Args:
     - roca_metadata_path (str): The file path where the label ID files will be saved.
     - labels (list[str]): A list of labels to include in the label ID files.
+
+    Returns:
+    None
     """
     write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels)
     write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels)
@@ -259,6 +281,43 @@ def generate_metadata_train_val_files(roca_metadata_path: str, scene_numbers: li
     write_list_to_txt(os.path.join(roca_metadata_path, "val_images.txt"), val_images)
 
 
+def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, scene_numbers) -> None:
+    """
+    Reads camera parameters from JSON files, inverts the camera view transformation matrix,
+    and saves it in a text file.
+
+    Args:
+    - rep_data_path (str): Path to the folder containing camera_params_[nr].json files.
+    - roca_data_path (str): Path where the inverted camera view transform will be saved.
+    - scene_numbers (list[str]): List of scene numbers as strings.
+
+    Returns:
+    None
+    """
+
+    for nr in scene_numbers:
+        json_file_path = os.path.join(replicator_dir, f"camera_params_{nr}.json")
+        # Read the JSON file
+        with open(json_file_path, 'r') as file:
+            data = json.load(file)
+
+        # Extract the camera view transform matrix
+        camera_view_transform = np.array(data["cameraViewTransform"]).reshape([4,4]).transpose()
+
+        # Invert the matrix to get world to camera
+        inverted_transform = np.linalg.inv(camera_view_transform)
+
+        # Prepare the output directory
+        output_dir = os.path.join(roca_dataset_dir, f"ScanNet25k/tasks/scannet_frames_25k/scene{nr}/pose")
+        os.makedirs(output_dir, exist_ok=True)
+
+        # Write the inverted matrix to a text file
+        output_file_path = os.path.join(output_dir, "000000.txt")
+        with open(output_file_path, 'w') as output_file:
+            for row in inverted_transform:
+                output_file.write(" ".join([f"{val}" for val in row]) + "\n")
+
+
 def main(args: list[str]) -> None:
     # Create argument parser
     parser = argparse.ArgumentParser(description="Converts the generated training data from NVIDIA Replicator to the format required by ROCA")
@@ -281,6 +340,7 @@ def main(args: list[str]) -> None:
     print("Converting the generated training data from NVIDIA Replicator to ROCA format...")
     print("Warning! This will create a new randomized training and validation data split!")
     print("You may want to backup and restore 'val_images.txt', 'scannetv2_val.txt, 'scannetv2_train.txt' in your ROCA metadata directory.")
+    input("Press any key to continue...")
 
     # Create roca_dataset_dir and roca_metadata_dir if necessary
     os.makedirs(args.roca_dataset_dir, exist_ok=True)
@@ -297,12 +357,13 @@ def main(args: list[str]) -> None:
     replicator_intrinsics_to_scannet(replicator_dir, roca_dataset_dir, scene_numbers)
     print("Converting images...")
     replicator_image_to_scannet(replicator_dir, roca_dataset_dir, scene_numbers)
+    print("Converting camera to world transformations...")
+    replicator_cam_pose_to_scannet(replicator_dir, roca_dataset_dir, scene_numbers)
     print("Copying CAD models...")
     copy_obj_files(roca_dataset_dir, obj_dir)
     print("Generating full_annotations.json...")
     generate_full_annotations_json(replicator_dir, roca_dataset_dir, scene_numbers)
     print("Generating ROCA metadata files...")
-    input("Press any key to continue...")
     labels = generate_labels_from_objs(obj_dir)
     generate_metadata_taxonomy_9(roca_metadata_dir, labels)
     generate_metadata_label_id_files(roca_metadata_dir, labels)
