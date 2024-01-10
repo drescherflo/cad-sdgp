@@ -72,7 +72,7 @@ def main():
 
     # Initialize and attach basic writer
     train_data_writer = rep.WriterRegistry.get("BasicWriter")
-    train_data_writer.initialize(output_dir=out_dir, rgb=True, distance_to_camera=True,  distance_to_image_plane=True, camera_params=True, image_output_format="png")
+    train_data_writer.initialize(output_dir=out_dir, rgb=True, distance_to_camera=False,  distance_to_image_plane=False, camera_params=True, image_output_format="png")
     train_data_writer.attach([render_product])
 
     # Initialize and attach bounding box 2d tight annotator to detect which objects are visible in the image
