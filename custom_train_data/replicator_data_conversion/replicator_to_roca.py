@@ -167,11 +167,37 @@ def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scen
         json.dump(annotations, output_file, indent=4)
 
 
+def generate_labels_from_objs(obj_path: str) -> list[str]:
+    """
+    Generate labels from all obj files in obj_path
+
+    Args:
+    - obj_path (str): path to obj files
+
+    Returns: List of labels (list[str])
+    """
+    # Find all .obj files in the obj_path
+    obj_files = glob.glob(os.path.join(obj_path, "*.obj"))
+    # Remove file type from filename
+    return [os.path.basename(obj_path).split(".")[0] for obj_path in obj_files]
+
+
+def generate_metadata_taxonomy_9(roca_metadata_path: str, labels: list[str]) -> None:
+    taxonomy = [{"name": label, "shapenet": label} for label in labels]
+    json.dump(taxonomy, open(os.path.join(roca_metadata_path, "scan2cad_taxonomy_9.json"), "w"), indent=4)
+
+
+#def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str]) -> None:
+
+
+
+
 def main(args: list[str]) -> None:
     # Create argument parser
     parser = argparse.ArgumentParser(description="Converts the generated training data from NVIDIA Replicator to the format required by ROCA")
     parser.add_argument("--rep_dir", help="Input directory containing the files in the Replicator format", required=True)
     parser.add_argument("--roca_dataset_dir", help="Directory that ROCA will use for training data generation", required=True)
+    parser.add_argument("--roca_metadata_dir", help="Metadata directory in the ROCA GitHub-Repository", required=True)
     parser.add_argument("--obj_dir", help="Directory with all CAD Models in OBJ format", required=True)
 
     args = parser.parse_args(args)
@@ -184,14 +210,16 @@ def main(args: list[str]) -> None:
         print(f"The OBJ model directory {args.rep_dir} does not exist. Existing...")
         exit(-1)
 
-    # Test if roca_dataset_dir exists and create if necessary
-    if not os.path.isdir(args.roca_dataset_dir):
-        os.makedirs(args.roca_dataset_dir)
+    # Create roca_dataset_dir and roca_metadata_dir if necessary
+    os.makedirs(args.roca_dataset_dir, exist_ok=True)
+    os.makedirs(args.roca_metadata_dir, exist_ok=True)
 
     # Convert training data
     replicator_dir = args.rep_dir
     obj_dir = args.obj_dir
     roca_dataset_dir = args.roca_dataset_dir
+    roca_metadata_dir = args.roca_metadata_dir
+
     scene_numbers = get_scene_nrs(replicator_dir)
     print("Converting camera intrinsics...")
     replicator_intrinsics_to_scannet(replicator_dir, roca_dataset_dir, scene_numbers)
@@ -202,6 +230,13 @@ def main(args: list[str]) -> None:
     print("Generating full_annotations.json...")
     generate_full_annotations_json(replicator_dir, roca_dataset_dir, scene_numbers)
     print("Generating ROCA metadata files...")
+    labels = generate_labels_from_objs(obj_dir)
+    generate_metadata_taxonomy_9(roca_metadata_dir, labels)
+
+    print("Done!")
+
+
+
 
 
 if __name__ == '__main__':

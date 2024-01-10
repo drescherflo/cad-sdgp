@@ -62,8 +62,9 @@ def main():
     xform_prims.append(prims.create_prim(prim_path=prim_paths[1], usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[+1, +0.5, 0]))
 
     # Apply semantics
+    label = obj_path.split("/")[-1].removesuffix(".obj")
     for xform_prim in xform_prims:
-        add_update_semantics(xform_prim, semantic_label="simple_object", type_label="class")
+        add_update_semantics(xform_prim, semantic_label=label, type_label="class")
 
     # Add camera
     camera = rep.create.camera(position=(0, 0, 5), rotation=(-90, -90, 0))  # Look at (0, 0, 0) with x axis to the right
