@@ -5,7 +5,7 @@ import glob
 import json
 import argparse
 from PIL import Image
-import numpy as np
+from sklearn.model_selection import train_test_split
 
 
 def get_scene_nrs(rep_data_path: str) -> list[str]:
@@ -187,9 +187,28 @@ def generate_metadata_taxonomy_9(roca_metadata_path: str, labels: list[str]) -> 
     json.dump(taxonomy, open(os.path.join(roca_metadata_path, "scan2cad_taxonomy_9.json"), "w"), indent=4)
 
 
-#def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str]) -> None:
+def write_list_to_txt(output_path: str, string_list: list[str]) -> None:
+    with open(output_path, "w") as f:
+        f.write("\n".join(string_list))
 
 
+def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str]) -> None:
+    write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels)
+    write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels)
+
+
+def generate_metadata_train_val_files(roca_metadata_path: str, scene_numbers: list[str]) -> None:
+    # Create train and val split with 20% validation
+    scene_names = [f"scene{scene_number}" for scene_number in scene_numbers]
+    train_scenes, val_scenes = train_test_split(scene_names, test_size=0.2)
+
+    # Write scenes
+    write_list_to_txt(os.path.join(roca_metadata_path, "scannetv2_train.txt"), train_scenes)
+    write_list_to_txt(os.path.join(roca_metadata_path, "scannetv2_val.txt"), val_scenes)
+
+    # Write val images
+    val_images = [scene_name + " 0" for scene_name in val_scenes]  # Since there is only one picture per scene, use this one
+    write_list_to_txt(os.path.join(roca_metadata_path, "val_images.txt"), val_images)
 
 
 def main(args: list[str]) -> None:
@@ -209,6 +228,11 @@ def main(args: list[str]) -> None:
     if not os.path.isdir(args.obj_dir):
         print(f"The OBJ model directory {args.rep_dir} does not exist. Existing...")
         exit(-1)
+
+    # Warn user about new test and val splits
+    print("Converting the generated training data from NVIDIA Replicator to ROCA format...")
+    print("Warning! This will create a new randomized training and validation data split!")
+    print("You may want to backup and restore 'val_images.txt', 'scannetv2_val.txt, 'scannetv2_train.txt' in your ROCA metadata directory.")
 
     # Create roca_dataset_dir and roca_metadata_dir if necessary
     os.makedirs(args.roca_dataset_dir, exist_ok=True)
@@ -230,13 +254,13 @@ def main(args: list[str]) -> None:
     print("Generating full_annotations.json...")
     generate_full_annotations_json(replicator_dir, roca_dataset_dir, scene_numbers)
     print("Generating ROCA metadata files...")
+    input("Press any key to continue...")
     labels = generate_labels_from_objs(obj_dir)
     generate_metadata_taxonomy_9(roca_metadata_dir, labels)
+    generate_metadata_label_id_files(roca_metadata_dir, labels)
+    generate_metadata_train_val_files(roca_metadata_dir, scene_numbers)
 
     print("Done!")
-
-
-
 
 
 if __name__ == '__main__':
