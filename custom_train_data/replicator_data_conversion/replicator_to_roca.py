@@ -15,7 +15,8 @@ def get_scene_nrs(rep_data_path: str) -> list[str]:
     Args:
     - rep_data_path : Path to the replicator dataset containing camera_params_*.json files
 
-    Returns: list of scene numbers (list[str])
+    Returns:
+    list of scene numbers (list[str])
     """
 
     # Find all JSON files matching the pattern camera_params_*.json
@@ -174,7 +175,8 @@ def generate_labels_from_objs(obj_path: str) -> list[str]:
     Args:
     - obj_path (str): path to obj files
 
-    Returns: List of labels (list[str])
+    Returns:
+    List of labels (list[str])
     """
     # Find all .obj files in the obj_path
     obj_files = glob.glob(os.path.join(obj_path, "*.obj"))
@@ -183,21 +185,67 @@ def generate_labels_from_objs(obj_path: str) -> list[str]:
 
 
 def generate_metadata_taxonomy_9(roca_metadata_path: str, labels: list[str]) -> None:
+    """
+    Generates a taxonomy JSON file for ROCA metadata.
+
+    This function creates a taxonomy file named 'scan2cad_taxonomy_9.json' in the specified directory.
+    The taxonomy file contains a list of dictionaries, each representing a label from the provided labels list,
+    with each label being mapped to its corresponding ShapeNet label.
+
+    Args:
+    - roca_metadata_path (str): The file path where the taxonomy file will be saved.
+    - labels (list[str]): A list of labels to include in the taxonomy file.
+    """
+
     taxonomy = [{"name": label, "shapenet": label} for label in labels]
     json.dump(taxonomy, open(os.path.join(roca_metadata_path, "scan2cad_taxonomy_9.json"), "w"), indent=4)
 
 
 def write_list_to_txt(output_path: str, string_list: list[str]) -> None:
+    """
+    Writes a list of strings to a text file, with each string on a new line.
+
+    Args:
+    - output_path (str): The file path where the text file will be saved.
+    - string_list (list[str]): A list of strings to be written to the file.
+    """
+
     with open(output_path, "w") as f:
         f.write("\n".join(string_list))
 
 
 def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str]) -> None:
+    """
+    Generates text files containing label IDs for ROCA metadata.
+
+    This function creates two files: 'labelids_all.txt' and 'labelids.txt' in the specified directory.
+    Both files contain the same labels, each on a new line, as provided in the labels list.
+
+    Args:
+    - roca_metadata_path (str): The file path where the label ID files will be saved.
+    - labels (list[str]): A list of labels to include in the label ID files.
+    """
     write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels)
     write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels)
 
 
 def generate_metadata_train_val_files(roca_metadata_path: str, scene_numbers: list[str]) -> None:
+    """
+    Generates train and validation split files for ROCA metadata.
+
+    This function creates three files: 'scannetv2_train.txt', 'scannetv2_val.txt', and 'val_images.txt'
+    in the specified directory. The train and validation splits are made from the provided scene numbers,
+    with 20% of the scenes being used for validation. The 'val_images.txt' file contains one image per scene
+    in the validation split.
+
+    Args:
+    - roca_metadata_path (str): The file path where the train and validation files will be saved.
+    - scene_numbers (list[str]): A list of scene numbers to be split into train and validation sets.
+
+    Returns:
+    None
+    """
+
     # Create train and val split with 20% validation
     scene_names = [f"scene{scene_number}" for scene_number in scene_numbers]
     train_scenes, val_scenes = train_test_split(scene_names, test_size=0.2)
