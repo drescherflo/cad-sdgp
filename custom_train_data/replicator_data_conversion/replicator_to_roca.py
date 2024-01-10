@@ -113,6 +113,60 @@ def copy_obj_files(roca_data_path: str, obj_path: str) -> None:
         shutil.copy(obj_file, new_file_path)
 
 
+def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scene_numbers: list[str]) -> None:
+    """
+    Generate a full_annotations.json file from world_pose_visible_objects_[nr].json files.
+
+    Args:
+    - rep_data_path (str): Path to the folder containing world_pose_visible_objects_[nr].json files.
+    - roca_data_path (str): ROCA data path where the Scan2CAD/full_annotations.json will be saved.
+    - scene_numbers (list[str]): List of scene numbers as strings.
+    """
+
+    annotations = []
+    for nr in scene_numbers:
+        # Read the contents of the JSON file
+        file_path = os.path.join(rep_data_path, f"world_pose_visible_objects_{nr}.json")
+        with open(file_path, 'r') as file:
+            data = json.load(file)
+
+        # Process the data
+        scene_data = {
+            "id_scan": f"scene{nr}",
+            "trs": {
+                "translation": [0.0, 0.0, 0.0],
+                "rotation": [1.0, 0.0, 0.0, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "aligned_models": [
+                {
+                    "sym": "__SYM_NONE",  # Assuming symmetry as none for all models
+                    "catid_cad": obj["obj_path"].split("/")[-1].split(".")[0],
+                    "id_cad": "0",
+                    "trs": {
+                        "translation": [obj['pose']['position']['x'],
+                                        obj['pose']['position']['y'],
+                                        obj['pose']['position']['z']],
+                        "rotation": [obj['pose']['orientation']['w'],
+                                     obj['pose']['orientation']['x'],
+                                     obj['pose']['orientation']['y'],
+                                     obj['pose']['orientation']['z']],
+                        "scale": [1.0, 1.0, 1.0]
+                    }
+                } for obj in data
+            ]
+        }
+
+        annotations.append(scene_data)
+
+    # Saving the annotations to full_annotations.json
+    output_path = os.path.join(roca_data_path, "Scan2CAD", "full_annotations.json")
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    with open(output_path, 'w') as output_file:
+        json.dump(annotations, output_file, indent=4)
+
+
 def main(args: list[str]) -> None:
     # Create argument parser
     parser = argparse.ArgumentParser(description="Converts the generated training data from NVIDIA Replicator to the format required by ROCA")
@@ -145,6 +199,8 @@ def main(args: list[str]) -> None:
     replicator_image_to_scannet(replicator_dir, roca_dir, scene_numbers)
     print("Copying CAD models...")
     copy_obj_files(roca_dir, obj_dir)
+    print("Generating full_annotations.json...")
+    generate_full_annotations_json(replicator_dir, roca_dir, scene_numbers)
 
 
 if __name__ == '__main__':
