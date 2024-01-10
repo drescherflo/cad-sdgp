@@ -171,7 +171,7 @@ def main(args: list[str]) -> None:
     # Create argument parser
     parser = argparse.ArgumentParser(description="Converts the generated training data from NVIDIA Replicator to the format required by ROCA")
     parser.add_argument("--rep_dir", help="Input directory containing the files in the Replicator format", required=True)
-    parser.add_argument("--roca_dir", help="Directory that ROCA will use for training data generation", required=True)
+    parser.add_argument("--roca_dataset_dir", help="Directory that ROCA will use for training data generation", required=True)
     parser.add_argument("--obj_dir", help="Directory with all CAD Models in OBJ format", required=True)
 
     args = parser.parse_args(args)
@@ -184,23 +184,24 @@ def main(args: list[str]) -> None:
         print(f"The OBJ model directory {args.rep_dir} does not exist. Existing...")
         exit(-1)
 
-    # Test if roca_dir exists and create if necessary
-    if not os.path.isdir(args.roca_dir):
-        os.makedirs(args.roca_dir)
+    # Test if roca_dataset_dir exists and create if necessary
+    if not os.path.isdir(args.roca_dataset_dir):
+        os.makedirs(args.roca_dataset_dir)
 
     # Convert training data
     replicator_dir = args.rep_dir
     obj_dir = args.obj_dir
-    roca_dir = args.roca_dir
+    roca_dataset_dir = args.roca_dataset_dir
     scene_numbers = get_scene_nrs(replicator_dir)
     print("Converting camera intrinsics...")
-    replicator_intrinsics_to_scannet(replicator_dir, roca_dir, scene_numbers)
+    replicator_intrinsics_to_scannet(replicator_dir, roca_dataset_dir, scene_numbers)
     print("Converting images...")
-    replicator_image_to_scannet(replicator_dir, roca_dir, scene_numbers)
+    replicator_image_to_scannet(replicator_dir, roca_dataset_dir, scene_numbers)
     print("Copying CAD models...")
-    copy_obj_files(roca_dir, obj_dir)
+    copy_obj_files(roca_dataset_dir, obj_dir)
     print("Generating full_annotations.json...")
-    generate_full_annotations_json(replicator_dir, roca_dir, scene_numbers)
+    generate_full_annotations_json(replicator_dir, roca_dataset_dir, scene_numbers)
+    print("Generating ROCA metadata files...")
 
 
 if __name__ == '__main__':
