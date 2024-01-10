@@ -302,7 +302,7 @@ def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, s
             data = json.load(file)
 
         # Extract the camera view transform matrix
-        camera_view_transform = np.array(data["cameraViewTransform"]).reshape([4,4]).transpose()
+        camera_view_transform = np.array(data["cameraViewTransform"]).reshape([4, 4]).transpose()
 
         # Invert the matrix to get world to camera
         inverted_transform = np.linalg.inv(camera_view_transform)
