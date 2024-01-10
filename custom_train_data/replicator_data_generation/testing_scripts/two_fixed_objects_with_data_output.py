@@ -37,10 +37,25 @@ def main():
 
     # Add objects
     usd_path = "CAD Models/OBJ_converted/MA Simple Object_obj.usd"
+    ## Reconstruct obj path from usd path
+    obj_path_split = usd_path.split("/")
+    obj_path_split[-2] = obj_path_split[-2].removesuffix("_converted")
+    obj_path_split[-1] = obj_path_split[-1].replace("_obj.usd", ".obj")
+    obj_path = "/".join(obj_path_split)
+
+    ## Create valid prim_path from usd_path
     prim_path_start = usd_path.split("/")[-1].replace(" ", "_").removesuffix(".usd")
+    prim_paths = [f"/{prim_path_start}_{i}" for i in range(2)]
+
+    ## Map prim path to obj path
+    prim_path_to_obj_path = {}
+    for prim_path in prim_paths:
+        prim_path_to_obj_path[prim_path] = obj_path
+
+    ## Add prims to stage
     xform_prims = []
-    xform_prims.append(prims.create_prim(prim_path=f"/{prim_path_start}_1", usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[-1, -0.5, 0]))
-    xform_prims.append(prims.create_prim(prim_path=f"/{prim_path_start}_2", usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[+1, +0.5, 0]))
+    xform_prims.append(prims.create_prim(prim_path=prim_paths[0], usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[-1, -0.5, 0]))
+    xform_prims.append(prims.create_prim(prim_path=prim_paths[1], usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[+1, +0.5, 0]))
 
     # Apply semantics
     for xform_prim in xform_prims:
