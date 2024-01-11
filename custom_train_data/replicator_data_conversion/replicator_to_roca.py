@@ -169,7 +169,7 @@ def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scen
                                  obj['pose']['orientation']['x'],
                                  obj['pose']['orientation']['y'],
                                  obj['pose']['orientation']['z']],
-                    "scale": [0.001, 0.001, 0.001]
+                    "scale": [1.0, 1.0, 1.0]
                 }
             })
 
