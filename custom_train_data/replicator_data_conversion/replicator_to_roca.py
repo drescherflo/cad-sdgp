@@ -238,7 +238,7 @@ def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str])
     Generates text files containing label IDs for ROCA metadata.
 
     This function creates two files: 'labelids_all.txt' and 'labelids.txt' in the specified directory.
-    Both files contain the same labels, each on a new line, as provided in the labels list.
+    Both files contain the same labels, each on a new line, as provided in the labels list prepended by an ID.
 
     Args:
     - roca_metadata_path (str): The file path where the label ID files will be saved.
@@ -247,8 +247,9 @@ def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str])
     Returns:
     None
     """
-    write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels)
-    write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels)
+    labels_with_id = [f"{i + 1} {labels[i]}" for i in range(len(labels))]
+    write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels_with_id)
+    write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels_with_id)
 
 
 def generate_metadata_train_val_files(roca_metadata_path: str, scene_numbers: list[str]) -> None:
