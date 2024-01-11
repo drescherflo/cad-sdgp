@@ -5,6 +5,7 @@ import glob
 import json
 import argparse
 import numpy as np
+import quaternion
 from PIL import Image
 from sklearn.model_selection import train_test_split
 
@@ -151,26 +152,35 @@ def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scen
                 "translation": [0.0, 0.0, 0.0],
                 "rotation": [1.0, 0.0, 0.0, 0.0],
                 "scale": [1.0, 1.0, 1.0]
-            },
-            "aligned_models": [
-                {
-                    "sym": "__SYM_NONE",  # Assuming symmetry as none for all models
-                    "catid_cad": obj["obj_path"].split("/")[-1].split(".")[0],
-                    "id_cad": "0",
-                    "trs": {
-                        "translation": [obj['pose']['position']['x'],
-                                        obj['pose']['position']['y'],
-                                        obj['pose']['position']['z']],
-                        "rotation": [obj['pose']['orientation']['w'],
-                                     obj['pose']['orientation']['x'],
-                                     obj['pose']['orientation']['y'],
-                                     obj['pose']['orientation']['z']],
-                        "scale": [1.0, 1.0, 1.0]
-                    }
-                } for obj in data
-            ]
+            }
         }
 
+        aligned_models = []
+        for obj in data:
+            # Invert world to obj / cad model transformation
+            world_to_obj_translation = np.array([obj['pose']['position']['x'], obj['pose']['position']['y'], obj['pose']['position']['z']])
+            obj_to_world_translation = -world_to_obj_translation
+            world_to_obj_rotation = np.quaternion(obj['pose']['orientation']['w'], obj['pose']['orientation']['x'], obj['pose']['orientation']['y'], obj['pose']['orientation']['z'])
+            obj_to_world_rotation = world_to_obj_rotation ** -1
+
+            # Process obj data
+            aligned_models.append({
+                "sym": "__SYM_NONE",  # Assuming symmetry as none for all models
+                "catid_cad": obj["obj_path"].split("/")[-1].split(".")[0],
+                "id_cad": "0",
+                "trs": {
+                    "translation": [obj_to_world_translation[0].astype(float),
+                                    obj_to_world_translation[1].astype(float),
+                                    obj_to_world_translation[2].astype(float)],
+                    "rotation": [obj_to_world_rotation.w,
+                                 obj_to_world_rotation.x,
+                                 obj_to_world_rotation.y,
+                                 obj_to_world_rotation.z],
+                    "scale": [1.0, 1.0, 1.0]
+                }
+            })
+
+        scene_data["aligned_models"] = aligned_models
         annotations.append(scene_data)
 
     # Saving the annotations to full_annotations.json
