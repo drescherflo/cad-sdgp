@@ -12,21 +12,9 @@
   ```
 
 ## ROCA einrichten
-- ROCA-Repo clonen
+- ROCA-Repo-Fork clonen
   ```bash
-  git clone https://github.com/cangumeli/ROCA.git
-  ```
-
-- `requirements.txt` mit nachfolgendem Inhalt aktualisieren, da unvollständig
-  ```txt
-  dataclasses==0.6
-  opencv-python==4.5.4.60
-  numpy-quaternion==2021.11.4.15.26.3
-  pandas==1.3.4
-  scipy==1.7.2
-  open3d==0.13.0
-  trimesh==3.9.35
-  rtree==0.9.7
+  https://github.com/drescherflo/ROCA.git -b roca_working_training
   ```
 
 - Conda-Umgebung einrichten und Abhängigkeiten installieren
@@ -35,14 +23,6 @@
   source setup.sh
   ```
   Rückfragen mit `y` und `Enter` bestätigen
-- `pytorch3d` nachinstallieren, da `setup.sh` eine nicht existierende Variante installieren möchte
-  ```bash
-  conda install pytorch3d -c pytorch3d
-  ```
-- `Pillow und numpy` downgraden, da mit torchvision eine zu neue Version intalliert wird
-  ```bash
-  pip install Pillow==9.5.0 numpy==1.22.4
-  ```
 
 ### Variante 1: Demo-Daten zum Testen herunterladen (kein Training nötig)
 - Demo-Daten vom [zugehörigen Google Drive](https://tex.stackexchange.com/questions/12806/guidelines-for-customizing-biblatex-styles) laden und innerhalb des Repos entpacken
@@ -153,16 +133,6 @@ python demo.py --model_path ../Models/model_best.pth --data_dir ../Data/Dataset 
   python ~/Data/ScanNet25k/raw/download-scannet.py -o ~/Data/ScanNet25k/raw/ --preprocessed_frames
   unzip ~/Data/ScanNet25k/raw/tasks/scannet_frames_25k.zip -d ~/Data/ScanNet25k/tasks
   ```
-
-#### Scan2CADRasterizer-lib erstellen
-```bash
-git clone https://github.com/cangumeli/Scan2CADRasterizer/tree/main
-cd Scan2CADRasterizer
-pip install .
-cp build/lib.linux-x86_64-cpython-38/scan2cad_rasterizer.cpython-38-x86_64-linux-gnu.so ../renderer/scan2cad_rasterizer.cpython-38-x86_64-linux-gnu.so
-cd ..
-rm -rf Scan2CADRasterizer
-```
 
 #### Daten vorbereiten
 ```bash
