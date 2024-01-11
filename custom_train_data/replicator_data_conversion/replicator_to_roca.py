@@ -319,7 +319,6 @@ def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, s
 
         # Calculate ros camera view to world camera view transformation (T^R_W)
         ros_camera_view_to_world = ros_camera_view_to_isaac_camera_view @ isaac_camera_view_to_world
-        test = ros_camera_view_to_world @ np.array([-1, -0.5, 0, 1])  # sollte [-1, 0.5, 5] sein
 
         # According to ROCA code in render.py, T^W_R needs to be saved
         world_to_ros_camera_view = np.linalg.inv(ros_camera_view_to_world)
