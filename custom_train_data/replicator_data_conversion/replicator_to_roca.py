@@ -5,7 +5,6 @@ import glob
 import json
 import argparse
 import numpy as np
-import quaternion
 from PIL import Image
 from sklearn.model_selection import train_test_split
 
@@ -157,26 +156,20 @@ def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scen
 
         aligned_models = []
         for obj in data:
-            # Invert world to obj / cad model transformation
-            world_to_obj_translation = np.array([obj['pose']['position']['x'], obj['pose']['position']['y'], obj['pose']['position']['z']])
-            obj_to_world_translation = -world_to_obj_translation
-            world_to_obj_rotation = np.quaternion(obj['pose']['orientation']['w'], obj['pose']['orientation']['x'], obj['pose']['orientation']['y'], obj['pose']['orientation']['z'])
-            obj_to_world_rotation = world_to_obj_rotation ** -1
-
             # Process obj data
             aligned_models.append({
                 "sym": "__SYM_NONE",  # Assuming symmetry as none for all models
                 "catid_cad": obj["obj_path"].split("/")[-1].split(".")[0],
                 "id_cad": "0",
                 "trs": {
-                    "translation": [obj_to_world_translation[0].astype(float),
-                                    obj_to_world_translation[1].astype(float),
-                                    obj_to_world_translation[2].astype(float)],
-                    "rotation": [obj_to_world_rotation.w,
-                                 obj_to_world_rotation.x,
-                                 obj_to_world_rotation.y,
-                                 obj_to_world_rotation.z],
-                    "scale": [1.0, 1.0, 1.0]
+                    "translation": [obj['pose']['position']['x'],
+                                    obj['pose']['position']['y'],
+                                    obj['pose']['position']['z']],
+                    "rotation": [obj['pose']['orientation']['w'],
+                                 obj['pose']['orientation']['x'],
+                                 obj['pose']['orientation']['y'],
+                                 obj['pose']['orientation']['z']],
+                    "scale": [0.001, 0.001, 0.001]
                 }
             })
 
@@ -312,29 +305,32 @@ def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, s
         with open(json_file_path, 'r') as file:
             data = json.load(file)
 
-        # Extract the isaac camera to view transform matrix
+        # Build T^R_W = T^R_I * T^I_W
+        # Extract the world to isaac camera view transform matrix  (T^I_W)
         isaac_camera_view_to_world = np.array(data["cameraViewTransform"]).reshape([4, 4]).transpose()
 
-        # Invert the matrix to get world to isaac camera
-        world_to_isaac_camera_view = np.linalg.inv(isaac_camera_view_to_world)
-
-        # Create world to ros / real camera transformation by rotating 180° around X
-        isaac_camera_view_to_ros_camera_view = np.array([
+        # Create isaac camera view to ros camera view transformation (T^R_I)
+        ros_camera_view_to_isaac_camera_view = np.array([
             [1, 0, 0, 0],
             [0, -1, 0, 0],
             [0, 0, -1, 0],
             [0, 0, 0, 1],
         ])
-        world_to_ros_camera = isaac_camera_view_to_ros_camera_view @ world_to_isaac_camera_view
+
+        # Calculate ros camera view to world camera view transformation (T^R_W)
+        ros_camera_view_to_world = ros_camera_view_to_isaac_camera_view @ isaac_camera_view_to_world
+        test = ros_camera_view_to_world @ np.array([-1, -0.5, 0, 1])  # sollte [-1, 0.5, 5] sein
+
+        # According to ROCA code in render.py, T^W_R needs to be saved
+        world_to_ros_camera_view = np.linalg.inv(ros_camera_view_to_world)
 
         # Prepare the output directory
         output_dir = os.path.join(roca_dataset_dir, f"ScanNet25k/tasks/scannet_frames_25k/scene{nr}/pose")
         os.makedirs(output_dir, exist_ok=True)
 
-        # Write the inverted matrix to a text file
         output_file_path = os.path.join(output_dir, "000000.txt")
         with open(output_file_path, 'w') as output_file:
-            for row in world_to_ros_camera:
+            for row in world_to_ros_camera_view:
                 output_file.write(" ".join([f"{val}" for val in row]) + "\n")
 
 
