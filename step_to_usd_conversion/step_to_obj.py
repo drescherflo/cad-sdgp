@@ -31,6 +31,10 @@ def main():
     parser = argparse.ArgumentParser(description="Converts STEP files to STL files")
     parser.add_argument("--input_dir", help="Input directory containing .stp files or .step files")
     parser.add_argument("--output_dir", help="Output directory for .obj files")
+    parser.add_argument("--scale_factor", type=float, default=0.001,
+                        help="Scales the .obj file by this factor.\n"
+                             "This is required when the object was designed with some other unit than meters.\n"
+                             "The default value of 0.001 is used when the object was designed in millimeters.")
 
     # Parse args
     args = parser.parse_args()
@@ -68,8 +72,8 @@ def main():
         with open(output_file_path, 'w') as f:
             # Write vertices
             for v in np.vstack(stl_mesh.vectors):
-                # scale down from m to mm
-                v = v * 0.001
+                # scale by provided factor (default 0.001)
+                v = v * args.scale_factor
                 f.write(f'v {v[0]} {v[1]} {v[2]}\n')
 
             # Write faces
