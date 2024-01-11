@@ -59,7 +59,7 @@ def main():
     ## Add prims to stage
     xform_prims = []
     xform_prims.append(prims.create_prim(prim_path=prim_paths[0], usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[-1, -0.5, 0]))
-    xform_prims.append(prims.create_prim(prim_path=prim_paths[1], usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[+1, +0.5, 0]))
+    xform_prims.append(prims.create_prim(prim_path=prim_paths[1], usd_path=usd_path, scale=[0.001, 0.001, 0.001], position=[+0.5, +0.5, 0]))
 
     # Apply semantics
     label = obj_path.split("/")[-1].removesuffix(".obj")

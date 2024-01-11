@@ -284,7 +284,7 @@ def generate_metadata_train_val_files(roca_metadata_path: str, scene_numbers: li
 
 def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, scene_numbers) -> None:
     """
-    Reads camera parameters from JSON files, inverts the camera view transformation matrix,
+    Reads camera parameters from JSON files, calculates the world to ros camera view transformation matrix,
     and saves it in a text file.
 
     Args:
@@ -302,11 +302,20 @@ def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, s
         with open(json_file_path, 'r') as file:
             data = json.load(file)
 
-        # Extract the camera view transform matrix
-        camera_view_transform = np.array(data["cameraViewTransform"]).reshape([4, 4]).transpose()
+        # Extract the isaac camera to view transform matrix
+        isaac_camera_view_to_world = np.array(data["cameraViewTransform"]).reshape([4, 4]).transpose()
 
-        # Invert the matrix to get world to camera
-        inverted_transform = np.linalg.inv(camera_view_transform)
+        # Invert the matrix to get world to isaac camera
+        world_to_isaac_camera_view = np.linalg.inv(isaac_camera_view_to_world)
+
+        # Create world to ros / real camera transformation by rotating 180° around X
+        isaac_camera_view_to_ros_camera_view = np.array([
+            [1, 0, 0, 0],
+            [0, -1, 0, 0],
+            [0, 0, -1, 0],
+            [0, 0, 0, 1],
+        ])
+        world_to_ros_camera = isaac_camera_view_to_ros_camera_view @ world_to_isaac_camera_view
 
         # Prepare the output directory
         output_dir = os.path.join(roca_dataset_dir, f"ScanNet25k/tasks/scannet_frames_25k/scene{nr}/pose")
@@ -315,7 +324,7 @@ def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, s
         # Write the inverted matrix to a text file
         output_file_path = os.path.join(output_dir, "000000.txt")
         with open(output_file_path, 'w') as output_file:
-            for row in inverted_transform:
+            for row in world_to_ros_camera:
                 output_file.write(" ".join([f"{val}" for val in row]) + "\n")
 
 
