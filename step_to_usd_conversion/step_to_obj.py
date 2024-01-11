@@ -68,6 +68,8 @@ def main():
         with open(output_file_path, 'w') as f:
             # Write vertices
             for v in np.vstack(stl_mesh.vectors):
+                # scale down from m to mm
+                v = v * 0.001
                 f.write(f'v {v[0]} {v[1]} {v[2]}\n')
 
             # Write faces
