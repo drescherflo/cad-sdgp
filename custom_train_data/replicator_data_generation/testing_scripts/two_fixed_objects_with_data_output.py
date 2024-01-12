@@ -19,6 +19,7 @@ from omni.isaac.core import World, SimulationContext
 from omni.isaac.core.prims import XFormPrim
 from omni.isaac.core.utils import prims, extensions
 from omni.isaac.core.utils.semantics import add_update_semantics
+from omni.isaac.core.materials import OmniPBR, OmniGlass
 from omni.isaac.sensor import Camera
 from omni.isaac.core.utils.rotations import euler_angles_to_quat
 
@@ -65,6 +66,17 @@ def main():
     label = obj_path.split("/")[-1].removesuffix(".obj")
     for xform_prim in xform_prims:
         add_update_semantics(xform_prim, semantic_label=label, type_label="class")
+
+    # Create materials
+    pbr_mat = OmniPBR(prim_path="/Materials/PBR", color=np.array([0, 1, 1]))
+    pbr_mat.set_reflection_roughness(0.9)
+    glass_mat = OmniGlass(prim_path="/Materials/Glass", color=np.array([1, 0, 1]))
+
+    # Apply materials
+    prim = XFormPrim(prim_path=xform_prims[0].GetPrimPath().pathString)
+    prim.apply_visual_material(pbr_mat)
+    prim = XFormPrim(prim_path=xform_prims[1].GetPrimPath().pathString)
+    prim.apply_visual_material(glass_mat)
 
     # Add camera
     camera = rep.create.camera(position=(0, 0, 5), rotation=(-90, -90, 0))  # Look at (0, 0, 0) with x axis to the right
@@ -146,9 +158,9 @@ def main():
     train_data_writer.detach()
 
     # Isaac Sim run-loop (only for testing and ROS publishing, do NOT use this when generating data)
-    #world.reset()  # This is required instead of sim_app.update for ros publishers to work
-    #while simulation_app.is_running():
-    #    world.step(render=True)  # This is required instead of sim_app.update for ros publishers to work
+    world.reset()  # This is required instead of sim_app.update for ros publishers to work
+    while simulation_app.is_running():
+        world.step(render=True)  # This is required instead of sim_app.update for ros publishers to work
 
 
 if __name__ == '__main__':
