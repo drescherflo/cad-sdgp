@@ -42,10 +42,32 @@ def generate_camera_conf(frame_height: int, frame_width: int) -> dict:
 
 
 def generate_random_rgb_color() -> list[float]:
+    """
+    Generates a random RGB color.
+
+    Each color component is a float between 0 and 1, representing the intensity of red, green, and blue.
+
+    :return: A list containing three floats, each representing the red, green, and blue color components.
+    :rtype: list[float]
+    """
+
     return [random.uniform(0, 1) for _ in range(3)]
 
 
 def generate_materials_conf(num_random_materials: int, probability_of_glass_material: float) -> list[dict]:
+    """
+    Generates a list of random material configurations.
+
+    The function randomly decides if a material is glass or metallic based on the provided probability, and assigns a random RGB color to each material. For metallic materials, a random surface roughness is also assigned.
+
+    :param num_random_materials: Number of random materials to generate.
+    :type num_random_materials: int
+    :param probability_of_glass_material: Probability that a material is glass.
+    :type probability_of_glass_material: float
+    :return: A list of dictionaries, each containing the configuration of a material.
+    :rtype: list[dict]
+    """
+
     mat_configs = []
     for i in range(num_random_materials):
         if random.uniform(0, 1) < probability_of_glass_material:
@@ -68,6 +90,19 @@ def generate_materials_conf(num_random_materials: int, probability_of_glass_mate
 
 
 def generate_obj_conf(num_random_materials: int, usd_model: str) -> dict:
+    """
+    Generates a configuration for an object using a specified USD model.
+
+    The configuration includes a random position, orientation, material index, and a semantic class label derived from the USD model file name.
+
+    :param num_random_materials: The number of available random materials.
+    :type num_random_materials: int
+    :param usd_model: The file name of the USD model.
+    :type usd_model: str
+    :return: A dictionary containing the object's configuration.
+    :rtype: dict
+    """
+
     return {
         "usd_model": usd_model,
         "pose": {
@@ -83,6 +118,21 @@ def generate_obj_conf(num_random_materials: int, usd_model: str) -> dict:
 
 def generate_single_object_scene_confs(num_frames_per_object: int, num_objects_per_frame: int, usd_model: str,
                                        num_random_materials: int) -> list[dict]:
+    """
+    Generates a list of scene configurations, each containing configurations for a single object.
+
+    :param num_frames_per_object: Number of frames to generate for each object.
+    :type num_frames_per_object: int
+    :param num_objects_per_frame: Number of objects in each frame.
+    :type num_objects_per_frame: int
+    :param usd_model: The file name of the USD model to be used for each object.
+    :type usd_model: str
+    :param num_random_materials: The number of available random materials.
+    :type num_random_materials: int
+    :return: A list of dictionaries, each representing a scene configuration.
+    :rtype: list[dict]
+    """
+
     return [
         {
             "object_configs": [generate_obj_conf(num_random_materials, usd_model) for _ in range(num_objects_per_frame)]
@@ -92,6 +142,23 @@ def generate_single_object_scene_confs(num_frames_per_object: int, num_objects_p
 
 def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects_per_frame: int, usd_models: list[str],
                                          num_random_materials: int) -> list[dict]:
+    """
+    Generates a list of scene configurations with multiple objects.
+
+    Each scene configuration contains a random selection of objects based on the provided USD models.
+
+    :param num_frames_per_object: Number of frames to generate for each object type.
+    :type num_frames_per_object: int
+    :param num_objects_per_frame: Number of objects in each frame.
+    :type num_objects_per_frame: int
+    :param usd_models: A list of USD model file names to be used.
+    :type usd_models: list[str]
+    :param num_random_materials: The number of available random materials.
+    :type num_random_materials: int
+    :return: A list of dictionaries, each representing a scene configuration.
+    :rtype: list[dict]
+    """
+
     num_scenes = len(usd_models) * num_frames_per_object
     scene_confs = []
     for _ in range(num_scenes):
@@ -106,6 +173,17 @@ def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects
 
 
 def generate_sphere_light_confs_for_one_frame(num_sphere_lights):
+    """
+    Generates configurations for sphere lights in a single frame.
+
+    Each sphere light configuration includes a random position and color.
+
+    :param num_sphere_lights: Number of sphere lights to generate.
+    :type num_sphere_lights: int
+    :return: A dictionary containing the configurations of sphere lights.
+    :rtype: dict
+    """
+
     return {
         "sphere_light_configs":
             [
@@ -120,6 +198,25 @@ def generate_sphere_light_confs_for_one_frame(num_sphere_lights):
 
 def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int, usd_models: list[str],
                          num_random_materials: int, num_sphere_lights: int) -> list[dict]:
+    """
+    Generates configurations for a variety of scenes.
+
+    This includes single and multiple object scenes, each with randomized background, dome light colors, and sphere light configurations.
+
+    :param num_frames_per_object: Number of frames to generate for each object type.
+    :type num_frames_per_object: int
+    :param num_objects_per_frame: Number of objects in each frame.
+    :type num_objects_per_frame: int
+    :param usd_models: A list of USD model file names to be used.
+    :type usd_models: list[str]
+    :param num_random_materials: The number of available random materials.
+    :type num_random_materials: int
+    :param num_sphere_lights: Number of sphere lights in each scene.
+    :type num_sphere_lights: int
+    :return: A list of dictionaries, each representing a scene configuration.
+    :rtype: list[dict]
+    """
+
     # Generate single object scenes
     scene_configs = []
     for usd_model in usd_models:
@@ -144,6 +241,18 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
 
 
 def parse_writer_init_args(writer_init_args: list[str]) -> dict:
+    """
+    Parses initialization arguments for a writer.
+
+    Converts argument strings into a dictionary format, interpreting values as booleans if they match 'true'.
+    E.g. ['rgb=true', 'depth=true'] is converted to {'rgb': True, 'depth': True}.
+
+    :param writer_init_args: A list of string arguments.
+    :type writer_init_args: list[str]
+    :return: A dictionary mapping argument names to their parsed boolean values.
+    :rtype: dict
+    """
+
     args_dict = {}
     for arg in writer_init_args:
         if '=' in arg:
@@ -153,6 +262,17 @@ def parse_writer_init_args(writer_init_args: list[str]) -> dict:
 
 
 def parse_writer_args(writer_args: list[list[str]]) -> dict:
+    """
+    Parses arguments for multiple writers.
+
+    Converts a list of argument lists into a dictionary format, suitable for initializing multiple writers.
+
+    :param writer_args: A list of lists, each containing arguments for a specific writer.
+    :type writer_args: list[list[str]]
+    :return: A dictionary containing configurations for each writer.
+    :rtype: dict
+    """
+
     writers = []
     for writer_arg in writer_args:
         writer_conf = {"name": writer_arg[0], "args": parse_writer_init_args(writer_arg[1:])}
