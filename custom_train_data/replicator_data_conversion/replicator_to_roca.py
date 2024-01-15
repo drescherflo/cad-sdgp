@@ -11,13 +11,12 @@ from sklearn.model_selection import train_test_split
 
 def get_scene_nrs(rep_data_path: str) -> list[str]:
     """
-    Get scene numbers from replicator dataset
+    Retrieves scene numbers from a replicator dataset.
 
-    Args:
-    - rep_data_path : Path to the replicator dataset containing camera_params_*.json files
-
-    Returns:
-    list of scene numbers (list[str])
+    :param rep_data_path: Path to the replicator dataset containing camera_params_*.json files.
+    :type rep_data_path: str
+    :return: List of scene numbers.
+    :rtype: list[str]
     """
 
     # Find all JSON files matching the pattern camera_params_*.json
@@ -29,15 +28,15 @@ def get_scene_nrs(rep_data_path: str) -> list[str]:
 
 def replicator_intrinsics_to_scannet(rep_data_path: str, roca_data_path: str, scene_numbers: list[str]) -> None:
     """
-    Generate intrinsics_color.txt files from camera parameters JSON files.
+    Generates intrinsics_color.txt files from camera parameters JSON files.
 
-    Args:
-    - rep_data_path (str): Path to the folder containing camera_params_*.json files.
-    - roca_data_path (str): Path to the output folder where ScanNet25k/tasks/scannet_frames_25k/scene{NR}/intrinsics_color.txt files will be saved.
-    - scene_numbers (list[str]): List of scene numbers
-
-    Returns:
-    None
+    :param rep_data_path: Path to the folder containing camera_params_*.json files.
+    :param roca_data_path: Path to the output folder where ScanNet25k/tasks/scannet_frames_25k/scene{NR}/intrinsics_color.txt files will be saved.
+    :param scene_numbers: List of scene numbers.
+    :type rep_data_path: str
+    :type roca_data_path: str
+    :type scene_numbers: list[str]
+    :return: None
     """
 
     # Iterate through all scene_numbers
@@ -68,15 +67,15 @@ def replicator_intrinsics_to_scannet(rep_data_path: str, roca_data_path: str, sc
 
 def replicator_image_to_scannet(rep_data_path: str, roca_data_path: str, scene_numbers: list[str]) -> None:
     """
-    Copy and convert images from PNG to JPG format and rename them.
+    Copies and converts images from PNG to JPG format and renames them.
 
-    Args:
-    - rep_data_path (str): Path to the folder containing rgb_{nr}.png files.
-    - roca_data_path (str): Path to the output folder where images will be saved in the format ScanNet25k/tasks/scannet_frames_25k/scene{NR}/color/000000.jpg.
-    - scene_numbers (list[str]): List of scene numbers
-
-    Returns:
-    None
+    :param rep_data_path: Path to the folder containing rgb_{nr}.png files.
+    :param roca_data_path: Path to the output folder where images will be saved in the format ScanNet25k/tasks/scannet_frames_25k/scene{NR}/color/000000.jpg.
+    :param scene_numbers: List of scene numbers.
+    :type rep_data_path: str
+    :type roca_data_path: str
+    :type scene_numbers: list[str]
+    :return: None
     """
 
     # Iterate through all scene_numbers
@@ -95,15 +94,13 @@ def replicator_image_to_scannet(rep_data_path: str, roca_data_path: str, scene_n
 
 def copy_obj_files(roca_data_path: str, obj_path: str) -> None:
     """
-    Copy .obj files to the roca data path respecting the ShapeNet data structure.
+    Copies .obj files to the ROCA data path respecting the ShapeNet data structure.
 
-    Args:
-    - rep_data_path (str): Not used in this function, but included for consistency.
-    - roca_data_path (str): ROCA data path where .obj files will be copied to.
-    - obj_path (str): Path to the folder containing [ModelName].obj files.
-
-    Returns:
-    None
+    :param roca_data_path: ROCA data path where .obj files will be copied to.
+    :param obj_path: Path to the folder containing [ModelName].obj files.
+    :type roca_data_path: str
+    :type obj_path: str
+    :return: None
     """
 
     # Find all .obj files in the obj_path
@@ -126,15 +123,15 @@ def copy_obj_files(roca_data_path: str, obj_path: str) -> None:
 
 def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scene_numbers: list[str]) -> None:
     """
-    Generate a full_annotations.json file from world_pose_visible_objects_[nr].json files.
+    Generates a full_annotations.json file from world_pose_visible_objects_[nr].json files.
 
-    Args:
-    - rep_data_path (str): Path to the folder containing world_pose_visible_objects_[nr].json files.
-    - roca_data_path (str): ROCA data path where the Scan2CAD/full_annotations.json will be saved.
-    - scene_numbers (list[str]): List of scene numbers as strings.
-
-    Returns:
-    None
+    :param rep_data_path: Path to the folder containing world_pose_visible_objects_[nr].json files.
+    :param roca_data_path: ROCA data path where the Scan2CAD/full_annotations.json will be saved.
+    :param scene_numbers: List of scene numbers as strings.
+    :type rep_data_path: str
+    :type roca_data_path: str
+    :type scene_numbers: list[str]
+    :return: None
     """
 
     annotations = []
@@ -186,14 +183,14 @@ def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scen
 
 def generate_labels_from_objs(obj_path: str) -> list[str]:
     """
-    Generate labels from all obj files in obj_path
+    Generates labels from all .obj files in the specified path.
 
-    Args:
-    - obj_path (str): path to obj files
-
-    Returns:
-    List of labels (list[str])
+    :param obj_path: Path to .obj files.
+    :type obj_path: str
+    :return: List of labels extracted from .obj file names.
+    :rtype: list[str]
     """
+
     # Find all .obj files in the obj_path
     obj_files = glob.glob(os.path.join(obj_path, "*.obj"))
     # Remove file type from filename
@@ -204,16 +201,11 @@ def generate_metadata_taxonomy_9(roca_metadata_path: str, labels: list[str]) -> 
     """
     Generates a taxonomy JSON file for ROCA metadata.
 
-    This function creates a taxonomy file named 'scan2cad_taxonomy_9.json' in the specified directory.
-    The taxonomy file contains a list of dictionaries, each representing a label from the provided labels list,
-    with each label being mapped to its corresponding ShapeNet label.
-
-    Args:
-    - roca_metadata_path (str): The file path where the taxonomy file will be saved.
-    - labels (list[str]): A list of labels to include in the taxonomy file.
-
-    Returns:
-    None
+    :param roca_metadata_path: File path where the taxonomy file will be saved.
+    :param labels: List of labels to include in the taxonomy file.
+    :type roca_metadata_path: str
+    :type labels: list[str]
+    :return: None
     """
 
     taxonomy = [{"name": label, "shapenet": label} for label in labels]
@@ -222,14 +214,13 @@ def generate_metadata_taxonomy_9(roca_metadata_path: str, labels: list[str]) -> 
 
 def write_list_to_txt(output_path: str, string_list: list[str]) -> None:
     """
-    Writes a list of strings to a text file, with each string on a new line.
+    Writes a list of strings to a text file, each string on a new line.
 
-    Args:
-    - output_path (str): The file path where the text file will be saved.
-    - string_list (list[str]): A list of strings to be written to the file.
-
-    Returns:
-    None
+    :param output_path: The file path where the text file will be saved.
+    :param string_list: A list of strings to be written to the file.
+    :type output_path: str
+    :type string_list: list[str]
+    :return: None
     """
 
     with open(output_path, "w") as f:
@@ -240,16 +231,13 @@ def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str])
     """
     Generates text files containing label IDs for ROCA metadata.
 
-    This function creates two files: 'labelids_all.txt' and 'labelids.txt' in the specified directory.
-    Both files contain the same labels, each on a new line, as provided in the labels list prepended by an ID.
-
-    Args:
-    - roca_metadata_path (str): The file path where the label ID files will be saved.
-    - labels (list[str]): A list of labels to include in the label ID files.
-
-    Returns:
-    None
+    :param roca_metadata_path: File path where the label ID files will be saved.
+    :param labels: List of labels to include in the label ID files.
+    :type roca_metadata_path: str
+    :type labels: list[str]
+    :return: None
     """
+
     labels_with_id = [f"{i + 1} {labels[i]}" for i in range(len(labels))]
     write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels_with_id)
     write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels_with_id)
@@ -259,17 +247,11 @@ def generate_metadata_train_val_files(roca_metadata_path: str, scene_numbers: li
     """
     Generates train and validation split files for ROCA metadata.
 
-    This function creates three files: 'scannetv2_train.txt', 'scannetv2_val.txt', and 'val_images.txt'
-    in the specified directory. The train and validation splits are made from the provided scene numbers,
-    with 20% of the scenes being used for validation. The 'val_images.txt' file contains one image per scene
-    in the validation split.
-
-    Args:
-    - roca_metadata_path (str): The file path where the train and validation files will be saved.
-    - scene_numbers (list[str]): A list of scene numbers to be split into train and validation sets.
-
-    Returns:
-    None
+    :param roca_metadata_path: File path where the train and validation files will be saved.
+    :param scene_numbers: List of scene numbers to be split into train and validation sets.
+    :type roca_metadata_path: str
+    :type scene_numbers: list[str]
+    :return: None
     """
 
     # Create train and val split with 20% validation
@@ -287,16 +269,15 @@ def generate_metadata_train_val_files(roca_metadata_path: str, scene_numbers: li
 
 def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, scene_numbers) -> None:
     """
-    Reads camera parameters from JSON files, calculates the world to ros camera view transformation matrix,
-    and saves it in a text file.
+    Reads camera parameters and calculates the world to ROS camera view transformation matrix.
 
-    Args:
-    - rep_data_path (str): Path to the folder containing camera_params_[nr].json files.
-    - roca_data_path (str): Path where the inverted camera view transform will be saved.
-    - scene_numbers (list[str]): List of scene numbers as strings.
-
-    Returns:
-    None
+    :param rep_data_path: Path containing camera_params_[nr].json files.
+    :param roca_data_path: Path where the inverted camera view transform will be saved.
+    :param scene_numbers: List of scene numbers as strings.
+    :type rep_data_path: str
+    :type roca_data_path: str
+    :type scene_numbers: list[str]
+    :return: None
     """
 
     for nr in scene_numbers:
