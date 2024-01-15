@@ -196,10 +196,12 @@ def main():
     for i in range(1000):
        world.step(render=True, step_sim=True)
 
+    # create_new_stage()
+
     ####################################################################
     #### Replicator run-loop (only for testing, do NOT use this when generating data)
-    while True:
-        rep.orchestrator.step()
+    #while True:
+    #    rep.orchestrator.step()
 
     ####################################################################
     #### Isaac Sim run-loop (only for testing, do NOT use this when generating data)
