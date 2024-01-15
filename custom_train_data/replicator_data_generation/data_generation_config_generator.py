@@ -112,7 +112,7 @@ def generate_obj_conf(num_random_materials: int, usd_model: str) -> dict:
             # all axes from (0° to 359°) (including)
         },
         "material_idx": random.randint(0, num_random_materials - 1),
-        "semantic_class_label": usd_model.removesuffix(".usd")
+        "semantic_class_label": usd_model.removesuffix("_obj.usd")
     }
 
 
