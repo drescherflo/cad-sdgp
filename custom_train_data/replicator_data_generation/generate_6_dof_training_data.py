@@ -81,11 +81,9 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Reset simulation
         # We need to reset every num_frames_per_object because the usd models change after num_frames_per_object
         create_new_stage()  # Create new stage and delete previous contents
-        world = World()  # Get world
 
         # Generate object materials
         materials = generate_materials(config["materials"])
-        #background_material = OmniPBR("materials/background")
 
         # Add camera
         camera = rep.create.camera(position=camera_position, rotation=camera_orientation)
@@ -133,6 +131,22 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
         rep.randomizer.register(randomize_sphere_light)
 
+        def randomize_objects(object_prims, object_idx, object_configs, materials):
+            object_prim = object_prims[object_idx]
+            rep_object_prim = rep.get.xform(path_pattern=object_prim.GetPrimPath().pathString)
+            object_config = [object_per_frame_config[object_idx] for object_per_frame_config in object_configs]
+            object_positions = [config["pose"]["position"] for config in object_config]
+            object_orientations = [config["pose"]["orientation"] for config in object_config]
+            object_material_indices = [config["material_idx"] for config in object_config]
+            object_materials = [materials[index] for index in object_material_indices]
+            rep_object_materials = [rep.get.material(path_pattern=material.prim_path) for material in object_materials]
+            with rep_object_prim:
+                rep.modify.material(rep.distribution.sequence(rep_object_materials))
+                rep.modify.pose(position=rep.distribution.sequence(object_positions), rotation=rep.distribution.sequence(object_orientations))
+            return rep_object_prim
+        
+        rep.randomizer.register(randomize_objects)
+
         with rep.trigger.on_frame():  # Change on every rendered frame
             # Change background color
             with plane_material:
@@ -145,6 +159,10 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Change sphere light color and position
             for i in range(len(sphere_lights)):
                 rep.randomizer.randomize_sphere_light(sphere_lights, i, sphere_light_configs)
+            
+            # Change object position, orientation and material
+            for i in range(len(object_prims)):
+                rep.randomizer.randomize_objects(object_prims, i, object_configs, materials)
 
         # TODO: remove following 4 lines
         # Isaac Sim run-loop (only for testing do NOT use this when generating data)
@@ -157,14 +175,14 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         for scene_nr in range(num_scenes):
             print(f"Writing frame {str(scene_nr + 1)} of {num_scenes}")
 
-            # Generate 32 subframes for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
-            rep.orchestrator.step(rt_subframes=32)
+            # Generate multiple subframes for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
+            rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
 
         
 
 if __name__ == '__main__':
     conf_path = "custom_train_data/replicator_data_generation/generated_configs/6_dof_only_simple_object.json"
     usd_dir = "CAD Models/OBJ_converted"
-    out_dir = "temp_replicator_out"
+    out_dir = os.path.join(os.getcwd(), "temp_replicator_out")
     main(conf_path, usd_dir, out_dir)
     simulation_app.close()
