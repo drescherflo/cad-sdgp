@@ -108,8 +108,8 @@ def generate_obj_conf(num_random_materials: int, usd_model: str) -> dict:
         "pose": {
             "position": [random.uniform(-2, 2), random.uniform(-1, 1), random.uniform(0, 3)],
             # from (-2, -1, 0) to (2, 1, 3) (including)
-            "orientation": [random.randint(0, 359), random.randint(0, 359), random.randint(0, 359)]
-            # all axes from (0° to 359°) (including)
+            "orientation": [random.randint(-180, 180), random.randint(-180, 180), random.randint(-180, 180)]
+            # all axes from (-180° to 180°) (including)
         },
         "material_idx": random.randint(0, num_random_materials - 1),
         "semantic_class_label": usd_model.removesuffix("_obj.usd")
