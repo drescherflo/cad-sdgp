@@ -113,6 +113,11 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         object_prims = []
         for i, object_config in enumerate(object_configs[0]):
             usd_path = os.path.join(usd_dir, object_config["usd_model"])
+            if not os.path.isfile(usd_path):
+                print(f"USD file at path '{usd_path}' could not be found. Exiting...", file=sys.stderr)
+                simulation_app.close()
+                exit(-1)
+                
             object_prims.append(prims.create_prim(prim_path=f"/objects/object_{i}", usd_path=usd_path, semantic_label=object_config["semantic_class_label"]))
 
         # Configure replicator "randomization"
@@ -131,7 +136,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         with rep.trigger.on_frame():  # Change on every rendered frame
             # Change background color
             with plane_material:
-                rep.modify.attribute("color", rep.distribution.sequence(background_colors))
+                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(background_colors))
 
             # Change dome_light color
             with dome_light:
@@ -141,12 +146,11 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             for i in range(len(sphere_lights)):
                 rep.randomizer.randomize_sphere_light(sphere_lights, i, sphere_light_configs)
 
-        # TODO: remove following 5 lines
-        # Isaac Sim run-loop (only for testing and ROS publishing, do NOT use this when generating data)
+        # TODO: remove following 4 lines
+        # Isaac Sim run-loop (only for testing do NOT use this when generating data)
         rep.orchestrator.preview()
-        world.reset()  # This is required instead of sim_app.update for ros publishers to work
         while simulation_app.is_running():
-            world.step(render=True)  # This is required instead of sim_app.update for ros publishers to work
+            simulation_app.update()
         
         # Capture training data
         num_scenes = len(object_type_specific_scene_configs)
@@ -160,6 +164,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
 if __name__ == '__main__':
     conf_path = "custom_train_data/replicator_data_generation/generated_configs/6_dof_only_simple_object.json"
-    usd_dir = "custom_train_data/replicator_data_generation/generated_configs/6_dof_only_simple_object.json"
+    usd_dir = "CAD Models/OBJ_converted"
     out_dir = "temp_replicator_out"
     main(conf_path, usd_dir, out_dir)
+    simulation_app.close()
