@@ -172,7 +172,7 @@ def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects
     return scene_confs
 
 
-def generate_sphere_light_confs_for_one_frame(num_sphere_lights):
+def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int) -> list[dict]:
     """
     Generates configurations for sphere lights in a single frame.
 
@@ -180,24 +180,21 @@ def generate_sphere_light_confs_for_one_frame(num_sphere_lights):
 
     :param num_sphere_lights: Number of sphere lights to generate.
     :type num_sphere_lights: int
-    :return: A dictionary containing the configurations of sphere lights.
-    :rtype: dict
+    :return: A list containing the configurations of sphere lights.
+    :rtype: list[dict]
     """
 
-    return {
-        "sphere_light_configs":
-            [
-                {
-                    "position": [random.uniform(-3, 3), random.uniform(-2, 2), random.uniform(0, 4)],
-                    # from (-3, -2, 0) to (3, 2, 4) (including)]}
-                    "color": generate_random_rgb_color()
-                }
-                for _ in range(num_sphere_lights)]
-    }
+    return [
+        {
+            "position": [random.uniform(-3, 3), random.uniform(-2, 2), random.uniform(0, 4)],
+            # from (-3, -2, 0) to (3, 2, 4) (including)]}
+            "color": generate_random_rgb_color()
+        }
+        for _ in range(num_sphere_lights)]
 
 
 def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int, usd_models: list[str],
-                         num_random_materials: int, num_sphere_lights: int) -> list[dict]:
+                         num_random_materials: int, num_sphere_lights: int) -> list[list[dict]]:
     """
     Generates configurations for a variety of scenes.
 
@@ -213,29 +210,30 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
     :type num_random_materials: int
     :param num_sphere_lights: Number of sphere lights in each scene.
     :type num_sphere_lights: int
-    :return: A list of dictionaries, each representing a scene configuration.
-    :rtype: list[dict]
+    :return: A list of a list of dictionaries, each representing a scene configuration.
+    :rtype: list[list[dict]]
     """
 
     # Generate single object scenes
     scene_configs = []
     for usd_model in usd_models:
-        scene_configs.extend(generate_single_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_model,
+        scene_configs.append(generate_single_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_model,
                                                                 num_random_materials))
 
     # Generate multiple object scenes
-    scene_configs.extend(generate_multiple_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_models,
+    scene_configs.append(generate_multiple_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_models,
                                                               num_random_materials))
 
-    for scene_config in scene_configs:
-        # Add randomized background / ground plane color
-        scene_config["background_color"] = generate_random_rgb_color()
+    for object_type_scene_configs in scene_configs:
+        for scene_config in object_type_scene_configs:
+            # Add randomized background / ground plane color
+            scene_config["background_color"] = generate_random_rgb_color()
 
-        # Add randomized dome light color
-        scene_config["dome_light_color"] = generate_random_rgb_color()
+            # Add randomized dome light color
+            scene_config["dome_light_color"] = generate_random_rgb_color()
 
-        # Add randomized sphere lights
-        scene_config["sphere_light_configs"] = generate_sphere_light_confs_for_one_frame(num_sphere_lights)
+            # Add randomized sphere lights
+            scene_config["sphere_light_configs"] = generate_sphere_light_confs_for_one_frame(num_sphere_lights)
 
     return scene_configs
 
@@ -261,7 +259,7 @@ def parse_writer_init_args(writer_init_args: list[str]) -> dict:
     return args_dict
 
 
-def parse_writer_args(writer_args: list[list[str]]) -> dict:
+def parse_writer_args(writer_args: list[list[str]]) -> list[dict]:
     """
     Parses arguments for multiple writers.
 
@@ -270,7 +268,7 @@ def parse_writer_args(writer_args: list[list[str]]) -> dict:
     :param writer_args: A list of lists, each containing arguments for a specific writer.
     :type writer_args: list[list[str]]
     :return: A dictionary containing configurations for each writer.
-    :rtype: dict
+    :rtype: list[dict]
     """
 
     writers = []
@@ -278,7 +276,7 @@ def parse_writer_args(writer_args: list[list[str]]) -> dict:
         writer_conf = {"name": writer_arg[0], "args": parse_writer_init_args(writer_arg[1:])}
         writers.append(writer_conf)
 
-    return {"writers": writers}
+    return writers
 
 
 def main(argv: list[str]) -> None:
@@ -310,7 +308,7 @@ def main(argv: list[str]) -> None:
     frame_width = args.frame_width
     frame_height = args.frame_height
     sub_frames_per_frame = args.sub_frames_per_frame
-    num_frames_per_object = args.num_objects_per_frame
+    num_frames_per_object = args.num_frames_per_object
     num_objects_per_frame = args.num_objects_per_frame
     num_random_materials = args.num_random_materials
     num_sphere_lights = args.num_sphere_lights
@@ -337,6 +335,7 @@ def main(argv: list[str]) -> None:
         "scenes": generate_scenes_conf(num_frames_per_object, num_objects_per_frame, usd_models, num_random_materials,
                                        num_sphere_lights),
         "writer_configs": parse_writer_args(writer_args),
+        "usd_models": usd_models,
         "generation_script_args": vars(args)
     }
 
