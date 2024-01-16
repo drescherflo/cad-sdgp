@@ -83,7 +83,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
         # Generate object materials
         materials = generate_materials(config["materials"])
-        # rep_materials = [rep.get.material(path_pattern=material.prim_path) for material in materials]
 
         # Add camera
         camera = rep.create.camera(position=camera_position, rotation=camera_orientation)
@@ -132,26 +131,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
         rep.randomizer.register(randomize_sphere_light)
 
-        def randomize_objects(object_prims, object_idx, object_configs):
-            object_prim = object_prims[object_idx]
-            prim_path = object_prim.GetPrimPath().pathString
-            rep_object_prim = rep.get.xform(path_pattern=prim_path)
-            object_config = [object_per_frame_config[object_idx] for object_per_frame_config in object_configs]
-            object_positions = [config["pose"]["position"] for config in object_config]
-            object_positions = [[0, 0, 0], [1, 1, 1]]
-            object_orientations = [config["pose"]["orientation"] for config in object_config]
-            # object_material_indices = [config["material_idx"] for config in object_config]
-            # rep_object_materials = [rep_materials[index] for index in object_material_indices]
-            with rep_object_prim:
-                # rep.modify.material(rep.distribution.sequence(rep_object_materials))  # not supported
-                #rep.modify.pose(position=rep.distribution.sequence(object_positions), rotation=rep.distribution.sequence(object_orientations))
-                rep.modify.pose(position=rep.distribution.sequence(object_positions))
-                #rep.modify.pose(position=rep.distribution.uniform((-1, -1, 0.5), (1, 1, 0.5)))
-                #rep.modify.pose(rotation=rep.distribution.sequence(object_orientations))
-            return rep_object_prim
-        
-        rep.randomizer.register(randomize_objects)
-
         with rep.trigger.on_frame():  # Change on every rendered frame
             # Change background color
             with plane_material:
@@ -164,16 +143,12 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Change sphere light color and position
             for i in range(len(sphere_lights)):
                 rep.randomizer.randomize_sphere_light(sphere_lights, i, sphere_light_configs)
-            
-            # Change object position and orientation
-            for i in range(len(object_prims)):
-                rep.randomizer.randomize_objects(object_prims, i, object_configs)
 
         # TODO: remove following 4 lines
         # Isaac Sim run-loop (only for testing do NOT use this when generating data)
-        rep.orchestrator.preview()
-        while simulation_app.is_running():
-            simulation_app.update()
+        #rep.orchestrator.preview()
+        #while simulation_app.is_running():
+        #    simulation_app.update()
         
         # Capture training data
         num_scenes = len(object_type_specific_scene_configs)
@@ -181,10 +156,15 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             print(f"Writing frame {str(scene_nr + 1)} of {num_scenes}")
 
             # Assign material to object manually since replicator does not support sequential assignment
+            # Modify pose of object manually since replicator throws error "WritePrimAttribute Error: cannot reshape array of size 3 into shape (2,newaxis)"
             for obj_idx, object_prim in enumerate(object_prims):
                 material_idx = current_scene_config["object_configs"][obj_idx]["material_idx"]
                 xform_object_prim = XFormPrim(object_prim.GetPrimPath().pathString)
                 xform_object_prim.apply_visual_material(materials[material_idx])
+                position = current_scene_config["object_configs"][obj_idx]["pose"]["position"]
+                orientation = current_scene_config["object_configs"][obj_idx]["pose"]["orientation"]
+                orientation_quaternion = euler_angles_to_quat(np.array(orientation), degrees=True, extrinsic=False)
+                xform_object_prim.set_world_pose(position=position, orientation=orientation_quaternion)
 
             # Generate multiple subframes for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
