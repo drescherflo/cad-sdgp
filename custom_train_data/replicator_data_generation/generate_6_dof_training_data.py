@@ -76,7 +76,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         sphere_light_configs = extract_per_scene_config(object_type_specific_scene_configs, "sphere_light_configs")
         num_sphere_lights = len(sphere_light_configs[0])
         object_configs = extract_per_scene_config(object_type_specific_scene_configs, "object_configs")
-        num_objects_per_scene = len(object_configs[0])
 
         # Reset simulation
         # We need to reset every num_frames_per_object because the usd models change after num_frames_per_object
@@ -109,6 +108,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         plane = rep.create.plane(scale=10, visible=True, material=plane_material)
 
         # Add objects
+        num_objects_per_scene = len(object_configs[0])
         object_prims = []
         for i, object_config in enumerate(object_configs[0]):
             usd_path = os.path.join(usd_dir, object_config["usd_model"])
@@ -117,7 +117,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                 simulation_app.close()
                 exit(-1)
                 
-            object_prims.append(prims.create_prim(prim_path=f"/objects/object_{i}", usd_path=usd_path, semantic_label=object_config["semantic_class_label"]))
+            object_prims.append(prims.create_prim(prim_path=f"/objects/object_{i:0{len(str(num_objects_per_scene))}}", usd_path=usd_path, semantic_label=object_config["semantic_class_label"]))
 
         # Configure replicator "randomization"
         def randomize_sphere_light(sphere_lights, sphere_light_idx, sphere_light_configs):
@@ -145,8 +145,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             with rep_object_prim:
                 # rep.modify.material(rep.distribution.sequence(rep_object_materials))  # not supported
                 #rep.modify.pose(position=rep.distribution.sequence(object_positions), rotation=rep.distribution.sequence(object_orientations))
-                #rep.modify.pose(position=rep.distribution.sequence(object_positions))
-                rep.modify.pose(position=rep.distribution.uniform((-1, -1, 0.5), (1, 1, 0.5)))
+                rep.modify.pose(position=rep.distribution.sequence(object_positions))
+                #rep.modify.pose(position=rep.distribution.uniform((-1, -1, 0.5), (1, 1, 0.5)))
                 #rep.modify.pose(rotation=rep.distribution.sequence(object_orientations))
             return rep_object_prim
         
