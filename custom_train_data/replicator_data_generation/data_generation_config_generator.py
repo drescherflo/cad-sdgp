@@ -17,16 +17,16 @@ def get_usd_models(usd_dir: str) -> list[str]:
     return [file for file in os.listdir(usd_dir) if file.endswith('.usd')]
 
 
-def generate_camera_conf(frame_height: int, frame_width: int) -> dict:
+def generate_camera_conf(frame_width: int, frame_height: int) -> dict:
     """
     Generates a configuration dictionary for a camera setup.
 
     This function creates a configuration with specified frame height and width, and sets a default pose for the camera.
     The default pose is set to look at the origin (0, 0, 0) with the x-axis oriented to the right.
 
-    :param frame_height: The height of the frame in pixels.
-    :type frame_height: int
     :param frame_width: The width of the frame in pixels.
+    :type frame_height: int
+    :param frame_height: The height of the frame in pixels.
     :type frame_width: int
     :return: A dictionary containing the camera configuration, including frame size and pose.
     :rtype: dict
