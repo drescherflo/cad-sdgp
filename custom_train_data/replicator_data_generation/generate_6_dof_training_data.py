@@ -34,6 +34,7 @@ from omni.isaac.core.utils.semantics import add_update_semantics
 from omni.isaac.core.materials import OmniPBR, OmniGlass
 from omni.isaac.sensor import Camera
 from omni.isaac.core.utils.rotations import euler_angles_to_quat
+import custom_writers.resumable_basicwriter
 
 
 def generate_materials(materials_config) -> list[OmniGlass | OmniPBR]:
@@ -69,6 +70,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     num_frames_per_object = config["num_frames_per_object"]
 
     # Scene generation loop
+    frame_number = 0
+    num_frames = np.sum(len(scene_configs) for scene_configs in config["scenes"])
     for object_type_specific_scene_configs in config["scenes"]:
         # Parse scene configs
         background_colors = extract_per_scene_config(object_type_specific_scene_configs, "background_color")
@@ -92,7 +95,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         writers = []
         for writer_config in writer_configs:
             writer = rep.WriterRegistry.get(writer_config["name"])
-            writer.initialize(output_dir=out_dir, **writer_config["args"])
+            writer.initialize(output_dir=out_dir, init_frame_nr=frame_number, **writer_config["args"])
             writer.attach(render_product)
             writers.append(writer)
 
@@ -151,9 +154,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         #    simulation_app.update()
         
         # Capture training data
-        num_scenes = len(object_type_specific_scene_configs)
-        for scene_nr, current_scene_config in enumerate(object_type_specific_scene_configs):
-            print(f"Writing frame {str(scene_nr + 1)} of {num_scenes}")
+        for current_scene_config in object_type_specific_scene_configs:
+            print(f"Writing frame {str(frame_number + 1)} of {num_frames}")
 
             # Assign material to object manually since replicator does not support sequential assignment
             # Modify pose of object manually since replicator throws error "WritePrimAttribute Error: cannot reshape array of size 3 into shape (2,newaxis)"
@@ -168,11 +170,15 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
             # Generate multiple subframes for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
+
+            # Increase frame_number count
+            frame_number += 1
         
 
 if __name__ == '__main__':
     conf_path = "custom_train_data/replicator_data_generation/generated_configs/6_dof_only_simple_object.json"
     usd_dir = "CAD Models/OBJ_converted"
-    out_dir = os.path.join(os.getcwd(), "temp_replicator_out")
+    out_dir = "temp_replicator_out"
+    out_dir = out_dir if os.path.isabs(out_dir) else os.path.join(os.getcwd(), out_dir)
     main(conf_path, usd_dir, out_dir)
     simulation_app.close()
