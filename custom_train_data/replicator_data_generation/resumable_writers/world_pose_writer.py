@@ -22,11 +22,11 @@ class WorldPoseWriter(ResumableWriterInterface):
             for i, prim_path in enumerate(visible_prims_paths):
                 prim = XFormPrim(prim_path=prim_path)
                 prim_pose = prim.get_world_pose()
-                # bbox_id = bbox_data["info"]["bboxIds"][i]
-                # semantic_labels = bbox_data["info"]["idToLabels"][str(bbox_id)]  # Disabled because mapping from bbox_id to labels does not work
+                semantic_id = bbox_data["data"][i][0]
+                semantic_labels = bbox_data["info"]["idToLabels"][str(semantic_id)]  # Disabled because mapping from bbox_id to labels does not work
 
                 semantic_labels_and_pose = {
-                    # "semantic_labels": semantic_labels,  # just as additional info
+                    "semantic_labels": semantic_labels,  # just as additional info
                     "pose": {
                         "position": {
                             "x": prim_pose[0][0].astype(float),
