@@ -1,5 +1,5 @@
-from .resumable_writer_interface import ResumableWriterInterface
-from omni.replicator.core import BasicWriter, WriterRegistry
+from .writer_interface import ResumableWriterInterface
+from omni.replicator.core import BasicWriter
 
 
 class ResumableBasicWriter(ResumableWriterInterface, BasicWriter):
@@ -13,6 +13,3 @@ class ResumableBasicWriter(ResumableWriterInterface, BasicWriter):
 
     def write(self, data: dict):
         BasicWriter.write(self, data)
-
-
-WriterRegistry.register(ResumableBasicWriter)

@@ -4,6 +4,7 @@ import os
 import json
 import sys
 import numpy as np
+import importlib
 
 # Parse args
 parser = argparse.ArgumentParser()
@@ -34,7 +35,7 @@ from omni.isaac.core.utils.semantics import add_update_semantics
 from omni.isaac.core.materials import OmniPBR, OmniGlass
 from omni.isaac.sensor import Camera
 from omni.isaac.core.utils.rotations import euler_angles_to_quat
-import custom_writers.resumable_basicwriter
+from resumable_writers.writer_interface import ResumableWriterInterface
 
 
 def generate_materials(materials_config) -> list[OmniGlass | OmniPBR]:
@@ -54,7 +55,24 @@ def extract_per_scene_config(scenes: list[dict], config_key: str) -> list:
     return [scene[config_key] for scene in scenes]
 
 
+def load_resumable_writer_plugins(plugin_dir: str, plugin_package_name) -> None:
+    for filename in os.listdir(plugin_dir):
+        if filename.endswith('.py') and not filename.startswith('_'):
+            module_name = filename[:-3]
+            module = importlib.import_module('.' + module_name, package=plugin_package_name)
+            for attribute_name in dir(module):
+                attribute = getattr(module, attribute_name)
+                if isinstance(attribute, type) and issubclass(attribute, ResumableWriterInterface) and attribute is not ResumableWriterInterface:
+                    rep.WriterRegistry.register(attribute)
+
+
 def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
+    # Load resumable writers
+    plugin_package_name = "resumable_writers"
+    script_location_dir = os.path.dirname(os.path.abspath(__file__))
+    plugin_dir = os.path.join(script_location_dir, plugin_package_name) # plugin_dir has to be relative to the script. This is not always the case, e.g. when debugging with VSCode
+    load_resumable_writer_plugins(plugin_dir, plugin_package_name)
+
     # Load json config
     with open(conf_path, "r") as f:
         config = json.load(f)
