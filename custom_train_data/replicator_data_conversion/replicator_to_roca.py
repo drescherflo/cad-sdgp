@@ -1,3 +1,4 @@
+import pickle
 import shutil
 import sys
 import os
@@ -6,6 +7,8 @@ import json
 import argparse
 import numpy as np
 from PIL import Image
+import trimesh
+from trimesh.sample import sample_surface_even
 
 
 def get_scene_nrs(rep_data_path: str) -> list[str]:
@@ -231,7 +234,7 @@ def write_list_to_txt(output_path: str, string_list: list[str]) -> None:
         f.write("\n".join(string_list))
 
 
-def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str]) -> None:
+def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str]) -> dict:
     """
     Generates text files containing label IDs for ROCA metadata.
 
@@ -239,12 +242,15 @@ def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str])
     :param labels: List of labels to include in the label ID files.
     :type roca_metadata_path: str
     :type labels: list[str]
-    :return: None
+    :return Dictionary of labels to label ids
+    :rtype dict
     """
 
-    labels_with_id = [f"{i + 1} {labels[i]}" for i in range(len(labels))]
-    write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels_with_id)
-    write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels_with_id)
+    labels_with_id = dict((label, idx + 1) for idx, label in enumerate(labels))
+    labels_with_id_str_list = [f"{labels_with_id[label]} {label}" for label in labels_with_id.keys()]
+    write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels_with_id_str_list)
+    write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels_with_id_str_list)
+    return labels_with_id
 
 
 def generate_metadata_train_val_files(replicator_dir: str, roca_metadata_path: str) -> None:
@@ -321,6 +327,42 @@ def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, s
                 output_file.write(" ".join([f"{val}" for val in row]) + "\n")
 
 
+def generate_point_files(roca_dataset_dir: str, obj_dir: str, labels_to_label_ids: dict):
+    # Find all .obj files in the obj_path
+    obj_files = glob.glob(os.path.join(obj_dir, "*.obj"))
+
+    point_datasets = []
+    for obj_file in obj_files:
+        # Load the model
+        mesh = trimesh.load(obj_file)
+
+        # Check if every edge is included in two faces
+        if not mesh.is_watertight:
+            print(f"Warning: The mesh in '{obj_file}' does not have all edges included in two faces. This may lead to inaccurate point sampling.")
+
+        # Sample 1024 points from the mesh surface (like in https://github.com/cangumeli/ROCA/blob/main/network/assets/points_val.pkl (18.01.2024))
+        points = np.asarray(sample_surface_even(mesh, 1024)[0]).astype(np.float32)
+
+        # Extract semantic label / category from the file name
+        model_name = os.path.basename(obj_file).split('.')[0]
+        semantic_label = _obj_file_name_to_semantic_label(model_name)
+
+        # Create dataset for current mesh
+        point_datasets.append({
+            "points": points,
+            "catid_cad": semantic_label,
+            "id_cad": "0",
+            "category_id": labels_to_label_ids[semantic_label]
+        })
+
+    # Write point files
+    out_dir = os.path.join(roca_dataset_dir, "Dataset")
+    os.makedirs(out_dir, exist_ok=True)
+    for split in ["train", "val"]:
+        with open(os.path.join(out_dir, f"points_{split}.pkl"), "wb") as f:
+            pickle.dump(point_datasets, f)
+
+
 def main(args: list[str]) -> None:
     # Create argument parser
     parser = argparse.ArgumentParser(description="Converts the generated training data from NVIDIA Replicator to the format required by ROCA")
@@ -365,8 +407,10 @@ def main(args: list[str]) -> None:
     print("Generating ROCA metadata files...")
     labels = generate_labels_from_objs(obj_dir)
     generate_metadata_taxonomy_9(roca_metadata_dir, labels)
-    generate_metadata_label_id_files(roca_metadata_dir, labels)
+    labels_to_label_ids = generate_metadata_label_id_files(roca_metadata_dir, labels)
     generate_metadata_train_val_files(replicator_dir, roca_metadata_dir)
+    print("Generating point files by sampling from CAD models...")
+    generate_point_files(roca_dataset_dir, obj_dir, labels_to_label_ids)
 
     print("Done!")
 
