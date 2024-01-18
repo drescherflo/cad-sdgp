@@ -6,7 +6,6 @@ import json
 import argparse
 import numpy as np
 from PIL import Image
-from sklearn.model_selection import train_test_split
 
 
 def get_scene_nrs(rep_data_path: str) -> list[str]:
@@ -248,20 +247,23 @@ def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str])
     write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels_with_id)
 
 
-def generate_metadata_train_val_files(roca_metadata_path: str, scene_numbers: list[str]) -> None:
+def generate_metadata_train_val_files(replicator_dir: str, roca_metadata_path: str) -> None:
     """
     Generates train and validation split files for ROCA metadata.
 
+    :param replicator_dir: Path containing train_val_scenes.json.
     :param roca_metadata_path: File path where the train and validation files will be saved.
-    :param scene_numbers: List of scene numbers to be split into train and validation sets.
+    :type replicator_dir: str
     :type roca_metadata_path: str
-    :type scene_numbers: list[str]
     :return: None
     """
 
-    # Create train and val split with 20% validation
-    scene_names = [f"scene{scene_number}" for scene_number in scene_numbers]
-    train_scenes, val_scenes = train_test_split(scene_names, test_size=0.2)
+    # Read train_val_scenes
+    with open(os.path.join(replicator_dir, "train_val_scenes.json"), "r") as f:
+        train_val_scenes = json.load(f)
+
+    train_scenes = [f"scene{scene_number:04d}" for scene_number in train_val_scenes["train_scenes"]]
+    val_scenes = [f"scene{scene_number:04d}" for scene_number in train_val_scenes["val_scenes"]]
 
     # Write scenes
     write_list_to_txt(os.path.join(roca_metadata_path, "scannetv2_train.txt"), train_scenes)
@@ -272,15 +274,15 @@ def generate_metadata_train_val_files(roca_metadata_path: str, scene_numbers: li
     write_list_to_txt(os.path.join(roca_metadata_path, "val_images.txt"), val_images)
 
 
-def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, scene_numbers) -> None:
+def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, scene_numbers: list[str]) -> None:
     """
     Reads camera parameters and calculates the world to ROS camera view transformation matrix.
 
-    :param rep_data_path: Path containing camera_params_[nr].json files.
-    :param roca_data_path: Path where the inverted camera view transform will be saved.
+    :param replicator_dir: Path containing camera_params_[nr].json files.
+    :param roca_dataset_dir: Path where the inverted camera view transform will be saved.
     :param scene_numbers: List of scene numbers as strings.
-    :type rep_data_path: str
-    :type roca_data_path: str
+    :type replicator_dir: str
+    :type roca_dataset_dir: str
     :type scene_numbers: list[str]
     :return: None
     """
@@ -337,11 +339,7 @@ def main(args: list[str]) -> None:
         print(f"The OBJ model directory {args.rep_dir} does not exist. Existing...")
         exit(-1)
 
-    # Warn user about new test and val splits
     print("Converting the generated training data from NVIDIA Replicator to ROCA format...")
-    print("Warning! This will create a new randomized training and validation data split!")
-    print("You may want to backup and restore 'val_images.txt', 'scannetv2_val.txt, 'scannetv2_train.txt' in your ROCA metadata directory.")
-    input("Press any key to continue...")
 
     # Create roca_dataset_dir and roca_metadata_dir if necessary
     os.makedirs(args.roca_dataset_dir, exist_ok=True)
@@ -368,7 +366,7 @@ def main(args: list[str]) -> None:
     labels = generate_labels_from_objs(obj_dir)
     generate_metadata_taxonomy_9(roca_metadata_dir, labels)
     generate_metadata_label_id_files(roca_metadata_dir, labels)
-    generate_metadata_train_val_files(roca_metadata_dir, scene_numbers)
+    generate_metadata_train_val_files(replicator_dir, roca_metadata_dir)
 
     print("Done!")
 

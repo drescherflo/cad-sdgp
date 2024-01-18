@@ -87,9 +87,17 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     writer_configs = config["writer_configs"]
     num_frames_per_object = config["num_frames_per_object"]
 
+    # Write train val split
+    train_val_split_config = {
+        "train_scenes": config["train_scenes"],
+        "val_scenes": config["val_scenes"]
+    }
+    with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
+        json.dump(train_val_split_config, f, indent=4)
+
     # Scene generation loop
     frame_number = 0
-    num_frames = np.sum(len(scene_configs) for scene_configs in config["scenes"])
+    num_frames = np.sum(np.fromiter((len(scene_configs) for scene_configs in config["scenes"]), int))
     for object_type_specific_scene_configs in config["scenes"]:
         # Parse scene configs
         background_colors = extract_per_scene_config(object_type_specific_scene_configs, "background_color")
@@ -194,7 +202,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         
 
 if __name__ == '__main__':
-    conf_path = "custom_train_data/replicator_data_generation/generated_configs/6_dof_only_simple_object.json"
+    conf_path = "custom_train_data/replicator_data_generation/config_generation/generated_configs/6_dof_only_simple_object.json"
     usd_dir = "CAD Models/OBJ_converted"
     out_dir = "temp_replicator_out"
     out_dir = out_dir if os.path.isabs(out_dir) else os.path.join(os.getcwd(), out_dir)

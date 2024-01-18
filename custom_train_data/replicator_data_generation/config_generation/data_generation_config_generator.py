@@ -4,6 +4,9 @@ import os
 import argparse
 import random
 
+import numpy as np
+from sklearn.model_selection import train_test_split
+
 
 def get_usd_models(usd_dir: str) -> list[str]:
     """
@@ -279,6 +282,12 @@ def parse_writer_args(writer_args: list[list[str]]) -> list[dict]:
     return writers
 
 
+def generate_train_val_splits(scenes: list[list[dict]], val_share: float) -> tuple[np.ndarray, np.ndarray]:
+    num_scenes = np.sum(np.fromiter((len(s) for s in scenes), int))
+    scene_indices = np.arange(num_scenes)
+    return train_test_split(scene_indices, test_size=val_share)
+
+
 def main(argv: list[str]) -> None:
     parser = argparse.ArgumentParser(description="Generates a configuration for the training data generation script")
     parser.add_argument("--usd_dir", help="Directory containing the converted CAD models as USD files", required=True)
@@ -297,7 +306,9 @@ def main(argv: list[str]) -> None:
                         help="Specifies the number of objects in the scene")
     parser.add_argument("--num_sphere_lights", default=5, type=int,
                         help="Specifies the number of sphere lights with random light color in the scene")
-    parser.add_argument('--writer', nargs='*', action='append', help='Configures writers', required=True)
+    parser.add_argument("--train_val_split", default=0.2, type=float,
+                        help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
+    parser.add_argument('--writer', nargs='*', action='append', help='Configures writers from the resumable_writers plugin package', required=True)
 
     # Parse args
     args = parser.parse_args(argv)
@@ -312,6 +323,7 @@ def main(argv: list[str]) -> None:
     num_objects_per_frame = args.num_objects_per_frame
     num_random_materials = args.num_random_materials
     num_sphere_lights = args.num_sphere_lights
+    val_dataset_share = args.train_val_split
     writer_args = args.writer
     probability_of_glass_material = args.probability_of_glass_material
     if probability_of_glass_material < 0:
@@ -338,6 +350,10 @@ def main(argv: list[str]) -> None:
         "usd_models": usd_models,
         "generation_script_args": vars(args)
     }
+
+    (train_scenes, val_scenes) = generate_train_val_splits(data_generation_config["scenes"], val_dataset_share)
+    data_generation_config["train_scenes"] = train_scenes.tolist()
+    data_generation_config["val_scenes"] = val_scenes.tolist()
 
     with open(out_path, "w") as f:
         json.dump(data_generation_config, f, indent=4)
