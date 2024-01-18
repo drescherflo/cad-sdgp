@@ -92,6 +92,10 @@ def replicator_image_to_scannet(rep_data_path: str, roca_data_path: str, scene_n
             img.convert('RGB').save(new_file_path, 'JPEG')
 
 
+def _obj_file_name_to_semantic_label(obj_file_name: str) -> str:
+    return obj_file_name.removesuffix(".obj").lower().replace(" ", "_")
+
+
 def copy_obj_files(roca_data_path: str, obj_path: str) -> None:
     """
     Copies .obj files to the ROCA data path respecting the ShapeNet data structure.
@@ -109,9 +113,10 @@ def copy_obj_files(roca_data_path: str, obj_path: str) -> None:
     for obj_file in obj_files:
         # Extract the model name from the file name
         model_name = os.path.basename(obj_file).split('.')[0]
+        semantic_label = _obj_file_name_to_semantic_label(model_name)
 
         # Prepare the output directory
-        output_dir = os.path.join(roca_data_path, f"ShapeNetCore.v2/{model_name}/0/models")
+        output_dir = os.path.join(roca_data_path, f"ShapeNetCore.v2/{semantic_label}/0/models")
         os.makedirs(output_dir, exist_ok=True)
 
         # Set the new file path
@@ -156,7 +161,7 @@ def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scen
             # Process obj data
             aligned_models.append({
                 "sym": "__SYM_NONE",  # Assuming symmetry as none for all models
-                "catid_cad": obj["obj_path"].split("/")[-1].split(".")[0],
+                "catid_cad": obj["semantic_labels"]["class"],
                 "id_cad": "0",
                 "trs": {
                     "translation": [obj['pose']['position']['x'],
@@ -194,7 +199,7 @@ def generate_labels_from_objs(obj_path: str) -> list[str]:
     # Find all .obj files in the obj_path
     obj_files = glob.glob(os.path.join(obj_path, "*.obj"))
     # Remove file type from filename
-    return [os.path.basename(obj_path).split(".")[0] for obj_path in obj_files]
+    return [_obj_file_name_to_semantic_label(os.path.basename(obj_path)) for obj_path in obj_files]
 
 
 def generate_metadata_taxonomy_9(roca_metadata_path: str, labels: list[str]) -> None:
