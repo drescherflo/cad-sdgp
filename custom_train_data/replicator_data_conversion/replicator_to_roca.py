@@ -234,7 +234,7 @@ def write_list_to_txt(output_path: str, string_list: list[str]) -> None:
         f.write("\n".join(string_list))
 
 
-def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str]) -> dict:
+def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str]) -> None:
     """
     Generates text files containing label IDs for ROCA metadata.
 
@@ -242,15 +242,13 @@ def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str])
     :param labels: List of labels to include in the label ID files.
     :type roca_metadata_path: str
     :type labels: list[str]
-    :return Dictionary of labels to label ids
-    :rtype dict
+    :return: None
     """
 
     labels_with_id = dict((label, idx + 1) for idx, label in enumerate(labels))
     labels_with_id_str_list = [f"{labels_with_id[label]} {label}" for label in labels_with_id.keys()]
     write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels_with_id_str_list)
     write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels_with_id_str_list)
-    return labels_with_id
 
 
 def generate_metadata_train_val_files(replicator_dir: str, roca_metadata_path: str) -> None:
@@ -327,12 +325,20 @@ def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, s
                 output_file.write(" ".join([f"{val}" for val in row]) + "\n")
 
 
-def generate_point_files(roca_dataset_dir: str, obj_dir: str, labels_to_label_ids: dict):
+def generate_point_files(roca_dataset_dir: str, obj_dir: str):
     # Find all .obj files in the obj_path
     obj_files = glob.glob(os.path.join(obj_dir, "*.obj"))
 
+    # Extract semantic labels / categories from the file name
+    semantic_labels = [_obj_file_name_to_semantic_label(os.path.basename(obj_file).split('.')[0]) for obj_file in obj_files]
+    files_and_labels = list(zip(obj_files, semantic_labels))
+
+    # Sort is required, because this is how the order in scan2cad_alignment_classes.json is created
+    # The index of the class in scan2cad_alignment_classes.json is then used as the category_id during training
+    sorted(files_and_labels, key=lambda x: x[1])
+
     point_datasets = []
-    for obj_file in obj_files:
+    for idx, (obj_file, label) in enumerate(files_and_labels):
         # Load the model
         mesh = trimesh.load(obj_file)
 
@@ -343,16 +349,12 @@ def generate_point_files(roca_dataset_dir: str, obj_dir: str, labels_to_label_id
         # Sample 1024 points from the mesh surface (like in https://github.com/cangumeli/ROCA/blob/main/network/assets/points_val.pkl (18.01.2024))
         points = np.asarray(sample_surface_even(mesh, 1024)[0]).astype(np.float32)
 
-        # Extract semantic label / category from the file name
-        model_name = os.path.basename(obj_file).split('.')[0]
-        semantic_label = _obj_file_name_to_semantic_label(model_name)
-
         # Create dataset for current mesh
         point_datasets.append({
             "points": points,
-            "catid_cad": semantic_label,
+            "catid_cad": label,
             "id_cad": "0",
-            "category_id": labels_to_label_ids[semantic_label]
+            "category_id": idx
         })
 
     # Write point files
@@ -407,10 +409,10 @@ def main(args: list[str]) -> None:
     print("Generating ROCA metadata files...")
     labels = generate_labels_from_objs(obj_dir)
     generate_metadata_taxonomy_9(roca_metadata_dir, labels)
-    labels_to_label_ids = generate_metadata_label_id_files(roca_metadata_dir, labels)
+    generate_metadata_label_id_files(roca_metadata_dir, labels)
     generate_metadata_train_val_files(replicator_dir, roca_metadata_dir)
     print("Generating point files by sampling from CAD models...")
-    generate_point_files(roca_dataset_dir, obj_dir, labels_to_label_ids)
+    generate_point_files(roca_dataset_dir, obj_dir)
 
     print("Done!")
 
