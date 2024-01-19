@@ -28,6 +28,27 @@ def get_scene_nrs(rep_data_path: str) -> list[str]:
     return [os.path.basename(json_file).split('_')[2].split('.')[0] for json_file in json_files]
 
 
+def _obj_file_name_to_semantic_label(obj_file_name: str) -> str:
+    return obj_file_name.removesuffix(".obj").lower().replace(" ", "_")
+
+
+def get_obj_paths_semantic_labels_and_class_id(obj_dir: str) -> list[dict]:
+    # Find all .obj files in the obj_path
+    obj_files = glob.glob(os.path.join(obj_dir, "*.obj"))
+
+    # Extract semantic labels / categories from the file name
+    semantic_labels = [_obj_file_name_to_semantic_label(os.path.basename(obj_file).split('.')[0]) for obj_file in
+                       obj_files]
+    files_and_labels = list(zip(obj_files, semantic_labels))
+
+    # Sort is required, because this is how the order in scan2cad_alignment_classes.json is created
+    # The index of the class in scan2cad_alignment_classes.json is then used as the category_id during training
+    sorted(files_and_labels, key=lambda x: x[1])
+
+    # Build dictionary list
+    return [{"obj_file": obj_file, "semantic_label": semantic_label, "class_id": idx} for idx, (obj_file, semantic_label) in enumerate(files_and_labels)]
+
+
 def replicator_intrinsics_to_scannet(rep_data_path: str, roca_data_path: str, scene_numbers: list[str]) -> None:
     """
     Generates intrinsics_color.txt files from camera parameters JSON files.
@@ -94,50 +115,41 @@ def replicator_image_to_scannet(rep_data_path: str, roca_data_path: str, scene_n
             img.convert('RGB').save(new_file_path, 'JPEG')
 
 
-def _obj_file_name_to_semantic_label(obj_file_name: str) -> str:
-    return obj_file_name.removesuffix(".obj").lower().replace(" ", "_")
-
-
-def copy_obj_files(roca_data_path: str, obj_path: str) -> None:
+def copy_obj_files(roca_data_path: str, obj_paths_labels_ids: list[dict]) -> None:
     """
     Copies .obj files to the ROCA data path respecting the ShapeNet data structure.
 
+    :param obj_paths_labels_ids: List of dictionaries with obj file paths and their semantic labels and class ids.
     :param roca_data_path: ROCA data path where .obj files will be copied to.
-    :param obj_path: Path to the folder containing [ModelName].obj files.
     :type roca_data_path: str
-    :type obj_path: str
+    :type obj_paths_labels_ids: list[dict]
     :return: None
     """
 
-    # Find all .obj files in the obj_path
-    obj_files = glob.glob(os.path.join(obj_path, "*.obj"))
-
-    for obj_file in obj_files:
-        # Extract the model name from the file name
-        model_name = os.path.basename(obj_file).split('.')[0]
-        semantic_label = _obj_file_name_to_semantic_label(model_name)
-
+    for obj_file_label_id in obj_paths_labels_ids:
         # Prepare the output directory
-        output_dir = os.path.join(roca_data_path, f"ShapeNetCore.v2/{semantic_label}/0/models")
+        output_dir = os.path.join(roca_data_path, f"ShapeNetCore.v2/{obj_file_label_id['class_id']}/0/models")
         os.makedirs(output_dir, exist_ok=True)
 
         # Set the new file path
         new_file_path = os.path.join(output_dir, "model_normalized.obj")
 
         # Copy the .obj file
-        shutil.copy(obj_file, new_file_path)
+        shutil.copy(obj_file_label_id["obj_file"], new_file_path)
 
 
-def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scene_numbers: list[str]) -> None:
+def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scene_numbers: list[str], obj_paths_labels_ids: list[dict]) -> None:
     """
     Generates a full_annotations.json file from world_pose_visible_objects_[nr].json files.
 
     :param rep_data_path: Path to the folder containing world_pose_visible_objects_[nr].json files.
     :param roca_data_path: ROCA data path where the Scan2CAD/full_annotations.json will be saved.
     :param scene_numbers: List of scene numbers as strings.
+    :param obj_paths_labels_ids: List of dictionaries with obj file paths and their semantic labels and class ids.
     :type rep_data_path: str
     :type roca_data_path: str
     :type scene_numbers: list[str]
+    :type obj_paths_labels_ids: list[dict]
     :return: None
     """
 
@@ -160,10 +172,21 @@ def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scen
 
         aligned_models = []
         for obj in data:
+            # Find matching class_id
+            semantic_label = obj["semantic_labels"]["class"]
+            class_id = None
+            for obj_file_label_id in obj_paths_labels_ids:
+                if obj_file_label_id["semantic_label"] == semantic_label:
+                    class_id = obj_file_label_id["class_id"]
+                    break
+
+            if class_id is None:
+                raise RuntimeError("No matching class id found for semantic label '{}'.".format(semantic_label))
+
             # Process obj data
             aligned_models.append({
-                "sym": "__SYM_NONE",  # Assuming symmetry as none for all models
-                "catid_cad": obj["semantic_labels"]["class"],
+                "sym": "__SYM_NONE",  # Assuming symmetry as none for all models since symmetry is not considered during training (https://github.com/cangumeli/ROCA/blob/main/network/roca/data/cad_manager.py ll. 156 (19.01.2024)
+                "catid_cad": str(class_id),
                 "id_cad": "0",
                 "trs": {
                     "translation": [obj['pose']['position']['x'],
@@ -188,38 +211,22 @@ def generate_full_annotations_json(rep_data_path: str, roca_data_path: str, scen
         json.dump(annotations, output_file, indent=4)
 
 
-def generate_labels_from_objs(obj_path: str) -> list[str]:
-    """
-    Generates labels from all .obj files in the specified path.
-
-    :param obj_path: Path to .obj files.
-    :type obj_path: str
-    :return: List of labels extracted from .obj file names.
-    :rtype: list[str]
-    """
-
-    # Find all .obj files in the obj_path
-    obj_files = glob.glob(os.path.join(obj_path, "*.obj"))
-    # Remove file type from filename
-    return [_obj_file_name_to_semantic_label(os.path.basename(obj_path)) for obj_path in obj_files]
-
-
-def generate_metadata_taxonomy_9(roca_metadata_path: str, labels: list[str]) -> None:
+def generate_metadata_taxonomy_9(roca_metadata_path: str, obj_paths_labels_ids: list[dict]) -> None:
     """
     Generates a taxonomy JSON file for ROCA metadata.
 
     :param roca_metadata_path: File path where the taxonomy file will be saved.
-    :param labels: List of labels to include in the taxonomy file.
+    :param obj_paths_labels_ids: List of dictionaries with obj file paths and their semantic labels and class ids.
     :type roca_metadata_path: str
-    :type labels: list[str]
+    :type obj_paths_labels_ids: list[dict]
     :return: None
     """
 
-    taxonomy = [{"name": label, "shapenet": label} for label in labels]
+    taxonomy = [{"name": obj_path_label_id["semantic_label"], "shapenet": str(obj_path_label_id["class_id"])} for obj_path_label_id in obj_paths_labels_ids]
     json.dump(taxonomy, open(os.path.join(roca_metadata_path, "scan2cad_taxonomy_9.json"), "w"), indent=4)
 
 
-def write_list_to_txt(output_path: str, string_list: list[str]) -> None:
+def _write_list_to_txt(output_path: str, string_list: list[str]) -> None:
     """
     Writes a list of strings to a text file, each string on a new line.
 
@@ -234,21 +241,23 @@ def write_list_to_txt(output_path: str, string_list: list[str]) -> None:
         f.write("\n".join(string_list))
 
 
-def generate_metadata_label_id_files(roca_metadata_path: str, labels: list[str]) -> None:
+def generate_metadata_label_id_files(roca_metadata_path: str, obj_paths_labels_ids: list[dict]) -> None:
     """
     Generates text files containing label IDs for ROCA metadata.
 
     :param roca_metadata_path: File path where the label ID files will be saved.
-    :param labels: List of labels to include in the label ID files.
+    :param obj_paths_labels_ids: List of dictionaries with obj file paths and their semantic labels and class ids.
     :type roca_metadata_path: str
-    :type labels: list[str]
+    :type obj_paths_labels_ids: list[dict]
     :return: None
     """
 
-    labels_with_id = dict((label, idx + 1) for idx, label in enumerate(labels))
-    labels_with_id_str_list = [f"{labels_with_id[label]} {label}" for label in labels_with_id.keys()]
-    write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels_with_id_str_list)
-    write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels_with_id_str_list)
+    # Label ID files are just a list of an index (starting by 1) and the name of the label
+    # Order and assigned index are unrelated to the previously generate class id
+    # For consistency the index is generated by adding 1 to the class id
+    labels_with_id_str_list = [f"{obj_path_label_id['class_id'] + 1}\t{obj_path_label_id['semantic_label']}" for obj_path_label_id in obj_paths_labels_ids]
+    _write_list_to_txt(os.path.join(roca_metadata_path, "labelids_all.txt"), labels_with_id_str_list)
+    _write_list_to_txt(os.path.join(roca_metadata_path, "labelids.txt"), labels_with_id_str_list)
 
 
 def generate_metadata_train_val_files(replicator_dir: str, roca_metadata_path: str) -> None:
@@ -270,12 +279,12 @@ def generate_metadata_train_val_files(replicator_dir: str, roca_metadata_path: s
     val_scenes = [f"scene{scene_number:04d}" for scene_number in train_val_scenes["val_scenes"]]
 
     # Write scenes
-    write_list_to_txt(os.path.join(roca_metadata_path, "scannetv2_train.txt"), train_scenes)
-    write_list_to_txt(os.path.join(roca_metadata_path, "scannetv2_val.txt"), val_scenes)
+    _write_list_to_txt(os.path.join(roca_metadata_path, "scannetv2_train.txt"), train_scenes)
+    _write_list_to_txt(os.path.join(roca_metadata_path, "scannetv2_val.txt"), val_scenes)
 
     # Write val images
     val_images = [scene_name + " 0" for scene_name in val_scenes]  # Since there is only one picture per scene, use this one
-    write_list_to_txt(os.path.join(roca_metadata_path, "val_images.txt"), val_images)
+    _write_list_to_txt(os.path.join(roca_metadata_path, "val_images.txt"), val_images)
 
 
 def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, scene_numbers: list[str]) -> None:
@@ -325,21 +334,11 @@ def replicator_cam_pose_to_scannet(replicator_dir: str, roca_dataset_dir: str, s
                 output_file.write(" ".join([f"{val}" for val in row]) + "\n")
 
 
-def generate_point_files(roca_dataset_dir: str, obj_dir: str):
-    # Find all .obj files in the obj_path
-    obj_files = glob.glob(os.path.join(obj_dir, "*.obj"))
-
-    # Extract semantic labels / categories from the file name
-    semantic_labels = [_obj_file_name_to_semantic_label(os.path.basename(obj_file).split('.')[0]) for obj_file in obj_files]
-    files_and_labels = list(zip(obj_files, semantic_labels))
-
-    # Sort is required, because this is how the order in scan2cad_alignment_classes.json is created
-    # The index of the class in scan2cad_alignment_classes.json is then used as the category_id during training
-    sorted(files_and_labels, key=lambda x: x[1])
-
+def generate_point_files(roca_dataset_dir: str, obj_paths_labels_ids: list[dict]):
     point_datasets = []
-    for idx, (obj_file, label) in enumerate(files_and_labels):
+    for obj_path_label_id in obj_paths_labels_ids:
         # Load the model
+        obj_file = obj_path_label_id["obj_file"]
         mesh = trimesh.load(obj_file)
 
         # Check if every edge is included in two faces
@@ -352,9 +351,9 @@ def generate_point_files(roca_dataset_dir: str, obj_dir: str):
         # Create dataset for current mesh
         point_datasets.append({
             "points": points,
-            "catid_cad": label,
+            "catid_cad": str(obj_path_label_id["class_id"]),
             "id_cad": "0",
-            "category_id": idx
+            "category_id": obj_path_label_id["class_id"]
         })
 
     # Write point files
@@ -396,6 +395,7 @@ def main(args: list[str]) -> None:
     roca_metadata_dir = args.roca_metadata_dir
 
     scene_numbers = get_scene_nrs(replicator_dir)
+    obj_paths_labels_ids = get_obj_paths_semantic_labels_and_class_id(obj_dir)
     print("Converting camera intrinsics...")
     replicator_intrinsics_to_scannet(replicator_dir, roca_dataset_dir, scene_numbers)
     print("Converting images...")
@@ -403,16 +403,15 @@ def main(args: list[str]) -> None:
     print("Converting camera to world transformations...")
     replicator_cam_pose_to_scannet(replicator_dir, roca_dataset_dir, scene_numbers)
     print("Copying CAD models...")
-    copy_obj_files(roca_dataset_dir, obj_dir)
+    copy_obj_files(roca_dataset_dir, obj_paths_labels_ids)
     print("Generating full_annotations.json...")
-    generate_full_annotations_json(replicator_dir, roca_dataset_dir, scene_numbers)
+    generate_full_annotations_json(replicator_dir, roca_dataset_dir, scene_numbers, obj_paths_labels_ids)
     print("Generating ROCA metadata files...")
-    labels = generate_labels_from_objs(obj_dir)
-    generate_metadata_taxonomy_9(roca_metadata_dir, labels)
-    generate_metadata_label_id_files(roca_metadata_dir, labels)
+    generate_metadata_taxonomy_9(roca_metadata_dir, obj_paths_labels_ids)
+    generate_metadata_label_id_files(roca_metadata_dir, obj_paths_labels_ids)
     generate_metadata_train_val_files(replicator_dir, roca_metadata_dir)
     print("Generating point files by sampling from CAD models...")
-    generate_point_files(roca_dataset_dir, obj_dir)
+    generate_point_files(roca_dataset_dir, obj_paths_labels_ids)
 
     print("Done!")
 
