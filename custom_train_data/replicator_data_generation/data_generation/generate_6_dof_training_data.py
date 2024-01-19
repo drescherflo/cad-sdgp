@@ -92,6 +92,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         "train_scenes": config["train_scenes"],
         "val_scenes": config["val_scenes"]
     }
+
+    os.makedirs(out_dir, exist_ok=True)
     with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
         json.dump(train_val_split_config, f, indent=4)
 
