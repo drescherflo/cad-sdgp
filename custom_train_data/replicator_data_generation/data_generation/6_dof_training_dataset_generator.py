@@ -7,19 +7,17 @@ import numpy as np
 import importlib
 
 # Parse args
-parser = argparse.ArgumentParser()
+parser = argparse.ArgumentParser(description="Generates training data for 6-DOF Alignment neural networks with Omniverse Replicator")
+parser.add_argument("--headless", help="Run in headless mode", action="store_true")
+parser.add_argument("--output_dir", help="Output directory", required=True)
+parser.add_argument("--usd_dir", help="Directory containing the USD versions of the CAD models to be used for data generation", required=True)
+parser.add_argument("--config_file", help="Path to the JSON configuration file describing the to be generated scenes", required=True)
 args = parser.parse_args(sys.argv[1:])
-
-# TODO parse headless
-# TODO parse out_dir
-# TODO parse usd_dir
-# TODO parse conf_path
-
 
 # Launch Isaac Sim
 from omni.isaac.kit import SimulationApp
 
-CONFIG = {"renderer": "RayTracedLighting", "headless": False}
+CONFIG = {"renderer": "RayTracedLighting", "headless": args.headless}
 simulation_app = SimulationApp(launch_config=CONFIG)
 
 
@@ -83,9 +81,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     camera_position = config["camera_config"]["pose"]["position"]
     camera_orientation = config["camera_config"]["pose"]["orientation"]
     sub_frames_per_frame = config["sub_frames_per_frame"]
-    usd_models = config["usd_models"]
     writer_configs = config["writer_configs"]
-    num_frames_per_object = config["num_frames_per_object"]
 
     # Write train val split
     train_val_split_config = {
@@ -174,15 +170,13 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Change sphere light color and position
             for i in range(len(sphere_lights)):
                 rep.randomizer.randomize_sphere_light(sphere_lights, i, sphere_light_configs)
-
-        # TODO: remove following 4 lines
-        # Isaac Sim run-loop (only for testing do NOT use this when generating data)
-        #rep.orchestrator.preview()
-        #while simulation_app.is_running():
-        #    simulation_app.update()
         
         # Capture training data
         for current_scene_config in object_type_specific_scene_configs:
+            if not simulation_app.is_running():
+                print("Simulation has been stopped. Exiting...")
+                return
+
             print(f"Writing frame {str(frame_number + 1)} of {num_frames}")
 
             # Assign material to object manually since replicator does not support sequential assignment
@@ -196,7 +190,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                 orientation_quaternion = euler_angles_to_quat(np.array(orientation), degrees=True, extrinsic=False)
                 xform_object_prim.set_world_pose(position=position, orientation=orientation_quaternion)
 
-            # Generate multiple subframes for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
+            # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
 
             # Increase frame_number count
@@ -204,9 +198,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         
 
 if __name__ == '__main__':
-    conf_path = "custom_train_data/replicator_data_generation/config_generation/generated_configs/6_dof_only_simple_object.json"
-    usd_dir = "CAD Models/OBJ_converted"
-    out_dir = "temp_replicator_out"
-    out_dir = out_dir if os.path.isabs(out_dir) else os.path.join(os.getcwd(), out_dir)
-    main(conf_path, usd_dir, out_dir)
+    out_dir = args.output_dir if os.path.isabs(args.output_dir) else os.path.join(os.getcwd(), args.output_dir)
+    main(args.config_file, args.usd_dir, out_dir)
     simulation_app.close()
