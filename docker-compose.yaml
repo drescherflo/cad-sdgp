@@ -7,3 +7,4 @@ services:
       - ./CAD Models/STEP:/step_models
       - ./CAD Models/OBJ:/obj_models
     command: ["--input_dir", "/step_models", "--output_dir", "/obj_models"]
+    profiles: ["manual"]  # Disable autostart with compose up
