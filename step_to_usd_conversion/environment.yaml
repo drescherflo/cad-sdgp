@@ -1,0 +1,12 @@
+# Defines the conda environment for the STEP to OBJ converter
+name: step-to-obj
+channels:
+  - conda-forge
+dependencies:
+  - python=3.10
+  - pip
+  - numpy=1.26.*
+  - pythonocc-core=7.7.*
+  - pip:
+    - numpy-stl~=3.1.1
+

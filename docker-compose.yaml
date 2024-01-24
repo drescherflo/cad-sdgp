@@ -1,0 +1,9 @@
+version: "3"
+services:
+  step_to_obj_converter:
+    build: ./step_to_usd_conversion
+    image: drescherflo/ma_step_to_obj_converter
+    volumes:
+      - ./CAD Models/STEP:/step_models
+      - ./CAD Models/OBJ:/obj_models
+    command: ["--input_dir", "/step_models", "--output_dir", "/obj_models"]
