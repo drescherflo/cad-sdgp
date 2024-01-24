@@ -64,6 +64,11 @@ def load_resumable_writer_plugins(plugin_dir: str, plugin_package_name) -> None:
                     rep.WriterRegistry.register(attribute)
 
 
+def __quit_on_error() -> None:
+    simulation_app.close()
+    exit(-1)
+
+
 def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     # Load resumable writers
     plugin_package_name = "resumable_writers"
@@ -89,7 +94,14 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         "val_scenes": config["val_scenes"]
     }
 
+    # Create out_dir if necessary
     os.makedirs(out_dir, exist_ok=True)
+
+    # Check for empty out_dir
+    if len(os.listdir(out_dir)) != 0:
+        print("Output directory is not empty. Exiting...")
+        __quit_on_error()
+
     with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
         json.dump(train_val_split_config, f, indent=4)
 
@@ -140,8 +152,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             usd_path = os.path.join(usd_dir, object_config["usd_model"])
             if not os.path.isfile(usd_path):
                 print(f"USD file at path '{usd_path}' could not be found. Exiting...", file=sys.stderr)
-                simulation_app.close()
-                exit(-1)
+                __quit_on_error()
                 
             object_prims.append(prims.create_prim(prim_path=f"/objects/object_{i:0{len(str(num_objects_per_scene))}}", usd_path=usd_path, semantic_label=object_config["semantic_class_label"]))
 
@@ -175,7 +186,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         for current_scene_config in object_type_specific_scene_configs:
             if not simulation_app.is_running():
                 print("Simulation has been stopped. Exiting...")
-                return
+                __quit_on_error()
 
             print(f"Writing frame {str(frame_number + 1)} of {num_frames}")
 
