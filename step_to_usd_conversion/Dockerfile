@@ -1,7 +1,7 @@
 FROM continuumio/miniconda3
 
 # Set working directory
-WORKDIR step_to_obj_converter
+WORKDIR /step_to_obj_converter
 
 # Create environment
 COPY environment.yaml .

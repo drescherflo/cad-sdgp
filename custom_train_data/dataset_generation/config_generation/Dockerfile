@@ -1,7 +1,7 @@
 FROM python:3.10
 
 # Set Working directory
-WORKDIR config_generation
+WORKDIR /config_generation
 
 # Install dependencies
 COPY requirements.txt .
