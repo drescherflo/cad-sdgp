@@ -28,7 +28,7 @@ services:
     build: ./custom_train_data/dataset_generation/config_generation
     image: drescherflo/ma_config_generator_for_dataset_generation
     volumes:
-      - ~/custom_dataset/cad_models/OBJ_Converted/:/usd_models
+      - ~/custom_dataset/cad_models/OBJ_converted/:/usd_models
       - ~/custom_dataset/dataset_generator_configs/:/dataset_generator_configs
     command: [ "--usd_dir", "/usd_models", "--writer", "ResumableBasicWriter rgb=True camera_params=True", "--writer", "WorldPoseWriter", "--out_path", "/dataset_generator_configs/generator_config.json", "--num_frames_per_object", "1000" ]
     profiles: [ "manual" ]  # Disable autostart with compose up
