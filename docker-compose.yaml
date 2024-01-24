@@ -8,6 +8,22 @@ services:
       - ~/custom_dataset/cad_models/OBJ/:/obj_models
     command: [ "--input_dir", "/step_models", "--output_dir", "/obj_models" ]
     profiles: [ "manual" ]  # Disable autostart with compose up
+  obj_to_usd_converter:
+    image: nvcr.io/nvidia/isaac-sim:2023.1.1
+    environment:
+      - ACCEPT_EULA=Y
+    volumes:
+      - ~/custom_dataset/cad_models/:/cad_models/
+    #entrypoint: [ "pwd" ]
+    entrypoint: [ "./python.sh", "standalone_examples/api/omni.kit.asset_converter/asset_usd_converter.py", "--folders", "/cad_models/OBJ" ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
+    profiles: [ "manual" ]  # Disable autostart with compose up
   config_generator_for_dataset_generation:
     build: ./custom_train_data/dataset_generation/config_generation
     image: drescherflo/ma_config_generator_for_dataset_generation
