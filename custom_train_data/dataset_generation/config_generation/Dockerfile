@@ -1,7 +1,7 @@
 FROM python:3.10
 
 # Set Working directory
-WORKDIR dataset
+WORKDIR config_generation
 
 # Install dependencies
 COPY requirements.txt .
