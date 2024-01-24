@@ -1,11 +1,11 @@
 version: "3"
 services:
   step_to_obj_converter:
-    build: ./step_to_usd_conversion
+    build: ./step_to_usd_conversion/
     image: drescherflo/ma_step_to_obj_converter
     volumes:
-      - ~/custom_dataset/cad_models/STEP/:/step_models
-      - ~/custom_dataset/cad_models/OBJ/:/obj_models
+      - ~/custom_dataset/cad_models/STEP/:/step_models/
+      - ~/custom_dataset/cad_models/OBJ/:/obj_models/
     command: [ "--input_dir", "/step_models", "--output_dir", "/obj_models" ]
     profiles: [ "manual" ]  # Disable autostart with compose up
   obj_to_usd_converter:
@@ -14,8 +14,8 @@ services:
       - ACCEPT_EULA=Y
     volumes:
       - ~/custom_dataset/cad_models/:/cad_models/
-    #entrypoint: [ "pwd" ]
-    entrypoint: [ "./python.sh", "standalone_examples/api/omni.kit.asset_converter/asset_usd_converter.py", "--folders", "/cad_models/OBJ" ]
+    entrypoint: [ "./python.sh", "standalone_examples/api/omni.kit.asset_converter/asset_usd_converter.py" ]
+    command: [ "--folders", "/cad_models/OBJ" ]
     deploy:
       resources:
         reservations:
@@ -24,11 +24,30 @@ services:
               count: all
               capabilities: [ gpu ]
     profiles: [ "manual" ]  # Disable autostart with compose up
-  config_generator_for_dataset_generation:
-    build: ./custom_train_data/dataset_generation/config_generation
+  config_generator_for_6_dof_dataset_generation:
+    build: ./custom_train_data/dataset_generation/config_generation/
     image: drescherflo/ma_config_generator_for_dataset_generation
     volumes:
-      - ~/custom_dataset/cad_models/OBJ_converted/:/usd_models
-      - ~/custom_dataset/dataset_generator_configs/:/dataset_generator_configs
-    command: [ "--usd_dir", "/usd_models", "--writer", "ResumableBasicWriter rgb=True camera_params=True", "--writer", "WorldPoseWriter", "--out_path", "/dataset_generator_configs/generator_config.json", "--num_frames_per_object", "1000" ]
+      - ~/custom_dataset/cad_models/OBJ_converted/:/usd_models/
+      - ~/custom_dataset/dataset_generator_configs/:/dataset_generator_configs/
+    command: [ "--usd_dir", "/usd_models", "--writer", "ResumableBasicWriter", "rgb=True", "camera_params=True", "--writer", "WorldPoseWriter", "--out_path", "/dataset_generator_configs/generator_config.json", "--num_frames_per_object", "1000" ]
+    profiles: [ "manual" ]  # Disable autostart with compose up
+  6_dof_dataset_generator:
+    image: nvcr.io/nvidia/isaac-sim:2023.1.1
+    environment:
+      - ACCEPT_EULA=Y
+    volumes:
+      - ./custom_train_data/dataset_generation/data_generation/:/data_generation/
+      - ~/custom_dataset/cad_models/OBJ_converted/:/usd_models/
+      - ~/custom_dataset/dataset_generator_configs/:/dataset_generator_configs/
+      - ~/custom_dataset/replicator_dataset/6_dof/:/replicator_dataset/
+    entrypoint: [ "./python.sh", "/data_generation/6_dof_training_dataset_generator.py" ]
+    command: [ "--headless", "--output_dir", "/replicator_dataset", "--usd_dir", "/usd_models", "--config_file", "/dataset_generator_configs/generator_config.json" ]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [ gpu ]
     profiles: [ "manual" ]  # Disable autostart with compose up
