@@ -63,7 +63,7 @@ Password: <API-Key>
 - CAD-Modelle im STEP-Format in Verzeichnis `~/custom_dataset/cad_models/STEP` legen
 - Pipeline ausführen
   ```bash
-  ./build_custom_dataset.sh
+  ./build_custom_dataset_docker.sh
   ```
 - Datensatz für ROCA liegt unter `~/custom_dataset/ReplicatorToROCA`
 
