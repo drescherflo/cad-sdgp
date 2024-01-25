@@ -8,6 +8,14 @@ from converter_plugins.converter_interface import ConverterInterface
 
 
 def load_converter_plugins(plugin_dir: str, plugin_package_name) -> list[Type[ConverterInterface]]:
+    """
+    Loads converter plugins from a specified directory.
+
+    :param plugin_dir: Directory containing the plugin files.
+    :param plugin_package_name: Name of the package where plugins are located.
+    :return: A list of types derived from the ConverterInterface class.
+    """
+
     converter_plugins = []
     for filename in os.listdir(plugin_dir):
         if filename.endswith('.py') and not filename.startswith('_'):
@@ -21,6 +29,12 @@ def load_converter_plugins(plugin_dir: str, plugin_package_name) -> list[Type[Co
 
 
 def main(args: list[str]) -> None:
+    """
+    Main function to handle command-line arguments and initiate the conversion process.
+
+    :param args: List of command-line arguments.
+    """
+
     # Create argument parser
     parser = argparse.ArgumentParser(description="Converts the generated training data from NVIDIA Replicator to other formats using the plugins in the converter_plugins directory")
     parser.add_argument("--obj_dir", help="Directory with all CAD Models in OBJ format", required=True)

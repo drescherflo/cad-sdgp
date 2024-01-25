@@ -8,12 +8,30 @@ import numpy as np
 
 
 def get_step_files_in_dir(directory):
+    """
+    Retrieves a list of STEP file names from a specified directory.
+
+    :param directory: The directory to search for STEP files.
+    :type directory: str
+    :return: A list of STEP file names found in the directory.
+    :rtype: list
+    """
+
     files = [f for f in os.listdir(directory) if
              (os.path.isfile(os.path.join(directory, f)) and f.endswith((".stp", ".step")))]
     return files
 
 
 def convert_exponential_to_decimal(input_strings):
+    """
+    Converts strings containing exponential numbers to decimal format.
+
+    :param input_strings: A list of strings containing exponential numbers.
+    :type input_strings: list
+    :return: A list of strings with numbers converted to decimal format.
+    :rtype: list
+    """
+
     converted_strings = []
     for string in input_strings:
         numbers = string.split()  # Split at space
@@ -24,6 +42,11 @@ def convert_exponential_to_decimal(input_strings):
 
 
 def main():
+    """
+    Main function to initiate the conversion process from STEP to OBJ format.
+    Handles command-line arguments and orchestrates the conversion.
+    """
+
     # Set vars
     tmp_dir = "tmp/"
 

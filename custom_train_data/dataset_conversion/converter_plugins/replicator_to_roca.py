@@ -31,10 +31,28 @@ class ReplicatorToRoca(ConverterInterface):
 
     @staticmethod
     def __obj_file_name_to_semantic_label(obj_file_name: str) -> str:
+        """
+        Converts the file name of an OBJ file to a semantic label.
+
+        :param obj_file_name: The file name of the OBJ file.
+        :type obj_file_name: str
+        :return: A semantic label derived from the file name.
+        :rtype: str
+        """
+
         return obj_file_name.removesuffix(".obj").lower().replace(" ", "_")
 
     @staticmethod
     def _get_obj_paths_semantic_labels_and_class_id(obj_dir: str) -> list[dict]:
+        """
+        Retrieves paths to OBJ files, their semantic labels, and class IDs.
+
+        :param obj_dir: Path to the directory containing the OBJ files.
+        :type obj_dir: str
+        :return: A list of dictionaries with paths, semantic labels, and class IDs of the OBJ files.
+        :rtype: list[dict]
+        """
+
         # Find all .obj files in the obj_path
         obj_files = glob.glob(os.path.join(obj_dir, "*.obj"))
 
@@ -374,6 +392,17 @@ class ReplicatorToRoca(ConverterInterface):
 
     @staticmethod
     def convert(replicator_data_dir: str, obj_files_dir: str, output_dir: str) -> None:
+        """
+        Converts data from NVIDIA Replicator to the ROCA format.
+
+        :param replicator_data_dir: Directory containing the NVIDIA Replicator data.
+        :param obj_files_dir: Directory containing the OBJ files.
+        :param output_dir: Target directory for the converted data.
+        :type replicator_data_dir: str
+        :type obj_files_dir: str
+        :type output_dir: str
+        """
+
         print("Converting the generated training data from NVIDIA Replicator to ROCA format...")
 
         # Create roca_metadata_dir if necessary

@@ -242,12 +242,30 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
 
 
 def generate_train_val_splits(scenes: list[list[dict]], val_share: float) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Generates training and validation splits from a list of scenes.
+
+    :param scenes: A nested list of dictionaries, each representing a scene.
+    :param val_share: The proportion of the dataset to include in the validation split.
+    :type scenes: list[list[dict]]
+    :type val_share: float
+    :return: A tuple containing two numpy arrays with scene numbers, one for training and one for validation.
+    :rtype: tuple[np.ndarray, np.ndarray]
+    """
+
     num_scenes = np.sum(np.fromiter((len(s) for s in scenes), int))
     scene_indices = np.arange(num_scenes)
     return train_test_split(scene_indices, test_size=val_share)
 
 
 def main(argv: list[str]) -> None:
+    """
+    Main function to handle command-line arguments and execute the configuration generation process.
+
+    :param argv: List of command-line arguments.
+    :type argv: list[str]
+    """
+
     parser = argparse.ArgumentParser(description="Generates a configuration for the training data generation script")
     parser.add_argument("--usd_dir", help="Directory containing the converted CAD models as USD files", required=True)
     parser.add_argument("--out_path", default="config.json", help="Output path for the generated configuration")

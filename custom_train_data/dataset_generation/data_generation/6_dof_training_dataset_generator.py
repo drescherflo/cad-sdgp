@@ -93,10 +93,30 @@ def generate_materials(materials_config) -> list[OmniGlass | OmniPBR]:
 
 
 def extract_per_scene_config(scenes: list[dict], config_key: str) -> list:
+    """
+    Extracts a specific configuration value for each scene from a list of scenes.
+
+    :param scenes: A list of dictionaries, each representing a scene.
+    :param config_key: The key for the configuration value to be extracted.
+    :type scenes: list[dict]
+    :type config_key: str
+    :return: A list of configuration values extracted for each scene.
+    :rtype: list
+    """
+
     return [scene[config_key] for scene in scenes]
 
 
 def load_resumable_writer_plugins(plugin_dir: str, plugin_package_name) -> None:
+    """
+    Loads resumable writer plugins from a specified directory.
+
+    :param plugin_dir: Directory containing the writer plugin files.
+    :param plugin_package_name: Name of the package where writer plugins are located.
+    :type plugin_dir: str
+    :type plugin_package_name: str
+    """
+
     for filename in os.listdir(plugin_dir):
         if filename.endswith('.py') and not filename.startswith('_'):
             module_name = filename[:-3]
@@ -108,11 +128,27 @@ def load_resumable_writer_plugins(plugin_dir: str, plugin_package_name) -> None:
 
 
 def __quit_on_error() -> None:
+    """
+    Terminates the program execution in case of an error.
+    This function should be called when an unrecoverable error is encountered.
+    """
+
     simulation_app.close()
     exit(-1)
 
 
 def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
+    """
+    Main function to handle the dataset generation process.
+
+    :param conf_path: Path to the configuration file.
+    :param usd_dir: Directory containing USD files.
+    :param out_dir: Output directory where the dataset will be generated.
+    :type conf_path: str
+    :type usd_dir: str
+    :type out_dir: str
+    """
+
     # Load resumable writers
     plugin_package_name = "resumable_writers"
     script_location_dir = os.path.dirname(os.path.abspath(__file__))
