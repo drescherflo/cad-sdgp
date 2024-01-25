@@ -241,47 +241,6 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
     return scene_configs
 
 
-def parse_writer_init_args(writer_init_args: list[str]) -> dict:
-    """
-    Parses initialization arguments for a writer.
-
-    Converts argument strings into a dictionary format, interpreting values as booleans if they match 'true'.
-    E.g. ['rgb=true', 'depth=true'] is converted to {'rgb': True, 'depth': True}.
-
-    :param writer_init_args: A list of string arguments.
-    :type writer_init_args: list[str]
-    :return: A dictionary mapping argument names to their parsed boolean values.
-    :rtype: dict
-    """
-
-    args_dict = {}
-    for arg in writer_init_args:
-        if '=' in arg:
-            key, value = arg.split('=', 1)
-            args_dict[key] = value.lower() == 'true'
-    return args_dict
-
-
-def parse_writer_args(writer_args: list[list[str]]) -> list[dict]:
-    """
-    Parses arguments for multiple writers.
-
-    Converts a list of argument lists into a dictionary format, suitable for initializing multiple writers.
-
-    :param writer_args: A list of lists, each containing arguments for a specific writer.
-    :type writer_args: list[list[str]]
-    :return: A dictionary containing configurations for each writer.
-    :rtype: list[dict]
-    """
-
-    writers = []
-    for writer_arg in writer_args:
-        writer_conf = {"name": writer_arg[0], "args": parse_writer_init_args(writer_arg[1:])}
-        writers.append(writer_conf)
-
-    return writers
-
-
 def generate_train_val_splits(scenes: list[list[dict]], val_share: float) -> tuple[np.ndarray, np.ndarray]:
     num_scenes = np.sum(np.fromiter((len(s) for s in scenes), int))
     scene_indices = np.arange(num_scenes)
@@ -308,7 +267,6 @@ def main(argv: list[str]) -> None:
                         help="Specifies the number of sphere lights with random light color in the scene")
     parser.add_argument("--train_val_split", default=0.2, type=float,
                         help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
-    parser.add_argument('--writer', nargs='*', action='append', help='Configures writers from the resumable_writers plugin package', required=True)
 
     # Parse args
     args = parser.parse_args(argv)
@@ -324,7 +282,6 @@ def main(argv: list[str]) -> None:
     num_random_materials = args.num_random_materials
     num_sphere_lights = args.num_sphere_lights
     val_dataset_share = args.train_val_split
-    writer_args = args.writer
     probability_of_glass_material = args.probability_of_glass_material
     if probability_of_glass_material < 0:
         probability_of_glass_material = 0
@@ -346,7 +303,6 @@ def main(argv: list[str]) -> None:
         "materials": generate_materials_conf(num_random_materials, probability_of_glass_material),
         "scenes": generate_scenes_conf(num_frames_per_object, num_objects_per_frame, usd_models, num_random_materials,
                                        num_sphere_lights),
-        "writer_configs": parse_writer_args(writer_args),
         "usd_models": usd_models,
         "generation_script_args": vars(args)
     }

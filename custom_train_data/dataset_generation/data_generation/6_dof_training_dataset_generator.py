@@ -6,12 +6,55 @@ import sys
 import numpy as np
 import importlib
 
+
+def parse_writer_init_args(writer_init_args: list[str]) -> dict:
+    """
+    Parses initialization arguments for a writer.
+
+    Converts argument strings into a dictionary format, interpreting values as booleans if they match 'true'.
+    E.g. ['rgb=true', 'depth=true'] is converted to {'rgb': True, 'depth': True}.
+
+    :param writer_init_args: A list of string arguments.
+    :type writer_init_args: list[str]
+    :return: A dictionary mapping argument names to their parsed boolean values.
+    :rtype: dict
+    """
+
+    args_dict = {}
+    for arg in writer_init_args:
+        if '=' in arg:
+            key, value = arg.split('=', 1)
+            args_dict[key] = value.lower() == 'true'
+    return args_dict
+
+
+def parse_writer_args(writer_args: list[list[str]]) -> list[dict]:
+    """
+    Parses arguments for multiple writers.
+
+    Converts a list of argument lists into a dictionary format, suitable for initializing multiple writers.
+
+    :param writer_args: A list of lists, each containing arguments for a specific writer.
+    :type writer_args: list[list[str]]
+    :return: A dictionary containing configurations for each writer.
+    :rtype: list[dict]
+    """
+
+    writers = []
+    for writer_arg in writer_args:
+        writer_conf = {"name": writer_arg[0], "args": parse_writer_init_args(writer_arg[1:])}
+        writers.append(writer_conf)
+
+    return writers
+
+
 # Parse args
 parser = argparse.ArgumentParser(description="Generates training data for 6-DOF Alignment neural networks with Omniverse Replicator")
 parser.add_argument("--headless", help="Run in headless mode", action="store_true")
 parser.add_argument("--output_dir", help="Output directory", required=True)
 parser.add_argument("--usd_dir", help="Directory containing the USD versions of the CAD models to be used for data generation", required=True)
 parser.add_argument("--config_file", help="Path to the JSON configuration file describing the to be generated scenes", required=True)
+parser.add_argument('--writer', nargs='*', action='append', help='Configures writers from the resumable_writers plugin package', required=True)
 args = parser.parse_args(sys.argv[1:])
 
 # Launch Isaac Sim
@@ -86,7 +129,9 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     camera_position = config["camera_config"]["pose"]["position"]
     camera_orientation = config["camera_config"]["pose"]["orientation"]
     sub_frames_per_frame = config["sub_frames_per_frame"]
-    writer_configs = config["writer_configs"]
+
+    # Parse writer config
+    writer_configs = parse_writer_args(args.writer)
 
     # Write train val split
     train_val_split_config = {
