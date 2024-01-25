@@ -54,7 +54,7 @@ parser.add_argument("--headless", help="Run in headless mode", action="store_tru
 parser.add_argument("--output_dir", help="Output directory", required=True)
 parser.add_argument("--usd_dir", help="Directory containing the USD versions of the CAD models to be used for data generation", required=True)
 parser.add_argument("--config_file", help="Path to the JSON configuration file describing the to be generated scenes", required=True)
-parser.add_argument('--writer', nargs='*', action='append', help='Configures writers from the resumable_writers plugin package', required=True)
+parser.add_argument("--writer", nargs="*", action="append", help="Configures writers from the resumable_writers plugin package. Argument can be added multiple times", required=True)
 args = parser.parse_args(sys.argv[1:])
 
 # Launch Isaac Sim
