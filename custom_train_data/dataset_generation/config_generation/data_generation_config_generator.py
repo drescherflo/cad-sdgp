@@ -316,6 +316,8 @@ def main(argv: list[str]) -> None:
     data_generation_config["train_scenes"] = train_scenes.tolist()
     data_generation_config["val_scenes"] = val_scenes.tolist()
 
+    # Write config
+    os.makedirs(os.path.dirname(out_path), exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(data_generation_config, f, indent=4)
 
