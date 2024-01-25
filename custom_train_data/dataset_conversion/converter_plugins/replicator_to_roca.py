@@ -377,7 +377,7 @@ class ReplicatorToRoca(ConverterInterface):
         print("Converting the generated training data from NVIDIA Replicator to ROCA format...")
 
         # Create roca_metadata_dir if necessary
-        roca_metadata_dir = os.path.join(replicator_data_dir, "metadata")
+        roca_metadata_dir = os.path.join(output_dir, "metadata")
         os.makedirs(roca_metadata_dir, exist_ok=True)
 
         # Convert training data
