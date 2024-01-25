@@ -24,5 +24,5 @@ deactivate
 
 ## Convert dataset
 source custom_train_data/dataset_conversion/venv/bin/activate
-python custom_train_data/dataset_conversion/dataset_converter.py --obj_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ/" --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" --output_dir "$CUSTOM_DATASET_DIR/converted/6_dof/"
+python custom_train_data/dataset_conversion/dataset_converter.py --obj_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ/" --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" --output_dir "$CUSTOM_DATASET_DIR/converted/"
 deactivate
