@@ -1,8 +1,25 @@
 # Isaac Sim Setup
 ## Isaac Sim Installieren
-- Omniverse Launcher installieren (Achtung, Firefox als snap geht nicht)
-- Omniverse Launcher starten und anmelden
-  - Achtung! Firefox ist unter Ubuntu 22.04 standardmäßig als snap installiert. Es kann sien, dass Firefox dann nicht mit dem Omniverse Launcher während des Logins kommunizieren kann. Sollte dem der Fall sein, muss ein Browser verwendet werden, welcher beispielsweise über eine *.deb installiert wurde
+- Omniverse Launcher von [hier](https://www.nvidia.com/de-de/omniverse/download/) herunterladen
+  - Direktlink für Linux: https://install.launcher.omniverse.nvidia.com/installers/omniverse-launcher-linux.AppImage
+  - Direktlink für Windows: https://install.launcher.omniverse.nvidia.com/installers/omniverse-launcher-win.exe
+  ```bash
+  curl -sSL https://install.launcher.omniverse.nvidia.com/installers/omniverse-launcher-linux.AppImage -o ~/Downloads/omniverse-launcher-linux.AppImage
+  ```
+
+- libfuse2 installieren
+  ```bash
+  sudo apt update
+  sudo apt install libfuse2
+  ```
+
+- Omniverse Launcher ausführen
+  ```bash
+  chmod +x ~/Downloads/omniverse-launcher-linux.AppImage
+  ~/Downloads/omniverse-launcher-linux.AppImage
+  ```
+
+- Im Omniverse Launcher mit NVIDIA Developer Account anmelden
 - Im Launcher unter `Exchange` folgende Apps installieren
   - `Omniverse Cache`
   - `Isaac Sim`
