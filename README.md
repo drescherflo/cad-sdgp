@@ -167,12 +167,24 @@ yes | ~/Downloads/anaconda_installer.sh
   ```bash
   ./build_custom_dataset_docker.sh
   ```
-- Datensatz für ROCA liegt unter `~/custom_dataset/ReplicatorToROCA`
+- Datensatz für ROCA liegt unter `~/custom_dataset/converted/6_dof/ReplicatorToROCA`
 - Soll Datensatz für natives Training und nicht in einem Container verwendet werden, kann es nötig sein, die Eigentümer der Daten zu korrigieren
   ```bash
   cd ~/custom_dataset
   sudo chown -R $(whoami) ./
   ```
+
+### Trainingsdatensatz nativ generieren
+- CAD-Modelle im STEP-Format in Verzeichnis `~/custom_dataset/cad_models/STEP` legen
+- Pipeline ausführen
+  ```bash
+  ./build_custom_dataset_native.sh
+  ```
+- Datensatz für ROCA liegt unter `~/custom_dataset/converted/6_dof/ReplicatorToROCA`
+
+### Hinweise
+- Arbeitsverzeichnis ist in Bash-Skripten über Variable `CUSTOM_DATASET_DIR` dir auf `~/custom_dataset`
+- Soll anderer Pfad verwendet werden, kann diese Variable abgeändert werden
 
 # Quellen
 - https://docs.omniverse.nvidia.com/isaacsim/latest/installation/install_container.html (24.01.2023)
