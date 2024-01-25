@@ -288,6 +288,11 @@ def main(argv: list[str]) -> None:
     if probability_of_glass_material > 1:
         probability_of_glass_material = 1
 
+    # Check for existing config at out_path
+    if os.path.exists(out_path):
+        print(f"Config file at '{out_path}' already exists. Exiting...")
+        exit(-1)
+
     # Test usd_dir
     if not os.path.isdir(usd_dir):
         print("USD directory does not exist. Exiting...")
