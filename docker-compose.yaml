@@ -1,7 +1,7 @@
 version: "3"
 services:
   step_to_obj_converter:
-    build: ./step_to_usd_conversion/
+    build: step_to_obj_conversion/
     image: drescherflo/ma_step_to_obj_converter
     volumes:
       - ~/custom_dataset/cad_models/STEP/:/step_models/
@@ -25,7 +25,7 @@ services:
               capabilities: [ gpu ]
     profiles: [ "manual" ]  # Disable autostart with compose up
   config_generator_for_6_dof_dataset_generation:
-    build: ./custom_train_data/dataset_generation/config_generation/
+    build: custom_train_data/dataset_generation/config_generation/
     image: drescherflo/ma_config_generator_for_dataset_generation
     volumes:
       - ~/custom_dataset/cad_models/OBJ_converted/:/usd_models/
@@ -52,7 +52,7 @@ services:
               capabilities: [ gpu ]
     profiles: [ "manual" ]  # Disable autostart with compose up
   dataset_converter:
-    build: ./custom_train_data/dataset_conversion/
+    build: custom_train_data/dataset_conversion/
     image: drescherflo/ma_dataset_converter
     volumes:
       - ./custom_train_data/dataset_conversion/converter_plugins/:/dataset_converter/converter_plugins/  # Override plugin dir, so new plugins can be added without rebuilding image

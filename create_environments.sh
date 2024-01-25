@@ -12,6 +12,6 @@ cd custom_train_data/dataset_generation/config_generation/
 ./setup_env.sh
 cd -
 
-cd step_to_usd_conversion/
+cd step_to_obj_conversion/
 ./setup_env.sh
 
