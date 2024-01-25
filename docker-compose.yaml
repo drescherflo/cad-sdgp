@@ -4,8 +4,8 @@ services:
     build: step_to_obj_conversion/
     image: drescherflo/ma_step_to_obj_converter
     volumes:
-      - ~/custom_dataset/cad_models/STEP/:/step_models/
-      - ~/custom_dataset/cad_models/OBJ/:/obj_models/
+      - "${CUSTOM_DATASET_DIR}/cad_models/STEP/:/step_models/:rw"
+      - "${CUSTOM_DATASET_DIR}/cad_models/OBJ/:/obj_models/:rw"
     command: [ "--input_dir", "/step_models", "--output_dir", "/obj_models" ]
     profiles: [ "manual" ]  # Disable autostart with compose up
   obj_to_usd_converter:
@@ -13,7 +13,7 @@ services:
     environment:
       - ACCEPT_EULA=Y
     volumes:
-      - ~/custom_dataset/cad_models/:/cad_models/
+      - "${CUSTOM_DATASET_DIR}/cad_models/:/cad_models/:rw"
     entrypoint: [ "./python.sh", "standalone_examples/api/omni.kit.asset_converter/asset_usd_converter.py" ]
     command: [ "--folders", "/cad_models/OBJ" ]
     deploy:
@@ -28,8 +28,8 @@ services:
     build: custom_train_data/dataset_generation/config_generation/
     image: drescherflo/ma_config_generator_for_dataset_generation
     volumes:
-      - ~/custom_dataset/cad_models/OBJ_converted/:/usd_models/
-      - ~/custom_dataset/dataset_generator_configs/:/dataset_generator_configs/
+      - "${CUSTOM_DATASET_DIR}/cad_models/OBJ_converted/:/usd_models/:ro"
+      - "${CUSTOM_DATASET_DIR}/dataset_generator_configs/:/dataset_generator_configs/:rw"
     command: [ "--usd_dir", "/usd_models", "--out_path", "/dataset_generator_configs/6_dof_generator_config.json", "--num_frames_per_object", "1000" ]
     profiles: [ "manual" ]  # Disable autostart with compose up
   6_dof_dataset_generator:
@@ -37,10 +37,10 @@ services:
     environment:
       - ACCEPT_EULA=Y
     volumes:
-      - ./custom_train_data/dataset_generation/data_generation/:/data_generation/
-      - ~/custom_dataset/cad_models/OBJ_converted/:/usd_models/
-      - ~/custom_dataset/dataset_generator_configs/:/dataset_generator_configs/
-      - ~/custom_dataset/replicator_dataset/6_dof/:/6_dof_replicator_dataset/
+      - "./custom_train_data/dataset_generation/data_generation/:/data_generation/:ro"
+      - "${CUSTOM_DATASET_DIR}/cad_models/OBJ_converted/:/usd_models/:ro"
+      - "${CUSTOM_DATASET_DIR}/dataset_generator_configs/:/dataset_generator_configs/:ro"
+      - "${CUSTOM_DATASET_DIR}/replicator_dataset/6_dof/:/6_dof_replicator_dataset/:rw"
     entrypoint: [ "./python.sh", "/data_generation/6_dof_training_dataset_generator.py" ]
     command: [ "--headless", "--output_dir", "/6_dof_replicator_dataset", "--usd_dir", "/usd_models", "--config_file", "/dataset_generator_configs/6_dof_generator_config.json", "--writer", "ResumableBasicWriter", "rgb=True", "camera_params=True", "--writer", "WorldPoseWriter" ]
     deploy:
@@ -55,10 +55,10 @@ services:
     build: custom_train_data/dataset_conversion/
     image: drescherflo/ma_dataset_converter
     volumes:
-      - ./custom_train_data/dataset_conversion/converter_plugins/:/dataset_converter/converter_plugins/  # Override plugin dir, so new plugins can be added without rebuilding image
-      - ~/custom_dataset/cad_models/OBJ/:/obj_models/
-      - ~/custom_dataset/replicator_dataset/6_dof/:/6_dof/
-      - ~/custom_dataset/converted/:/converted_datasets/
+      - "./custom_train_data/dataset_conversion/converter_plugins/:/dataset_converter/converter_plugins/:ro"  # Override plugin dir, so new plugins can be added without rebuilding image
+      - "${CUSTOM_DATASET_DIR}/cad_models/OBJ/:/obj_models/:ro"
+      - "${CUSTOM_DATASET_DIR}/replicator_dataset/6_dof/:/6_dof/:ro"
+      - "${CUSTOM_DATASET_DIR}/converted/:/converted_datasets/:rw"
     command: [ "--obj_dir", "/obj_models", "--replicator_data_dir", "/6_dof", "--output_dir", "/converted_datasets" ]
     profiles: [ "manual" ]  # Disable autostart with compose up
 
