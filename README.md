@@ -10,6 +10,7 @@
   
 - Sollen Container nicht verwendet werden stehen READMEs in den Ordnern der einzelnen Komponenten mit Installationsanleitungen zur Verfügung.
 - Argumente für Python-Skripte können mit Flag -h angezeigt werden und sind in den Skripten selbst dokumentiert
+- Die nachfolgende Dokumentation ist für Linux Ubuntu 22.04 erstellt worden
 
 ## Voraussetzungen
 - Pipeline verwendet für Erzeugung der Trainingsdaten NVIDIA Isaac Sim 2023.1.1
@@ -23,7 +24,7 @@
 - NVIDIA Container Toolkit
 - Zugriff auf das Isaac Sim Container Image
 
-### Docker installieren (Linux Ubuntu)
+### Docker installieren
 - Repository hinzufügen
   ```bash
   # Add Docker's official GPG key:
@@ -58,7 +59,7 @@
 - PC neustarten
 
 
-### NVIDIA Container Toolkit installieren (Linux Ubuntu)
+### NVIDIA Container Toolkit installieren
 - Repository hinzufügen
   ```bash
   curl -fsSL https://nvidia.github.io/libnvidia-container/gpgkey | sudo gpg --dearmor -o /usr/share/keyrings/nvidia-container-toolkit-keyring.gpg \
@@ -100,6 +101,64 @@ docker login nvcr.io
 Username: $oauthtoken
 Password: <API-Key>
 ```
+
+## Voraussetzungen für Verwendung von Pipeline nativ
+- Anaconda / Miniconda
+- ensurepip / python3-venv
+- Omniverse Launcher
+- libfuse2 (Für Ausführung von Omniverse Launcher)
+- Isaac Sim 2023.1.1
+
+### Anaconda installieren
+- Anaconda Installer herunterladen
+```bash
+curl -sSL https://repo.anaconda.com/archive/Anaconda3-2023.09-0-Linux-x86_64.sh -o ~/Downloads/anaconda_installer.sh
+```
+
+- Installer ausführen
+```bash
+chmod +x ~/Downloads/anaconda_installer.sh
+yes | ~/Downloads/anaconda_installer.sh
+```
+
+### Omniverse Launcher herunterladen und Isaac Sim installieren
+- Omniverse Launcher von [hier](https://www.nvidia.com/de-de/omniverse/download/) herunterladen
+  - Direktlink für Linux: https://install.launcher.omniverse.nvidia.com/installers/omniverse-launcher-linux.AppImage
+  - Direktlink für Windows: https://install.launcher.omniverse.nvidia.com/installers/omniverse-launcher-win.exe
+  ```bash
+  curl -sSL https://install.launcher.omniverse.nvidia.com/installers/omniverse-launcher-linux.AppImage -o ~/Downloads/omniverse-launcher-linux.AppImage
+  ```
+
+- libfuse2 installieren
+  ```bash
+  sudo apt update
+  sudo apt install libfuse2
+  ```
+
+- Omniverse Launcher ausführen
+  ```bash
+  chmod +x ~/Downloads/omniverse-launcher-linux.AppImage
+  ~/Downloads/omniverse-launcher-linux.AppImage
+  ```
+
+- Im Omniverse Launcher mit NVIDIA Developer Account anmelden
+- Im Launcher unter `Exchange` folgende Apps installieren
+  - `Omniverse Cache`
+  - `Isaac Sim 2023.1.1`
+- Im Launcher unter `Nucleus` eine lokale Instanz einrichten
+
+- Eine Anleitung zum Einrichten von Visual Studio Code und PyCharm als Entwicklungsumgebungen befindet sich [hier](./docs/Isaac%20Sim/Setup.md). Diese Anleitung behandelt ebenfalls die Einrichtung von Isaac Sim mit der lokalen ROS2-Installation.
+
+### Conda- und pip Virtual Environments einrichten
+- python3-venv installieren
+  ```bash
+  sudo apt install python3.10-venv
+  ```
+
+- Conda- und pip Virtual Environments einrichten
+  ```bash
+  ./create_environments.sh
+  ```
 
 ## Verwendung
 ### Trainingsdatensatz mit Containern generieren
