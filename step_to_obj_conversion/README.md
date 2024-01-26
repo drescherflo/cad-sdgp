@@ -16,3 +16,4 @@ python step_to_obj.py --input_dir "/pfad/zum/input-verzeichnis" --output_dir "/p
 - Die Pfade zu den Verzeichnissen müssen existieren und korrekt angegeben werden.
 - Während der Konvertierung werden temporäre STL-Dateien im Prozess erstellt, die nach Abschluss des Vorgangs automatisch gelöscht werden.
 - Der standardmäßige Skalierungsfaktor von 0.001 ist typisch, wenn das Objekt in Millimetern entworfen wurde. Der Skalierungsfaktor kann bei Bedarf angepasst werden.
+- Eine Anleitung zur Konvertierung der erstellen OBJ-Dateien in das USD-Format befindet sich [hier](../docs/Isaac%20Sim/STEP-nach-USD-Konvertierung.md).
