@@ -3,8 +3,8 @@
 Das Skript `step_to_obj.py` dient zur Konvertierung von STEP-Dateien (`.stp` oder `.step`) in OBJ-Dateien (`.obj`).
 
 ## Argumente
-- `--input_dir`: Verzeichnis, das die STEP-Dateien enthält. Dieses Argument ist erforderlich.
-- `--output_dir`: Zielverzeichnis für die konvertierten OBJ-Dateien. Dieses Argument ist erforderlich.
+- `--input_dir`: Pflichtargument. Verzeichnis, das die STEP-Dateien enthält. 
+- `--output_dir`: Pflichtargument. Zielverzeichnis für die konvertierten OBJ-Dateien. 
 - `--scale_factor`: Optionaler Skalierungsfaktor für die OBJ-Dateien. Standardwert ist 0.001.
 
 ## Beispielbefehl
