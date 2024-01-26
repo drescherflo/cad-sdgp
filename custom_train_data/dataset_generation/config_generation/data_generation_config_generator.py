@@ -96,7 +96,8 @@ def generate_materials_conf(num_random_materials: int, probability_of_glass_mate
     return mat_configs
 
 
-def generate_obj_conf(num_random_materials: int, usd_model: str, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> dict:
+def generate_obj_conf(num_random_materials: int, usd_model: str, min_x: float, max_x: float, min_y: float, max_y: float,
+                      max_z: float) -> dict:
     """
     Generates a configuration for an object using a specified USD model.
 
@@ -133,7 +134,8 @@ def generate_obj_conf(num_random_materials: int, usd_model: str, min_x: float, m
 
 
 def generate_single_object_scene_confs(num_frames_per_object: int, num_objects_per_frame: int, usd_model: str,
-                                       num_random_materials: int, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> list[dict]:
+                                       num_random_materials: int, min_x: float, max_x: float, min_y: float,
+                                       max_y: float, max_z: float) -> list[dict]:
     """
     Generates a list of scene configurations, each containing configurations for a single object.
 
@@ -161,13 +163,15 @@ def generate_single_object_scene_confs(num_frames_per_object: int, num_objects_p
 
     return [
         {
-            "object_configs": [generate_obj_conf(num_random_materials, usd_model, min_x, max_x, min_y, max_y, max_z) for _ in range(num_objects_per_frame)]
+            "object_configs": [generate_obj_conf(num_random_materials, usd_model, min_x, max_x, min_y, max_y, max_z) for
+                               _ in range(num_objects_per_frame)]
         } for _ in range(num_frames_per_object)
     ]
 
 
 def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects_per_frame: int, usd_models: list[str],
-                                         num_random_materials: int, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> list[dict]:
+                                         num_random_materials: int, min_x: float, max_x: float, min_y: float,
+                                         max_y: float, max_z: float) -> list[dict]:
     """
     Generates a list of scene configurations with multiple objects.
 
@@ -208,7 +212,8 @@ def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects
     return scene_confs
 
 
-def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> list[dict]:
+def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: float, max_x: float, min_y: float,
+                                              max_y: float, max_z: float) -> list[dict]:
     """
     Generates configurations for sphere lights in a single frame.
 
@@ -239,7 +244,8 @@ def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: flo
 
 
 def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int, usd_models: list[str],
-                         num_random_materials: int, num_sphere_lights: int, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> list[list[dict]]:
+                         num_random_materials: int, num_sphere_lights: int, min_x: float, max_x: float, min_y: float,
+                         max_y: float, max_z: float) -> list[list[dict]]:
     """
     Generates configurations for a variety of scenes.
 
@@ -273,7 +279,8 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
     scene_configs = []
     for usd_model in usd_models:
         scene_configs.append(generate_single_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_model,
-                                                                num_random_materials, min_x, min_y, max_x, max_y, max_z))
+                                                                num_random_materials, min_x, min_y, max_x, max_y,
+                                                                max_z))
 
     # Generate multiple object scenes
     scene_configs.append(generate_multiple_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_models,
@@ -288,7 +295,8 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
             scene_config["dome_light_color"] = generate_random_rgb_color()
 
             # Add randomized sphere lights
-            scene_config["sphere_light_configs"] = generate_sphere_light_confs_for_one_frame(num_sphere_lights, min_x, min_y, max_x, max_y, max_z)
+            scene_config["sphere_light_configs"] = generate_sphere_light_confs_for_one_frame(num_sphere_lights, min_x,
+                                                                                             min_y, max_x, max_y, max_z)
 
     return scene_configs
 
@@ -341,7 +349,8 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--max_x", default=2, type=float, help="The maximum x coordinate of the object in the scene")
     parser.add_argument("--min_y", default=-1, type=float, help="The minimum y coordinate of the object in the scene")
     parser.add_argument("--max_y", default=1, type=float, help="The maximum y coordinate of the object in the scene")
-    parser.add_argument("--cam_distance_to_background", default=5, type=float, help="Defines the distance between the camera and the background plane")
+    parser.add_argument("--cam_distance_to_background", default=5, type=float,
+                        help="Defines the distance between the camera and the background plane")
 
     # Parse args
     args = parser.parse_args(argv)
