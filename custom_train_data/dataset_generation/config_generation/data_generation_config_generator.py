@@ -20,7 +20,7 @@ def get_usd_models(usd_dir: str) -> list[str]:
     return [file for file in os.listdir(usd_dir) if file.endswith('.usd')]
 
 
-def generate_camera_conf(frame_width: int, frame_height: int) -> dict:
+def generate_camera_conf(frame_width: int, frame_height: int, cam_distance_to_background: float) -> dict:
     """
     Generates a configuration dictionary for a camera setup.
 
@@ -31,6 +31,8 @@ def generate_camera_conf(frame_width: int, frame_height: int) -> dict:
     :type frame_height: int
     :param frame_height: The height of the frame in pixels.
     :type frame_width: int
+    :param cam_distance_to_background: Camera distance to the background plane
+    :type cam_distance_to_background: float
     :return: A dictionary containing the camera configuration, including frame size and pose.
     :rtype: dict
     """
@@ -39,7 +41,8 @@ def generate_camera_conf(frame_width: int, frame_height: int) -> dict:
         "frame_height": frame_height,
         "frame_width": frame_width,
         "pose": {
-            "position": [0, 0, 5], "orientation": [-90, -90, 0]  # Look at (0, 0, 0) with x-axis to the right
+            "position": [0, 0, cam_distance_to_background],
+            "orientation": [-90, -90, 0]  # Look at (0, 0, 0) with x-axis to the right
         }
     }
 
@@ -61,7 +64,8 @@ def generate_materials_conf(num_random_materials: int, probability_of_glass_mate
     """
     Generates a list of random material configurations.
 
-    The function randomly decides if a material is glass or metallic based on the provided probability, and assigns a random RGB color to each material. For metallic materials, a random surface roughness is also assigned.
+    The function randomly decides if a material is glass or metallic based on the provided probability, and assigns a random RGB color to each material.
+    For metallic materials, a random surface roughness is also assigned.
 
     :param num_random_materials: Number of random materials to generate.
     :type num_random_materials: int
@@ -92,7 +96,7 @@ def generate_materials_conf(num_random_materials: int, probability_of_glass_mate
     return mat_configs
 
 
-def generate_obj_conf(num_random_materials: int, usd_model: str) -> dict:
+def generate_obj_conf(num_random_materials: int, usd_model: str, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> dict:
     """
     Generates a configuration for an object using a specified USD model.
 
@@ -102,6 +106,16 @@ def generate_obj_conf(num_random_materials: int, usd_model: str) -> dict:
     :type num_random_materials: int
     :param usd_model: The file name of the USD model.
     :type usd_model: str
+    :param min_x: Minimum x coordinate for an object.
+    :type min_x: float
+    :param max_x: Maximum x coordinate for an object.
+    :type max_x: float
+    :param min_y: Minimum y coordinate for an object.
+    :type min_y: float
+    :param max_y: Maximum y coordinate for an object.
+    :type max_y: float
+    :param max_z: Maximum z coordinate for an object.
+    :type max_z: float
     :return: A dictionary containing the object's configuration.
     :rtype: dict
     """
@@ -109,8 +123,7 @@ def generate_obj_conf(num_random_materials: int, usd_model: str) -> dict:
     return {
         "usd_model": usd_model,
         "pose": {
-            "position": [random.uniform(-2, 2), random.uniform(-1, 1), random.uniform(0, 3)],
-            # from (-2, -1, 0) to (2, 1, 3) (including)
+            "position": [random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.uniform(0, max_z)],
             "orientation": [random.randint(-180, 180), random.randint(-180, 180), random.randint(-180, 180)]
             # all axes from (-180° to 180°) (including)
         },
@@ -120,7 +133,7 @@ def generate_obj_conf(num_random_materials: int, usd_model: str) -> dict:
 
 
 def generate_single_object_scene_confs(num_frames_per_object: int, num_objects_per_frame: int, usd_model: str,
-                                       num_random_materials: int) -> list[dict]:
+                                       num_random_materials: int, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> list[dict]:
     """
     Generates a list of scene configurations, each containing configurations for a single object.
 
@@ -132,19 +145,29 @@ def generate_single_object_scene_confs(num_frames_per_object: int, num_objects_p
     :type usd_model: str
     :param num_random_materials: The number of available random materials.
     :type num_random_materials: int
+    :param min_x: Minimum x coordinate for an object.
+    :type min_x: float
+    :param max_x: Maximum x coordinate for an object.
+    :type max_x: float
+    :param min_y: Minimum y coordinate for an object.
+    :type min_y: float
+    :param max_y: Maximum y coordinate for an object.
+    :type max_y: float
+    :param max_z: Maximum z coordinate for an object.
+    :type max_z: float
     :return: A list of dictionaries, each representing a scene configuration.
     :rtype: list[dict]
     """
 
     return [
         {
-            "object_configs": [generate_obj_conf(num_random_materials, usd_model) for _ in range(num_objects_per_frame)]
+            "object_configs": [generate_obj_conf(num_random_materials, usd_model, min_x, max_x, min_y, max_y, max_z) for _ in range(num_objects_per_frame)]
         } for _ in range(num_frames_per_object)
     ]
 
 
 def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects_per_frame: int, usd_models: list[str],
-                                         num_random_materials: int) -> list[dict]:
+                                         num_random_materials: int, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> list[dict]:
     """
     Generates a list of scene configurations with multiple objects.
 
@@ -158,6 +181,16 @@ def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects
     :type usd_models: list[str]
     :param num_random_materials: The number of available random materials.
     :type num_random_materials: int
+    :param min_x: Minimum x coordinate for an object.
+    :type min_x: float
+    :param max_x: Maximum x coordinate for an object.
+    :type max_x: float
+    :param min_y: Minimum y coordinate for an object.
+    :type min_y: float
+    :param max_y: Maximum y coordinate for an object.
+    :type max_y: float
+    :param max_z: Maximum z coordinate for an object.
+    :type max_z: float
     :return: A list of dictionaries, each representing a scene configuration.
     :rtype: list[dict]
     """
@@ -168,14 +201,14 @@ def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects
         obj_configs = []
         for _ in range(num_objects_per_frame):
             usd_model = random.choice(usd_models)
-            obj_configs.append(generate_obj_conf(num_random_materials, usd_model))
+            obj_configs.append(generate_obj_conf(num_random_materials, usd_model, min_x, min_y, max_x, max_y, max_z))
 
         scene_confs.append({"object_configs": obj_configs})
 
     return scene_confs
 
 
-def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int) -> list[dict]:
+def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> list[dict]:
     """
     Generates configurations for sphere lights in a single frame.
 
@@ -183,21 +216,30 @@ def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int) -> list[di
 
     :param num_sphere_lights: Number of sphere lights to generate.
     :type num_sphere_lights: int
+    :param min_x: Minimum x coordinate for a light sphere.
+    :type min_x: float
+    :param max_x: Maximum x coordinate for a light sphere.
+    :type max_x: float
+    :param min_y: Minimum y coordinate for a light sphere.
+    :type min_y: float
+    :param max_y: Maximum y coordinate for a light sphere.
+    :type max_y: float
+    :param max_z: Maximum z coordinate for a light sphere.
+    :type max_z: float
     :return: A list containing the configurations of sphere lights.
     :rtype: list[dict]
     """
 
     return [
         {
-            "position": [random.uniform(-3, 3), random.uniform(-2, 2), random.uniform(0, 4)],
-            # from (-3, -2, 0) to (3, 2, 4) (including)]}
+            "position": [random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.uniform(0, max_z)],
             "color": generate_random_rgb_color()
         }
         for _ in range(num_sphere_lights)]
 
 
 def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int, usd_models: list[str],
-                         num_random_materials: int, num_sphere_lights: int) -> list[list[dict]]:
+                         num_random_materials: int, num_sphere_lights: int, min_x: float, max_x: float, min_y: float, max_y: float, max_z: float) -> list[list[dict]]:
     """
     Generates configurations for a variety of scenes.
 
@@ -213,6 +255,16 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
     :type num_random_materials: int
     :param num_sphere_lights: Number of sphere lights in each scene.
     :type num_sphere_lights: int
+    :param min_x: Minimum x coordinate for a light sphere or an object.
+    :type min_x: float
+    :param max_x: Maximum x coordinate for a light sphere or an object.
+    :type max_x: float
+    :param min_y: Minimum y coordinate for a light sphere or an object.
+    :type min_y: float
+    :param max_y: Maximum y coordinate for a light sphere or an object.
+    :type max_y: float
+    :param max_z: Maximum z coordinate for a light sphere or an object.
+    :type max_z: float
     :return: A list of a list of dictionaries, each representing a scene configuration.
     :rtype: list[list[dict]]
     """
@@ -221,11 +273,11 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
     scene_configs = []
     for usd_model in usd_models:
         scene_configs.append(generate_single_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_model,
-                                                                num_random_materials))
+                                                                num_random_materials, min_x, min_y, max_x, max_y, max_z))
 
     # Generate multiple object scenes
     scene_configs.append(generate_multiple_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_models,
-                                                              num_random_materials))
+                                                              num_random_materials, min_x, min_y, max_x, max_y, max_z))
 
     for object_type_scene_configs in scene_configs:
         for scene_config in object_type_scene_configs:
@@ -236,7 +288,7 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
             scene_config["dome_light_color"] = generate_random_rgb_color()
 
             # Add randomized sphere lights
-            scene_config["sphere_light_configs"] = generate_sphere_light_confs_for_one_frame(num_sphere_lights)
+            scene_config["sphere_light_configs"] = generate_sphere_light_confs_for_one_frame(num_sphere_lights, min_x, min_y, max_x, max_y, max_z)
 
     return scene_configs
 
@@ -285,6 +337,11 @@ def main(argv: list[str]) -> None:
                         help="Specifies the number of sphere lights with random light color in the scene")
     parser.add_argument("--train_val_split", default=0.2, type=float,
                         help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
+    parser.add_argument("--min_x", default=-2, type=float, help="The minimum x coordinate of the object in the scene")
+    parser.add_argument("--max_x", default=2, type=float, help="The maximum x coordinate of the object in the scene")
+    parser.add_argument("--min_y", default=-1, type=float, help="The minimum y coordinate of the object in the scene")
+    parser.add_argument("--max_y", default=1, type=float, help="The maximum y coordinate of the object in the scene")
+    parser.add_argument("--cam_distance_to_background", default=5, type=float, help="Defines the distance between the camera and the background plane")
 
     # Parse args
     args = parser.parse_args(argv)
@@ -305,6 +362,24 @@ def main(argv: list[str]) -> None:
         probability_of_glass_material = 0
     if probability_of_glass_material > 1:
         probability_of_glass_material = 1
+    min_x = args.min_x
+    max_x = args.max_x
+    min_y = args.min_y
+    max_y = args.min_y
+    cam_distance_to_background = args.cam_distance_to_background
+
+    # Check for plausibility
+    if cam_distance_to_background <= 0:
+        print("cam_distance_to_background must be greater than 0. Exiting...")
+        exit(-1)
+
+    if min_x > max_x:
+        print("min_x must be less than max_x. Exiting...")
+        exit(-1)
+
+    if min_y > max_y:
+        print("min_y must be less than max_y. Exiting...")
+        exit(-1)
 
     # Check for existing config at out_path
     if os.path.exists(out_path):
@@ -320,12 +395,12 @@ def main(argv: list[str]) -> None:
 
     # Build final config
     data_generation_config = {
-        "camera_config": generate_camera_conf(frame_width, frame_height),
+        "camera_config": generate_camera_conf(frame_width, frame_height, cam_distance_to_background),
         "sub_frames_per_frame": sub_frames_per_frame,
         "num_frames_per_object": num_frames_per_object,
         "materials": generate_materials_conf(num_random_materials, probability_of_glass_material),
         "scenes": generate_scenes_conf(num_frames_per_object, num_objects_per_frame, usd_models, num_random_materials,
-                                       num_sphere_lights),
+                                       num_sphere_lights, min_x, min_y, max_x, max_y, cam_distance_to_background),
         "usd_models": usd_models,
         "generation_script_args": vars(args)
     }
