@@ -205,7 +205,7 @@ def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects
         obj_configs = []
         for _ in range(num_objects_per_frame):
             usd_model = random.choice(usd_models)
-            obj_configs.append(generate_obj_conf(num_random_materials, usd_model, min_x, min_y, max_x, max_y, max_z))
+            obj_configs.append(generate_obj_conf(num_random_materials, usd_model, min_x, max_x, min_y, max_y, max_z))
 
         scene_confs.append({"object_configs": obj_configs})
 
@@ -279,12 +279,12 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
     scene_configs = []
     for usd_model in usd_models:
         scene_configs.append(generate_single_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_model,
-                                                                num_random_materials, min_x, min_y, max_x, max_y,
+                                                                num_random_materials, min_x, max_x, min_y, max_y,
                                                                 max_z))
 
     # Generate multiple object scenes
     scene_configs.append(generate_multiple_object_scene_confs(num_frames_per_object, num_objects_per_frame, usd_models,
-                                                              num_random_materials, min_x, min_y, max_x, max_y, max_z))
+                                                              num_random_materials, min_x, max_x, min_y, max_y, max_z))
 
     for object_type_scene_configs in scene_configs:
         for scene_config in object_type_scene_configs:
@@ -296,7 +296,7 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
 
             # Add randomized sphere lights
             scene_config["sphere_light_configs"] = generate_sphere_light_confs_for_one_frame(num_sphere_lights, min_x,
-                                                                                             min_y, max_x, max_y, max_z)
+                                                                                             max_x, min_y, max_y, max_z)
 
     return scene_configs
 
@@ -374,7 +374,7 @@ def main(argv: list[str]) -> None:
     min_x = args.min_x
     max_x = args.max_x
     min_y = args.min_y
-    max_y = args.min_y
+    max_y = args.max_y
     cam_distance_to_background = args.cam_distance_to_background
 
     # Check for plausibility
@@ -409,7 +409,7 @@ def main(argv: list[str]) -> None:
         "num_frames_per_object": num_frames_per_object,
         "materials": generate_materials_conf(num_random_materials, probability_of_glass_material),
         "scenes": generate_scenes_conf(num_frames_per_object, num_objects_per_frame, usd_models, num_random_materials,
-                                       num_sphere_lights, min_x, min_y, max_x, max_y, cam_distance_to_background),
+                                       num_sphere_lights, min_x, max_x, min_y, max_y, cam_distance_to_background),
         "usd_models": usd_models,
         "generation_script_args": vars(args)
     }
