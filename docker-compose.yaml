@@ -41,7 +41,7 @@ services:
       - "${CUSTOM_DATASET_DIR}/cad_models/OBJ_converted/:/usd_models/:ro"
       - "${CUSTOM_DATASET_DIR}/dataset_generator_configs/:/dataset_generator_configs/:ro"
       - "${CUSTOM_DATASET_DIR}/replicator_dataset/6_dof/:/6_dof_replicator_dataset/:rw"
-    entrypoint: [ "./python.sh", "/data_generation/6_dof_training_dataset_generator.py" ]
+    entrypoint: [ "./python.sh", "/data_generation/6_dof_dataset_generator.py" ]
     command: [ "--headless", "--output_dir", "/6_dof_replicator_dataset", "--usd_dir", "/usd_models", "--config_file", "/dataset_generator_configs/6_dof_generator_config.json", "--writer", "ResumableBasicWriter", "rgb=True", "camera_params=True", "--writer", "WorldPoseWriter" ]
     deploy:
       resources:

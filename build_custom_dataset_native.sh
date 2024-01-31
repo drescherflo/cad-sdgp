@@ -20,7 +20,7 @@ python custom_train_data/dataset_generation/config_generation/data_generation_co
 deactivate
 
 ## Generate 6 DOF dataset
-"$ISAAC_SIM_INSTALL_DIR"/python.sh custom_train_data/dataset_generation/data_generation/6_dof_training_dataset_generator.py --headless --output_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" --config_file "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" --writer ResumableBasicWriter rgb=True camera_params=True --writer WorldPoseWriter
+"$ISAAC_SIM_INSTALL_DIR"/python.sh custom_train_data/dataset_generation/data_generation/6_dof_dataset_generator.py --headless --output_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" --config_file "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" --writer ResumableBasicWriter rgb=True camera_params=True --writer WorldPoseWriter
 
 ## Convert dataset
 source custom_train_data/dataset_conversion/venv/bin/activate

@@ -1,5 +1,5 @@
-# Gebrauchsanweisung für `6_dof_training_dataset_generator.py`
-Das Skript `6_dof_training_dataset_generator.py` generiert Trainingsdatensätze für Anwendungen mit sechs Freiheitsgraden (6-DOF). 
+# Gebrauchsanweisung für `6_dof_dataset_generator.py`
+Das Skript `6_dof_dataset_generator.py` generiert Trainingsdatensätze für Anwendungen mit sechs Freiheitsgraden (6-DOF). 
 Es verwendet eine Konfigurationsdatei und USD-Modelle, um Szenen für das Training zu erstellen.
 Die Daten werden mittels sogenannter Writer erfasst und auf den Datenträger geschrieben. 
 
@@ -15,7 +15,7 @@ Dieser befindet sich für NVIDIA Isaac Sim 2023.1.1 unter Verwendung der Standar
 
 ## Beispielbefehl
 ```bash
-python.sh 6_dof_training_dataset_generator.py --headless --output_dir "/pfad/zum/output" --usd_dir "/pfad/zum/usd" --config_file "/pfad/zur/config.json" --writer Writer1 writer1_arg=true writer1_arg2=false --writer Writer2
+python.sh 6_dof_dataset_generator.py --headless --output_dir "/pfad/zum/output" --usd_dir "/pfad/zum/usd" --config_file "/pfad/zur/config.json" --writer Writer1 writer1_arg=true writer1_arg2=false --writer Writer2
 ```
 
 ## Wichtige Hinweise
