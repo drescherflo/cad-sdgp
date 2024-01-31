@@ -4,48 +4,7 @@ import os
 import json
 import sys
 import numpy as np
-import importlib
-
-
-def parse_writer_init_args(writer_init_args: list[str]) -> dict:
-    """
-    Parses initialization arguments for a writer.
-
-    Converts argument strings into a dictionary format, interpreting values as booleans if they match 'true'.
-    E.g. ['rgb=true', 'depth=true'] is converted to {'rgb': True, 'depth': True}.
-
-    :param writer_init_args: A list of string arguments.
-    :type writer_init_args: list[str]
-    :return: A dictionary mapping argument names to their parsed boolean values.
-    :rtype: dict
-    """
-
-    args_dict = {}
-    for arg in writer_init_args:
-        if '=' in arg:
-            key, value = arg.split('=', 1)
-            args_dict[key] = value.lower() == 'true'
-    return args_dict
-
-
-def parse_writer_args(writer_args: list[list[str]]) -> list[dict]:
-    """
-    Parses arguments for multiple writers.
-
-    Converts a list of argument lists into a dictionary format, suitable for initializing multiple writers.
-
-    :param writer_args: A list of lists, each containing arguments for a specific writer.
-    :type writer_args: list[list[str]]
-    :return: A dictionary containing configurations for each writer.
-    :rtype: list[dict]
-    """
-
-    writers = []
-    for writer_arg in writer_args:
-        writer_conf = {"name": writer_arg[0], "args": parse_writer_init_args(writer_arg[1:])}
-        writers.append(writer_conf)
-
-    return writers
+from utils.config import parse_writer_args
 
 
 # Parse args
@@ -64,32 +23,16 @@ CONFIG = {"renderer": "RayTracedLighting", "headless": args.headless}
 simulation_app = SimulationApp(launch_config=CONFIG)
 
 
-# Omniverse imports
-import omni
+# Omniverse imports and omniverse related imports need to be done after the simulation has been started
 import omni.replicator.core as rep
-import omni.graph.core as og
 from omni.isaac.core.utils.stage import create_new_stage
-from omni.isaac.core import World, SimulationContext
 from omni.isaac.core.prims import XFormPrim
-from omni.isaac.core.utils import prims, extensions
-from omni.isaac.core.utils.semantics import add_update_semantics
-from omni.isaac.core.materials import OmniPBR, OmniGlass
-from omni.isaac.sensor import Camera
+from omni.isaac.core.utils import prims
 from omni.isaac.core.utils.rotations import euler_angles_to_quat
-from resumable_writers.writer_interface import ResumableWriterInterface
 
-
-def generate_materials(materials_config) -> list[OmniGlass | OmniPBR]:
-    materials = []
-    for material_config in materials_config:
-        if material_config["is_glass"]:
-            materials.append(OmniGlass(f"/obj_materials/material_{material_config['material_idx']}", color=np.array(material_config["color"])))
-        else:
-            material = OmniPBR(f"/obj_materials/material_{material_config['material_idx']}", color=np.array(material_config["color"]))
-            material.set_reflection_roughness(material_config["surface_roughness"])
-            materials.append(material)
-
-    return materials
+from resumable_writers import load_resumable_writer_plugins
+from utils.scene_setup import generate_materials
+from utils import quit_on_error
 
 
 def extract_per_scene_config(scenes: list[dict], config_key: str) -> list:
@@ -107,36 +50,6 @@ def extract_per_scene_config(scenes: list[dict], config_key: str) -> list:
     return [scene[config_key] for scene in scenes]
 
 
-def load_resumable_writer_plugins(plugin_dir: str, plugin_package_name) -> None:
-    """
-    Loads resumable writer plugins from a specified directory.
-
-    :param plugin_dir: Directory containing the writer plugin files.
-    :param plugin_package_name: Name of the package where writer plugins are located.
-    :type plugin_dir: str
-    :type plugin_package_name: str
-    """
-
-    for filename in os.listdir(plugin_dir):
-        if filename.endswith('.py') and not filename.startswith('_'):
-            module_name = filename[:-3]
-            module = importlib.import_module('.' + module_name, package=plugin_package_name)
-            for attribute_name in dir(module):
-                attribute = getattr(module, attribute_name)
-                if isinstance(attribute, type) and issubclass(attribute, ResumableWriterInterface) and attribute is not ResumableWriterInterface:
-                    rep.WriterRegistry.register(attribute)
-
-
-def __quit_on_error() -> None:
-    """
-    Terminates the program execution in case of an error.
-    This function should be called when an unrecoverable error is encountered.
-    """
-
-    simulation_app.close()
-    exit(-1)
-
-
 def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     """
     Main function to handle the dataset generation process.
@@ -150,10 +63,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     """
 
     # Load resumable writers
-    plugin_package_name = "resumable_writers"
-    script_location_dir = os.path.dirname(os.path.abspath(__file__))
-    plugin_dir = os.path.join(script_location_dir, plugin_package_name) # plugin_dir has to be relative to the script. This is not always the case, e.g. when debugging with VSCode
-    load_resumable_writer_plugins(plugin_dir, plugin_package_name)
+    load_resumable_writer_plugins()
 
     # Load json config
     with open(conf_path, "r") as f:
@@ -181,7 +91,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     # Check for empty out_dir
     if len(os.listdir(out_dir)) != 0:
         print("Output directory is not empty. Exiting...")
-        __quit_on_error()
+        quit_on_error(simulation_app)
 
     with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
         json.dump(train_val_split_config, f, indent=4)
@@ -233,7 +143,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             usd_path = os.path.join(usd_dir, object_config["usd_model"])
             if not os.path.isfile(usd_path):
                 print(f"USD file at path '{usd_path}' could not be found. Exiting...", file=sys.stderr)
-                __quit_on_error()
+                quit_on_error(simulation_app)
                 
             object_prims.append(prims.create_prim(prim_path=f"/objects/object_{i:0{len(str(num_objects_per_scene))}}", usd_path=usd_path, semantic_label=object_config["semantic_class_label"]))
 
@@ -267,7 +177,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         for current_scene_config in object_type_specific_scene_configs:
             if not simulation_app.is_running():
                 print("Simulation has been stopped. Exiting...")
-                __quit_on_error()
+                quit_on_error(simulation_app)
 
             print(f"Writing frame {str(frame_number + 1)} of {num_frames}")
 
