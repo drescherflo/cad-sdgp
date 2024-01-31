@@ -25,7 +25,7 @@ services:
               capabilities: [ gpu ]
     profiles: [ "manual" ]  # Disable autostart with compose up
   config_generator_for_6_dof_dataset_generation:
-    build: custom_train_data/dataset_generation/config_generation/
+    build: custom_dataset/dataset_generation/config_generation/
     image: drescherflo/ma_config_generator_for_dataset_generation
     volumes:
       - "${CUSTOM_DATASET_DIR}/cad_models/OBJ_converted/:/usd_models/:ro"
@@ -37,7 +37,7 @@ services:
     environment:
       - ACCEPT_EULA=Y
     volumes:
-      - "./custom_train_data/dataset_generation/data_generation/:/data_generation/:ro"
+      - "./custom_dataset/dataset_generation/data_generation/:/data_generation/:ro"
       - "${CUSTOM_DATASET_DIR}/cad_models/OBJ_converted/:/usd_models/:ro"
       - "${CUSTOM_DATASET_DIR}/dataset_generator_configs/:/dataset_generator_configs/:ro"
       - "${CUSTOM_DATASET_DIR}/replicator_dataset/6_dof/:/6_dof_replicator_dataset/:rw"
@@ -52,10 +52,10 @@ services:
               capabilities: [ gpu ]
     profiles: [ "manual" ]  # Disable autostart with compose up
   dataset_converter:
-    build: custom_train_data/dataset_conversion/
+    build: custom_dataset/dataset_conversion/
     image: drescherflo/ma_dataset_converter
     volumes:
-      - "./custom_train_data/dataset_conversion/converter_plugins/:/dataset_converter/converter_plugins/:ro"  # Override plugin dir, so new plugins can be added without rebuilding image
+      - "./custom_dataset/dataset_conversion/converter_plugins/:/dataset_converter/converter_plugins/:ro"  # Override plugin dir, so new plugins can be added without rebuilding image
       - "${CUSTOM_DATASET_DIR}/cad_models/OBJ/:/obj_models/:ro"
       - "${CUSTOM_DATASET_DIR}/replicator_dataset/6_dof/:/6_dof/:ro"
       - "${CUSTOM_DATASET_DIR}/converted/:/converted_datasets/:rw"
