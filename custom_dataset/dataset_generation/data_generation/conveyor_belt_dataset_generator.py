@@ -49,6 +49,11 @@ def main() -> None:
         print("Could not open world. Exiting...")
         quit_on_error(simulation_app)
 
+    # Set conveyor speed to 1 m/s
+    conveyor_nodes = rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/ConveyorBeltGraph\/ConveyorNode")
+    with conveyor_nodes:
+        rep.modify.attribute("velocity", 1.0)
+
     while simulation_app.is_running():
         simulation_app.update()
     
