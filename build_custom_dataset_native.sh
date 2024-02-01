@@ -16,7 +16,7 @@ conda run --no-capture-output -n step-to-obj python step_to_obj_conversion/step_
 
 ## Generate config for 6 DOF dataset
 source custom_dataset/dataset_generation/config_generation/venv/bin/activate
-python custom_dataset/dataset_generation/config_generation/data_generation_config_generator.py --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" --out_path "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" --num_frames_per_object 1000
+python custom_dataset/dataset_generation/config_generation/6_dof_config_generator.py --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" --out_path "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" --num_frames_per_object 1000
 deactivate
 
 ## Generate 6 DOF dataset
