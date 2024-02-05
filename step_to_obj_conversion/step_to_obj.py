@@ -86,9 +86,9 @@ def main():
         tmp_file_path = os.path.join(tmp_dir, file).replace(".stp", ".stl").replace(".step", ".stl")
         output_file_path = os.path.join(args.output_dir, file).replace(".stp", ".obj").replace(".step", ".obj")
 
-        # Convert stp to (high quality) stl file in tmp
+        # Convert stp to stl file in tmp
         shape = read_step_file(input_file_path)
-        write_stl_file(shape, tmp_file_path, mode="ascii", linear_deflection=0.001, angular_deflection=0.001)
+        write_stl_file(shape, tmp_file_path, mode="ascii")
 
         # Convert tmp stl to obj
         stl_mesh = mesh.Mesh.from_file(tmp_file_path)
