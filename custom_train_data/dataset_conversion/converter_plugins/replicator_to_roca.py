@@ -63,7 +63,7 @@ class ReplicatorToRoca(ConverterInterface):
 
         # Sort is required, because this is how the order in scan2cad_alignment_classes.json is created
         # The index of the class in scan2cad_alignment_classes.json is then used as the category_id during training
-        sorted(files_and_labels, key=lambda x: x[1])
+        files_and_labels = sorted(files_and_labels, key=lambda x: x[1])
 
         # Build dictionary list
         return [{"obj_file": obj_file, "semantic_label": semantic_label, "class_id": idx} for
