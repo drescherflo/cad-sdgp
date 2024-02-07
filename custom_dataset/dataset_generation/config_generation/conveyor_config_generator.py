@@ -119,7 +119,7 @@ def generate_object_config(usd_model: str, object_init_min_x: float, object_init
                          object_init_min_y: float, object_init_max_y: float,
                          object_init_min_z: float, object_init_max_z: float) -> dict:
     return {
-                "model": usd_model,
+                "usd_model": usd_model,
                 "object_init_pose": {
                     "position": generate_random_vec_3(object_init_min_x, object_init_max_x, object_init_min_y, object_init_max_y, object_init_min_z, object_init_max_z),
                     "rotation": generate_random_vec_3(-180, 180, -180, 180, -180, 180) # all axes from (-180° to 180°) (including)
