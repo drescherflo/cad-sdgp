@@ -72,7 +72,7 @@ def generate_materials_conf(num_random_materials: int, probability_of_glass_mate
 
 
 def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: float, max_x: float, min_y: float,
-                                              max_y: float, min_z: float, max_z: float) -> list[dict]:
+                                              max_y: float, min_z: float, max_z: float, min_intensity: float, max_intensity: float) -> list[dict]:
     """
     Generates configurations for sphere lights in a single frame.
 
@@ -99,13 +99,72 @@ def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: flo
     return [
         {
             "position": generate_random_vec_3(min_x, max_x, min_y, max_y, min_z, max_z),
-            "color": generate_random_rgb_color()
+            "color": generate_random_rgb_color(),
+            "intensity": random.uniform(min_intensity, max_intensity)
         }
         for _ in range(num_sphere_lights)]
 
 
 def generate_random_vec_3(min_x: float, max_x: float, min_y: float, max_y: float, min_z: float, max_z: float):
     return [random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.uniform(min_z, max_z)]
+
+
+def generate_object_config(usd_model: str, object_init_min_x: float, object_init_max_x: float,
+                         object_init_min_y: float, object_init_max_y: float,
+                         object_init_min_z: float, object_init_max_z: float) -> dict:
+    return {
+                "model": usd_model,
+                "object_init_pose": {
+                    "position": generate_random_vec_3(object_init_min_x, object_init_max_x, object_init_min_y, object_init_max_y, object_init_min_z, object_init_max_z),
+                    "rotation": generate_random_vec_3(-180, 180, -180, 180, -180, 180) # all axes from (-180° to 180°) (including)
+                },
+                "semantic_class_label": usd_model.removesuffix("_obj.usd").lower().replace(" ", "_")
+            }
+
+
+def generate_per_frame_config(num_random_materials: int,
+                         num_frames_per_scene: int, num_objects_per_scene: int,
+                         num_sphere_lights: int,
+                         sphere_min_x: float, sphere_max_x: float,
+                         sphere_min_y: float, sphere_max_y: float,
+                         sphere_min_z: float, sphere_max_z: float,
+                         sphere_min_intensity: float, sphere_max_intensity: float,
+                         direct_light_min_rot_x: float, direct_light_max_rot_x: float,
+                         direct_light_min_rot_y: float, direct_light_max_rot_y: float,
+                         direct_light_min_rot_z: float, direct_light_max_rot_z: float,
+                         camera_pos_min_x: float, camera_pos_max_x: float,
+                         camera_pos_min_y: float, camera_pos_max_y: float,
+                         camera_pos_min_z: float, camera_pos_max_z: float,
+                         camera_rot_min_x: float, camera_rot_max_x: float,
+                         camera_rot_min_y: float, camera_rot_max_y: float,
+                         camera_rot_min_z: float, camera_rot_max_z: float,
+                         direct_light_min_intensity: float, direct_light_max_intensity: float) -> dict:
+    return {
+        "camera_poses": [{
+            "position": generate_random_vec_3(camera_pos_min_x, camera_pos_max_x, camera_pos_min_y, camera_pos_max_y,
+                                              camera_pos_min_z, camera_pos_max_z),
+            "rotation": generate_random_vec_3(camera_rot_min_x, camera_rot_max_x, camera_rot_min_y, camera_rot_max_y,
+                                              camera_rot_min_z, camera_rot_max_z)
+        } for _ in range(num_frames_per_scene)],
+        "sphere_light_configs": [
+            generate_sphere_light_confs_for_one_frame(num_sphere_lights, sphere_min_x, sphere_max_x, sphere_min_y,
+                                                      sphere_max_y, sphere_min_z, sphere_max_z, sphere_min_intensity,
+                                                      sphere_max_intensity) for _ in range(num_frames_per_scene)],
+        "direct_light_configs": [{
+            "rotation": generate_random_vec_3(direct_light_min_rot_x, direct_light_max_rot_x, direct_light_min_rot_y,
+                                              direct_light_max_rot_y, direct_light_min_rot_z, direct_light_max_rot_z),
+            "color": generate_random_rgb_color(),
+            "intensity": random.uniform(direct_light_min_intensity, direct_light_max_intensity)
+        } for _ in range(num_frames_per_scene)],
+        "ground_plane_colors": [generate_random_rgb_color() for _ in range(num_frames_per_scene)],
+        "object_material_assignments": [
+            [{
+                "object_idx": i,
+                "material_idx": random.randint(0, num_random_materials - 1)
+            } for i in range(num_objects_per_scene)]
+            for _ in range(num_frames_per_scene)]
+    }
+
 
 
 def generate_scenes_conf(usd_models: list[str], num_random_materials: int,
@@ -117,15 +176,17 @@ def generate_scenes_conf(usd_models: list[str], num_random_materials: int,
                          sphere_min_x: float, sphere_max_x: float,
                          sphere_min_y: float, sphere_max_y: float,
                          sphere_min_z: float, sphere_max_z: float,
-                         direct_light_min_x: float, direct_light_max_x: float,
-                         direct_light_min_y: float, direct_light_max_y: float,
-                         direct_light_min_z: float, direct_light_max_z: float,
+                         sphere_min_intensity: float, sphere_max_intensity: float,
+                         direct_light_min_rot_x: float, direct_light_max_rot_x: float,
+                         direct_light_min_rot_y: float, direct_light_max_rot_y: float,
+                         direct_light_min_rot_z: float, direct_light_max_rot_z: float,
                          camera_pos_min_x: float, camera_pos_max_x: float,
                          camera_pos_min_y: float, camera_pos_max_y: float,
                          camera_pos_min_z: float, camera_pos_max_z: float,
                          camera_rot_min_x: float, camera_rot_max_x: float,
                          camera_rot_min_y: float, camera_rot_max_y: float,
-                         camera_rot_min_z: float, camera_rot_max_z: float
+                         camera_rot_min_z: float, camera_rot_max_z: float,
+                         direct_light_min_intensity: float, direct_light_max_intensity: float
                          ) -> list:
 
     # TODO-List:
@@ -141,32 +202,26 @@ def generate_scenes_conf(usd_models: list[str], num_random_materials: int,
     for usd_model in usd_models:
         for _ in range(num_scenes_per_object):
             scene_config = {}
-            scene_config["objects"] = [{
-                "model": usd_model,
-                "object_init_pose": {
-                    "position": generate_random_vec_3(object_init_min_x, object_init_max_x, object_init_min_y, object_init_max_y, object_init_min_z, object_init_max_z),
-                    "rotation": generate_random_vec_3(-180, 180, -180, 180, -180, 180) # all axes from (-180° to 180°) (including)
-                },
-                "semantic_class_label": usd_model.removesuffix("_obj.usd").lower().replace(" ", "_")
-            } for _ in range(num_objects_per_scene)]
-            scene_config["per_frame_config"] = {
-                "camera_poses": [{
-                    "position": generate_random_vec_3(camera_pos_min_x, camera_pos_max_x, camera_pos_min_y, camera_pos_max_y, camera_pos_min_z, camera_pos_max_z),
-                    "rotation": generate_random_vec_3(camera_rot_min_x, camera_rot_max_x, camera_rot_min_y, camera_rot_max_y, camera_rot_min_z, camera_rot_max_z)
-                } for _ in range(num_objects_per_scene)],
-                "sphere_light_configs": [generate_sphere_light_confs_for_one_frame(num_sphere_lights, sphere_min_x, sphere_max_x, sphere_min_y, sphere_max_y, sphere_min_z, sphere_max_z) for _ in range(num_frames_per_scene)],
-                "direct_light_configs": [{
-                    "position": generate_random_vec_3(direct_light_min_x, direct_light_max_x, direct_light_min_y, direct_light_max_y, direct_light_min_z, direct_light_max_z),
-                    "color": generate_random_rgb_color()
-                } for _ in range(num_frames_per_scene)],
-                "ground_plane_colors": [generate_random_rgb_color() for _ in range(num_frames_per_scene)],
-                "object_material_assignments": [
-                    [{
-                        "object_idx": i,
-                        "material_idx": random.randint(0, num_random_materials - 1)
-                    } for i in range(num_objects_per_scene)]
-                    for _ in range(num_frames_per_scene)]
-            }
+            scene_config["objects"] = [generate_object_config(usd_model, object_init_min_x, object_init_max_x,
+                         object_init_min_y, object_init_max_y,
+                         object_init_min_z, object_init_max_z) for _ in range(num_objects_per_scene)]
+            scene_config["per_frame_config"] = generate_per_frame_config(num_random_materials,
+                         num_frames_per_scene, num_objects_per_scene,
+                         num_sphere_lights,
+                         sphere_min_x, sphere_max_x,
+                         sphere_min_y, sphere_max_y,
+                         sphere_min_z, sphere_max_z,
+                         sphere_min_intensity, sphere_max_intensity,
+                         direct_light_min_rot_x, direct_light_max_rot_x,
+                         direct_light_min_rot_y, direct_light_max_rot_y,
+                         direct_light_min_rot_z, direct_light_max_rot_z,
+                         camera_pos_min_x, camera_pos_max_x,
+                         camera_pos_min_y, camera_pos_max_y,
+                         camera_pos_min_z, camera_pos_max_z,
+                         camera_rot_min_x, camera_rot_max_x,
+                         camera_rot_min_y, camera_rot_max_y,
+                         camera_rot_min_z, camera_rot_max_z,
+                         direct_light_min_intensity, direct_light_max_intensity)
 
             scene_configs.append(scene_config)
 
@@ -176,40 +231,27 @@ def generate_scenes_conf(usd_models: list[str], num_random_materials: int,
             scene_config = {"objects": []}
             for _ in range(num_objects_per_scene):
                 usd_model = random.choice(usd_models)
-                scene_config["objects"].append({
-                    "model": usd_model,
-                    "object_init_pose": {
-                        "position": generate_random_vec_3(object_init_min_x, object_init_max_x, object_init_min_y,
-                                                          object_init_max_y, object_init_min_z, object_init_max_z),
-                        "rotation": generate_random_vec_3(-180, 180, -180, 180, -180, 180)
-                        # all axes from (-180° to 180°) (including)
-                    },
-                    "semantic_class_label": usd_model.removesuffix("_obj.usd").lower().replace(" ", "_")
-                })
-            scene_config["per_frame_config"] = {
-                "camera_poses": [{
-                    "position": generate_random_vec_3(camera_pos_min_x, camera_pos_max_x, camera_pos_min_y,
-                                                      camera_pos_max_y, camera_pos_min_z, camera_pos_max_z),
-                    "rotation": generate_random_vec_3(camera_rot_min_x, camera_rot_max_x, camera_rot_min_y,
-                                                      camera_rot_max_y, camera_rot_min_z, camera_rot_max_z)
-                } for _ in range(num_objects_per_scene)],
-                "sphere_light_configs": [
-                    generate_sphere_light_confs_for_one_frame(num_sphere_lights, sphere_min_x, sphere_max_x,
-                                                              sphere_min_y, sphere_max_y, sphere_min_z, sphere_max_z)
-                    for _ in range(num_frames_per_scene)],
-                "direct_light_configs": [{
-                    "position": generate_random_vec_3(direct_light_min_x, direct_light_max_x, direct_light_min_y,
-                                                      direct_light_max_y, direct_light_min_z, direct_light_max_z),
-                    "color": generate_random_rgb_color()
-                } for _ in range(num_frames_per_scene)],
-                "ground_plane_colors": [generate_random_rgb_color() for _ in range(num_frames_per_scene)],
-                "object_material_assignments": [
-                    [{
-                        "object_idx": i,
-                        "material_idx": random.randint(0, num_random_materials - 1)
-                    } for i in range(num_objects_per_scene)]
-                    for _ in range(num_frames_per_scene)]
-            }
+                scene_config["objects"].append(generate_object_config(usd_model, object_init_min_x, object_init_max_x,
+                         object_init_min_y, object_init_max_y,
+                         object_init_min_z, object_init_max_z))
+
+            scene_config["per_frame_config"] = generate_per_frame_config(num_random_materials,
+                         num_frames_per_scene, num_objects_per_scene,
+                         num_sphere_lights,
+                         sphere_min_x, sphere_max_x,
+                         sphere_min_y, sphere_max_y,
+                         sphere_min_z, sphere_max_z,
+                         sphere_min_intensity, sphere_max_intensity,
+                         direct_light_min_rot_x, direct_light_max_rot_x,
+                         direct_light_min_rot_y, direct_light_max_rot_y,
+                         direct_light_min_rot_z, direct_light_max_rot_z,
+                         camera_pos_min_x, camera_pos_max_x,
+                         camera_pos_min_y, camera_pos_max_y,
+                         camera_pos_min_z, camera_pos_max_z,
+                         camera_rot_min_x, camera_rot_max_x,
+                         camera_rot_min_y, camera_rot_max_y,
+                         camera_rot_min_z, camera_rot_max_z,
+                         direct_light_min_intensity, direct_light_max_intensity)
 
             scene_configs.append(scene_config)
 
@@ -272,66 +314,76 @@ def main(argv: list[str]) -> None:
                         help="Specifies the number of sphere lights with random light color in the scene")
     parser.add_argument("--train_val_split", default=0.2, type=float,
                         help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
-    parser.add_argument("--object_init_min_x", default=-2, type=float,
-                        help="The minimum initial x coordinate of the object in the scene")  # TODO adjust default values
-    parser.add_argument("--object_init_max_x", default=2, type=float,
+    parser.add_argument("--object_init_min_x", default=-5, type=float,
+                        help="The minimum initial x coordinate of the object in the scene")
+    parser.add_argument("--object_init_max_x", default=-2.5, type=float,
                         help="The maximum initial x coordinate of the object in the scene")
-    parser.add_argument("--object_init_min_y", default=-1, type=float,
+    parser.add_argument("--object_init_min_y", default=-0.4, type=float,
                         help="The minimum initial y coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_y", default=1, type=float,
+    parser.add_argument("--object_init_max_y", default=0.4, type=float,
                         help="The maximum initial y coordinate of the object in the scene")
-    parser.add_argument("--object_init_min_z", default=-1, type=float,
+    parser.add_argument("--object_init_min_z", default=3, type=float,
                         help="The minimum initial z coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_z", default=1, type=float,
+    parser.add_argument("--object_init_max_z", default=6, type=float,
                         help="The maximum initial z coordinate of the object in the scene")
-    parser.add_argument("--sphere_min_x", default=-2, type=float,
+    parser.add_argument("--sphere_min_x", default=-2.5, type=float,
                         help="The minimum x coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_x", default=2, type=float,
+    parser.add_argument("--sphere_max_x", default=2.5, type=float,
                         help="The maximum x coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_y", default=-1, type=float,
+    parser.add_argument("--sphere_min_y", default=-0.5, type=float,
                         help="The minimum y coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_y", default=1, type=float,
+    parser.add_argument("--sphere_max_y", default=0.5, type=float,
                         help="The maximum y coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_z", default=-1, type=float,
+    parser.add_argument("--sphere_min_z", default=1.8, type=float,
                         help="The minimum z coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_z", default=1, type=float,
+    parser.add_argument("--sphere_max_z", default=2.2, type=float,
                         help="The maximum z coordinate of light spheres in the scene")
-    parser.add_argument("--camera_pos_min_x", default=-2, type=float,
+    parser.add_argument("--sphere_min_intensity", default=5000, type=float,
+                        help="The minimum light intensity of a sphere light")
+    parser.add_argument("--sphere_max_intensity", default=50000, type=float,
+                        help="The maximum light intensity of a sphere light")
+    parser.add_argument("--camera_pos_min_x", default=-0.5, type=float,
                         help="The minimum x coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_max_x", default=2, type=float,
+    parser.add_argument("--camera_pos_max_x", default=0.5, type=float,
                         help="The maximum x coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_min_y", default=-1, type=float,
+    parser.add_argument("--camera_pos_min_y", default=-0.3, type=float,
                         help="The minimum y coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_max_y", default=1, type=float,
+    parser.add_argument("--camera_pos_max_y", default=0.3, type=float,
                         help="The maximum y coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_min_z", default=-1, type=float,
+    parser.add_argument("--camera_pos_min_z", default=3, type=float,
                         help="The minimum z coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_max_z", default=1, type=float,
+    parser.add_argument("--camera_pos_max_z", default=6, type=float,
                         help="The maximum z coordinate of the camera in the scene")
-    parser.add_argument("--camera_rot_min_x", default=-2, type=float,
+    parser.add_argument("--camera_rot_min_x", default=-180, type=float,
                         help="The minimum rotation of the camera around the x axis in degrees")
-    parser.add_argument("--camera_rot_max_x", default=2, type=float,
+    parser.add_argument("--camera_rot_max_x", default=180, type=float,
                         help="The maximum rotation of the camera around the x axis in degrees")
-    parser.add_argument("--camera_rot_min_y", default=-1, type=float,
+    parser.add_argument("--camera_rot_min_y", default=-120, type=float,
                         help="The minimum rotation of the camera around the y axis in degrees")
-    parser.add_argument("--camera_rot_max_y", default=1, type=float,
+    parser.add_argument("--camera_rot_max_y", default=-60, type=float,
                         help="The maximum rotation of the camera around the y axis in degrees")
-    parser.add_argument("--camera_rot_min_z", default=-1, type=float,
+    parser.add_argument("--camera_rot_min_z", default=-180, type=float,
                         help="The minimum rotation of the camera around the z axis in degrees")
-    parser.add_argument("--camera_rot_max_z", default=1, type=float,
+    parser.add_argument("--camera_rot_max_z", default=180, type=float,
                         help="The maximum rotation of the camera around the z axis in degrees")
-    parser.add_argument("--direct_light_min_x", default=-2, type=float,
+    parser.add_argument("--direct_light_min_rot_x", default=-90, type=float,
                         help="The minimum x coordinate of the direct light in the scene")
-    parser.add_argument("--direct_light_max_x", default=2, type=float,
+    parser.add_argument("--direct_light_max_rot_x", default=90, type=float,
                         help="The maximum x coordinate of the direct light in the scene")
-    parser.add_argument("--direct_light_min_y", default=-1, type=float,
+    parser.add_argument("--direct_light_min_rot_y", default=-90, type=float,
                         help="The minimum y coordinate of the direct light in the scene")
-    parser.add_argument("--direct_light_max_y", default=1, type=float,
+    parser.add_argument("--direct_light_max_rot_y", default=90, type=float,
                         help="The maximum y coordinate of the direct light in the scene")
-    parser.add_argument("--direct_light_min_z", default=-1, type=float,
+    parser.add_argument("--direct_light_min_rot_z", default=-180, type=float,
                         help="The minimum z coordinate of the direct light in the scene")
-    parser.add_argument("--direct_light_max_z", default=1, type=float,
+    parser.add_argument("--direct_light_max_rot_z", default=180, type=float,
                         help="The maximum z coordinate of the direct light in the scene")
+    parser.add_argument("--direct_light_min_intensity", default=1000, type=float,
+                        help="The minimum light intensity of the direct light")
+    parser.add_argument("--direct_light_max_intensity", default=10000, type=float,
+                        help="The minimum light intensity of the direct light")
+    parser.add_argument("--conveyor_belt_speed", default=0.2, type=float,
+                        help="The speed of the conveyor belt in the simulation")
 
 
     # TODO: evaulation-data-flag
@@ -357,7 +409,7 @@ def main(argv: list[str]) -> None:
         probability_of_glass_material = 1
     num_frames_per_scene = args.num_frames_per_scene
     num_objects_per_scene = args.num_objects_per_scene
-    num_scenes_per_object = args.num_scnenes_per_object
+    num_scenes_per_object = args.num_scenes_per_object
     num_sphere_lights = args.num_sphere_lights
     val_dataset_share = args.train_val_split
     object_init_min_x = args.object_init_min_x
@@ -372,6 +424,8 @@ def main(argv: list[str]) -> None:
     sphere_max_y = args.sphere_max_y
     sphere_min_z = args.sphere_min_z
     sphere_max_z = args.sphere_max_z
+    sphere_min_intensity = args.sphere_min_intensity
+    sphere_max_intensity = args.sphere_max_intensity
     camera_pos_min_x = args.camera_pos_min_x
     camera_pos_max_x = args.camera_pos_max_x
     camera_pos_min_y = args.camera_pos_min_y
@@ -384,12 +438,15 @@ def main(argv: list[str]) -> None:
     camera_rot_max_y = args.camera_rot_max_y
     camera_rot_min_z = args.camera_rot_min_z
     camera_rot_max_z = args.camera_rot_max_z
-    direct_light_min_x = args.direct_light_min_x
-    direct_light_max_x = args.direct_light_max_x
-    direct_light_min_y = args.direct_light_min_y
-    direct_light_max_y = args.direct_light_max_y
-    direct_light_min_z = args.direct_light_min_z
-    direct_light_max_z = args.direct_light_max_z
+    direct_light_min_rot_x = args.direct_light_min_rot_x
+    direct_light_max_rot_x = args.direct_light_max_rot_x
+    direct_light_min_rot_y = args.direct_light_min_rot_y
+    direct_light_max_rot_y = args.direct_light_max_rot_y
+    direct_light_min_rot_z = args.direct_light_min_rot_z
+    direct_light_max_rot_z = args.direct_light_max_rot_z
+    direct_light_min_intensity = args.direct_light_min_intensity
+    direct_light_max_intensity = args.direct_light_max_intensity
+    conveyor_belt_speed = args.conveyor_belt_speed
 
     # Check range args for plausibility
     check_range_plausibility(object_init_min_x, object_init_max_x)
@@ -398,15 +455,17 @@ def main(argv: list[str]) -> None:
     check_range_plausibility(sphere_min_x, sphere_max_x)
     check_range_plausibility(sphere_min_y, sphere_max_y)
     check_range_plausibility(sphere_min_z, sphere_max_z)
+    check_range_plausibility(sphere_min_intensity, sphere_max_intensity)
     check_range_plausibility(camera_pos_min_x, camera_pos_max_x)
     check_range_plausibility(camera_pos_min_y, camera_pos_max_y)
     check_range_plausibility(camera_pos_min_z, camera_pos_max_z)
     check_range_plausibility(camera_rot_min_x, camera_rot_max_x)
     check_range_plausibility(camera_rot_min_y, camera_rot_max_y)
     check_range_plausibility(camera_rot_min_z, camera_rot_max_z)
-    check_range_plausibility(direct_light_min_x, direct_light_max_x)
-    check_range_plausibility(direct_light_min_y, direct_light_max_y)
-    check_range_plausibility(direct_light_min_z, direct_light_max_z)
+    check_range_plausibility(direct_light_min_rot_x, direct_light_max_rot_x)
+    check_range_plausibility(direct_light_min_rot_y, direct_light_max_rot_y)
+    check_range_plausibility(direct_light_min_rot_z, direct_light_max_rot_z)
+    check_range_plausibility(direct_light_min_intensity, direct_light_max_intensity)
 
     # Check for existing config at out_path
     if os.path.exists(out_path):
@@ -434,27 +493,32 @@ def main(argv: list[str]) -> None:
                          sphere_min_x, sphere_max_x,
                          sphere_min_y, sphere_max_y,
                          sphere_min_z, sphere_max_z,
-                         direct_light_min_x, direct_light_max_x,
-                         direct_light_min_y, direct_light_max_y,
-                         direct_light_min_z, direct_light_max_z,
+                         sphere_min_intensity, sphere_max_intensity,
+                         direct_light_min_rot_x, direct_light_max_rot_x,
+                         direct_light_min_rot_y, direct_light_max_rot_y,
+                         direct_light_min_rot_z, direct_light_max_rot_z,
                          camera_pos_min_x, camera_pos_max_x,
                          camera_pos_min_y, camera_pos_max_y,
                          camera_pos_min_z, camera_pos_max_z,
                          camera_rot_min_x, camera_rot_max_x,
                          camera_rot_min_y, camera_rot_max_y,
-                         camera_rot_min_z, camera_rot_max_z),
+                         camera_rot_min_z, camera_rot_max_z,
+                         direct_light_min_intensity, direct_light_max_intensity),
+        "conveyor_belt_speed": conveyor_belt_speed,
         "usd_models": usd_models,
         "num_frames_per_scene": num_frames_per_scene,
         "num_scenes_per_object": num_scenes_per_object,
         "generation_script_args": vars(args)
     }
 
-    (train_scenes, val_scenes) = generate_train_val_splits(data_generation_config["scenes"], val_dataset_share)
+    (train_scenes, val_scenes) = generate_train_val_splits(data_generation_config["scenes"], val_dataset_share)  # FIXME: one scene is not one frame!!!
     data_generation_config["train_scenes"] = train_scenes.tolist()
     data_generation_config["val_scenes"] = val_scenes.tolist()
 
     # Write config
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    out_dir = os.path.dirname(out_path)
+    if out_dir != "":
+        os.makedirs(out_dir, exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(data_generation_config, f, indent=4)
 
