@@ -140,7 +140,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         num_objects_per_scene = len(object_configs[0])
         object_prims = []
         for i, object_config in enumerate(object_configs[0]):
-            usd_path = os.path.join(usd_dir, object_config["usd_model"])
+            usd_path = os.path.abspath(os.path.join(usd_dir, object_config["usd_model"]))
             if not os.path.isfile(usd_path):
                 print(f"USD file at path '{usd_path}' could not be found. Exiting...", file=sys.stderr)
                 quit_on_error(simulation_app)
