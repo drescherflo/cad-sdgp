@@ -1,6 +1,6 @@
 # Gebrauchsanweisung
 
-Das Skript `data_generation_config_generator.py` dient zur Generierung einer Konfigurationsdatei für die Erstellung von Trainingsdaten. 
+Das Skript `6_dof_config_generator.py` dient zur Generierung einer Konfigurationsdatei für die Erstellung von Trainingsdaten. 
 Es erstellt eine detaillierte Konfiguration, die Kameraeinstellungen, Materialkonfigurationen, Szenenkonfigurationen und weitere Parameter enthält. 
 Die generierte Konfiguration wird im JSON-Format gespeichert.
 
@@ -24,7 +24,7 @@ Die generierte Konfiguration wird im JSON-Format gespeichert.
 
 ## Beispielbefehl
 ```bash
-python data_generation_config_generator.py --usd_dir "/pfad/zum/verzeichnis" --out_path "/pfad/zu/config.json" --frame_width 1920 --frame_height 1080 --sub_frames_per_frame 5 --num_frames_per_object 10 --num_objects_per_frame 3 --num_random_materials 20 --num_sphere_lights 5 --train_val_split 0.2 --probability_of_glass_material 0.3 --cam_distance_to_background 10.0 --min_x -5.0 --max_x 5.0 --min_y -5.0 --max_y 5.0
+python 6_dof_config_generator.py --usd_dir "/pfad/zum/verzeichnis" --out_path "/pfad/zu/config.json" --frame_width 1920 --frame_height 1080 --sub_frames_per_frame 5 --num_frames_per_object 10 --num_objects_per_frame 3 --num_random_materials 20 --num_sphere_lights 5 --train_val_split 0.2 --probability_of_glass_material 0.3 --cam_distance_to_background 10.0 --min_x -5.0 --max_x 5.0 --min_y -5.0 --max_y 5.0
 ```
 
 ## Wichtige Hinweise
