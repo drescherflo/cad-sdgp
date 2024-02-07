@@ -1,3 +1,9 @@
+"""
+Script to create a config file for the conveyor dataset generation.
+The term scene means one data generation run, before the simulator reset.
+In one scene multiple frames are generated.
+"""
+
 import inspect
 import sys
 import json
@@ -258,20 +264,8 @@ def generate_scenes_conf(usd_models: list[str], num_random_materials: int,
     return scene_configs
 
 
-def generate_train_val_splits(scenes: list[list[dict]], val_share: float) -> tuple[np.ndarray, np.ndarray]:
-    """
-    Generates training and validation splits from a list of scenes.
-
-    :param scenes: A nested list of dictionaries, each representing a scene.
-    :param val_share: The proportion of the dataset to include in the validation split.
-    :type scenes: list[list[dict]]
-    :type val_share: float
-    :return: A tuple containing two numpy arrays with scene numbers, one for training and one for validation.
-    :rtype: tuple[np.ndarray, np.ndarray]
-    """
-
-    num_scenes = np.sum(np.fromiter((len(s) for s in scenes), int))
-    scene_indices = np.arange(num_scenes)
+def generate_train_val_splits(num_scenes: int, num_frames_per_scene: int, val_share: float) -> tuple[np.ndarray, np.ndarray]:
+    scene_indices = np.arange(num_scenes * num_frames_per_scene)
     return train_test_split(scene_indices, test_size=val_share)
 
 
@@ -511,9 +505,9 @@ def main(argv: list[str]) -> None:
         "generation_script_args": vars(args)
     }
 
-    (train_scenes, val_scenes) = generate_train_val_splits(data_generation_config["scenes"], val_dataset_share)  # FIXME: one scene is not one frame!!!
-    data_generation_config["train_scenes"] = train_scenes.tolist()
-    data_generation_config["val_scenes"] = val_scenes.tolist()
+    (train_frames, val_frames) = generate_train_val_splits(len(data_generation_config["scenes"]), num_frames_per_scene, val_dataset_share)
+    data_generation_config["train_frames"] = train_frames.tolist()
+    data_generation_config["val_frames"] = val_frames.tolist()
 
     # Write config
     out_dir = os.path.dirname(out_path)
