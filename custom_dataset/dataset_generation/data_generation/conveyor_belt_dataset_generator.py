@@ -16,7 +16,7 @@ simulation_app = SimulationApp(launch_config=CONFIG)
 import omni.replicator.core as rep
 from omni.isaac.core import World
 from omni.isaac.core.utils import extensions
-from omni.isaac.core.utils.stage import open_stage
+from omni.isaac.core.utils.stage import create_new_stage, open_stage
 from omni.isaac.core.utils import prims
 from omni.isaac.core.utils.rotations import euler_angles_to_quat
 from omni.isaac.core.prims import RigidPrim, XFormPrim, GeometryPrim
@@ -28,6 +28,10 @@ from utils import quit_on_error
 
 # Enable conveyor belt extension
 extensions.enable_extension("omni.isaac.conveyor")
+
+
+def get_conveyor_node_prims():
+    return rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/ConveyorBeltGraph\/ConveyorNode")
 
 
 def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
@@ -87,6 +91,9 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     for scene_nr, scene_config in enumerate(config["scenes"]):
         print("Setting up scene", scene_nr + 1, "of", len(config["scenes"]))
 
+        # Reset simulation
+        create_new_stage()  # Create new stage and delete previous contents
+        
         # Load stage
         if not open_stage(os.path.join(os.path.dirname(os.path.abspath(__file__)), "isaac_worlds/conveyor.usd")):
             print("Could not open world. Exiting...", file=sys.stderr)
@@ -126,7 +133,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         world.reset()
 
         # Set conveyor belt speed to 0 (until all objects stopped falling to prevent lower objects already moving on the conveyor belt)
-        conveyor_nodes = rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/ConveyorBeltGraph\/ConveyorNode")
+        conveyor_nodes = get_conveyor_node_prims()
         with conveyor_nodes:
            rep.modify.attribute("velocity", 0.0)
 
@@ -138,6 +145,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             objects_stopped_falling = all([np.linalg.norm(object_prim.get_linear_velocity()) < 0.001 for object_prim in object_rigid_prims])
 
         # Set conveyor belt speed to specified value
+        conveyor_nodes = get_conveyor_node_prims()
         with conveyor_nodes:
            rep.modify.attribute("velocity", conveyor_belt_speed)
 
