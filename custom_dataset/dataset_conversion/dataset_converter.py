@@ -46,10 +46,10 @@ def main(args: list[str]) -> None:
     replicator_dataset_dirs = args.replicator_data_dir
     for replicator_dataset_dir in replicator_dataset_dirs:
         if not os.path.isdir(replicator_dataset_dir):
-            print(f"The NVIDIA replicator directory {args.rep_dir} does not exist. Existing...")
+            print(f"The NVIDIA replicator directory {replicator_dataset_dir} does not exist. Existing...")
             exit(-1)
     if not os.path.isdir(args.obj_dir):
-        print(f"The OBJ model directory {args.rep_dir} does not exist. Existing...")
+        print(f"The OBJ model directory {replicator_dataset_dir} does not exist. Existing...")
         exit(-1)
 
     # Load converter plugins

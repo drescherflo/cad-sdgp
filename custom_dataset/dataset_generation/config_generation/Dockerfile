@@ -8,7 +8,7 @@ COPY requirements.txt .
 RUN pip install -r requirements.txt
 
 # Copy generator script
-COPY data_generation_config_generator.py .
+COPY 6_dof_config_generator.py .
 
 # Set generator as entrypoint
-ENTRYPOINT ["python", "data_generation_config_generator.py"]
+ENTRYPOINT ["python", "6_dof_config_generator.py"]

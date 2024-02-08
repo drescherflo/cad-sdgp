@@ -1,5 +1,5 @@
-# Gebrauchsanweisung für `6_dof_training_dataset_generator.py`
-Das Skript `6_dof_training_dataset_generator.py` generiert Trainingsdatensätze für Anwendungen mit sechs Freiheitsgraden (6-DOF). 
+# Gebrauchsanweisung für `6_dof_dataset_generator.py`
+Das Skript `6_dof_dataset_generator.py` generiert Trainingsdatensätze für Anwendungen mit sechs Freiheitsgraden (6-DOF). 
 Es verwendet eine Konfigurationsdatei und USD-Modelle, um Szenen für das Training zu erstellen.
 Die Daten werden mittels sogenannter Writer erfasst und auf den Datenträger geschrieben. 
 
@@ -10,12 +10,12 @@ Dieser befindet sich für NVIDIA Isaac Sim 2023.1.1 unter Verwendung der Standar
 - `--headless`: Startet das Skript im Headless-Modus. Keine grafische Benutzeroberfläche wird angezeigt.
 - `--output_dir`: Pflichtargument. Gibt das Ausgabeverzeichnis an, in dem die generierten Daten gespeichert werden.
 - `--usd_dir`: Pflichtargument. Verzeichnis, das die USD-Versionen (Universal Scene Description) der CAD-Modelle enthält, die für die Datengenerierung verwendet werden.
-- `--config_file`: Pflichtargument. Pfad zur JSON-Konfigurationsdatei, die die zu generierenden Szenen beschreibt. Zu Erstellen mit [data_generation_config_generator.py](../config_generation).
+- `--config_file`: Pflichtargument. Pfad zur JSON-Konfigurationsdatei, die die zu generierenden Szenen beschreibt. Zu Erstellen mit [6_dof_config_generator.py](../config_generation).
 - `--writer`: Pflichtargument. Konfiguriert Writer aus dem Plugin-Paket `resumable_writers`. Ein Writer wird nur dann geladen, wenn dessen Klassenname korrekt geschrieben wird. Die Argumente des Writers müssen das Format `argument=(true|false)` haben. Jeder Wert `!= true` wird als `False` interpretiert. Dieses Argument kann mehrfach hinzugefügt werden.
 
 ## Beispielbefehl
 ```bash
-python.sh 6_dof_training_dataset_generator.py --headless --output_dir "/pfad/zum/output" --usd_dir "/pfad/zum/usd" --config_file "/pfad/zur/config.json" --writer Writer1 writer1_arg=true writer1_arg2=false --writer Writer2
+python.sh 6_dof_dataset_generator.py --headless --output_dir "/pfad/zum/output" --usd_dir "/pfad/zum/usd" --config_file "/pfad/zur/config.json" --writer Writer1 writer1_arg=true writer1_arg2=false --writer Writer2
 ```
 
 ## Wichtige Hinweise
