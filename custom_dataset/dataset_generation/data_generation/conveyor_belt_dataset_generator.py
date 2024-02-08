@@ -122,15 +122,19 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                                                   semantic_label=object["semantic_class_label"],
                                                   position=object["object_init_pose"]["position"],
                                                   orientation=euler_angles_to_quat(np.array(object["object_init_pose"]["rotation"]), degrees=True, extrinsic=False)))
+
+            # Enable physics and collision
+            # Don't use rep.physics.rigid_body() and rep.physics.collider() or else either the simulation or PhysX will crash!
             rigid_prim = RigidPrim(prim_path=prim_path, name=prim_name + "_rigid")  # RigidPrim for Physics
             geometry_prim = GeometryPrim(prim_path=prim_path, name=prim_name + "_geometry",
                                          collision=True)  # GeometryPrim for Collisions
+            geometry_prim.set_collision_approximation("convexDecomposition")  # Use Convex Decomposition for a more fine granular collision calculation at cost of simulation performance
 
             world.scene.add(rigid_prim)  # Register in world's scene to enable physics simulation
             world.scene.add(geometry_prim)  # Register in world's scene to enable collision calculations
             object_rigid_prims.append(rigid_prim)
-
-        # Reset the world to handle the physics of the newly created rigid prims
+        
+        # Reset the world to handle the physics of the newly created prims
         world.reset()
 
         # Set conveyor belt speed to 0 (until all objects stopped falling to prevent lower objects already moving on the conveyor belt)
