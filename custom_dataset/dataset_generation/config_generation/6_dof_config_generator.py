@@ -1,3 +1,8 @@
+"""
+Script to create a config file for the 6 DOF dataset generation.
+The term scene is equivalent to one to be generated frame.
+"""
+
 import sys
 import json
 import os
@@ -213,7 +218,7 @@ def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects
 
 
 def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: float, max_x: float, min_y: float,
-                                              max_y: float, max_z: float) -> list[dict]:
+                                              max_y: float, max_z: float, sphere_min_intensity: float, sphere_max_intensity: float) -> list[dict]:
     """
     Generates configurations for sphere lights in a single frame.
 
@@ -233,19 +238,24 @@ def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: flo
     :type max_z: float
     :return: A list containing the configurations of sphere lights.
     :rtype: list[dict]
+
+    TODO: Add missing args
     """
 
     return [
         {
             "position": [random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.uniform(0, max_z)],
-            "color": generate_random_rgb_color()
+            "color": generate_random_rgb_color(),
+            "intensity": random.uniform(sphere_min_intensity, sphere_max_intensity)
         }
         for _ in range(num_sphere_lights)]
 
 
 def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int, usd_models: list[str],
-                         num_random_materials: int, num_sphere_lights: int, min_x: float, max_x: float, min_y: float,
-                         max_y: float, max_z: float) -> list[list[dict]]:
+                         num_random_materials: int, num_sphere_lights: int, sphere_min_intensity: float, sphere_max_intensity: float,
+                         min_x: float, max_x: float, min_y: float,
+                         max_y: float, max_z: float,
+                         dome_light_min_intensity, dome_light_max_intensity) -> list[list[dict]]:
     """
     Generates configurations for a variety of scenes.
 
@@ -273,6 +283,8 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
     :type max_z: float
     :return: A list of a list of dictionaries, each representing a scene configuration.
     :rtype: list[list[dict]]
+
+    TODO: add missing args
     """
 
     # Generate single object scenes
@@ -292,11 +304,12 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
             scene_config["background_color"] = generate_random_rgb_color()
 
             # Add randomized dome light color
-            scene_config["dome_light_color"] = generate_random_rgb_color()
+            scene_config["dome_light_configs"] = {"color": generate_random_rgb_color(), "intensity": np.random.uniform(dome_light_min_intensity, dome_light_max_intensity)}
+
 
             # Add randomized sphere lights
             scene_config["sphere_light_configs"] = generate_sphere_light_confs_for_one_frame(num_sphere_lights, min_x,
-                                                                                             max_x, min_y, max_y, max_z)
+                                                                                             max_x, min_y, max_y, max_z, sphere_min_intensity, sphere_max_intensity)
 
     return scene_configs
 
@@ -343,6 +356,10 @@ def main(argv: list[str]) -> None:
                         help="Specifies the number of objects in the scene")
     parser.add_argument("--num_sphere_lights", default=5, type=int,
                         help="Specifies the number of sphere lights with random light color in the scene")
+    parser.add_argument("--sphere_min_intensity", default=5000, type=float,
+                        help="The minimum light intensity of a sphere light")
+    parser.add_argument("--sphere_max_intensity", default=50000, type=float,
+                        help="The maximum light intensity of a sphere light")
     parser.add_argument("--train_val_split", default=0.2, type=float,
                         help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
     parser.add_argument("--min_x", default=-2, type=float, help="The minimum x coordinate of the object in the scene")
@@ -351,6 +368,10 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--max_y", default=1, type=float, help="The maximum y coordinate of the object in the scene")
     parser.add_argument("--cam_distance_to_background", default=5, type=float,
                         help="Defines the distance between the camera and the background plane")
+    parser.add_argument("--dome_light_min_intensity", default=5000, type=float,
+                        help="The minimum light intensity of the dome light")
+    parser.add_argument("--dome_light_max_intensity", default=50000, type=float,
+                        help="The maximum light intensity of the dome light")
 
     # Parse args
     args = parser.parse_args(argv)
@@ -365,6 +386,8 @@ def main(argv: list[str]) -> None:
     num_objects_per_frame = args.num_objects_per_frame
     num_random_materials = args.num_random_materials
     num_sphere_lights = args.num_sphere_lights
+    sphere_min_intensity = args.sphere_min_intensity
+    sphere_max_intensity = args.sphere_max_intensity
     val_dataset_share = args.train_val_split
     probability_of_glass_material = args.probability_of_glass_material
     if probability_of_glass_material < 0:
@@ -376,12 +399,15 @@ def main(argv: list[str]) -> None:
     min_y = args.min_y
     max_y = args.max_y
     cam_distance_to_background = args.cam_distance_to_background
+    dome_light_min_intensity = args.dome_light_min_intensity
+    dome_light_max_intensity = args.dome_light_max_intensity
 
     # Check for plausibility
     if cam_distance_to_background <= 0:
         print("cam_distance_to_background must be greater than 0. Exiting...")
         exit(-1)
 
+    # TODO: use check function from conveyor config
     if min_x > max_x:
         print("min_x must be less than max_x. Exiting...")
         exit(-1)
@@ -389,6 +415,8 @@ def main(argv: list[str]) -> None:
     if min_y > max_y:
         print("min_y must be less than max_y. Exiting...")
         exit(-1)
+
+    # TODO: check dome light and sphere light intensities
 
     # Check for existing config at out_path
     if os.path.exists(out_path):
@@ -409,7 +437,7 @@ def main(argv: list[str]) -> None:
         "num_frames_per_object": num_frames_per_object,
         "materials": generate_materials_conf(num_random_materials, probability_of_glass_material),
         "scenes": generate_scenes_conf(num_frames_per_object, num_objects_per_frame, usd_models, num_random_materials,
-                                       num_sphere_lights, min_x, max_x, min_y, max_y, cam_distance_to_background),
+                                       num_sphere_lights, sphere_min_intensity, sphere_max_intensity, min_x, max_x, min_y, max_y, cam_distance_to_background, dome_light_min_intensity, dome_light_max_intensity),
         "usd_models": usd_models,
         "generation_script_args": vars(args)
     }
@@ -419,7 +447,9 @@ def main(argv: list[str]) -> None:
     data_generation_config["val_scenes"] = val_scenes.tolist()
 
     # Write config
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
+    out_dir = os.path.dirname(out_path)
+    if out_dir != "":
+        os.makedirs(out_dir, exist_ok=True)
     with open(out_path, "w") as f:
         json.dump(data_generation_config, f, indent=4)
 

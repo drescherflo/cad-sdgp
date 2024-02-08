@@ -102,10 +102,16 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     for object_type_specific_scene_configs in config["scenes"]:
         # Parse scene configs
         background_colors = extract_per_scene_config(object_type_specific_scene_configs, "background_color")
-        dome_light_colors = extract_per_scene_config(object_type_specific_scene_configs, "dome_light_color")
         sphere_light_configs = extract_per_scene_config(object_type_specific_scene_configs, "sphere_light_configs")
         num_sphere_lights = len(sphere_light_configs[0])
         object_configs = extract_per_scene_config(object_type_specific_scene_configs, "object_configs")
+        if "dome_light_color" in object_type_specific_scene_configs:  # if condition required for compatibility of with old configs
+            dome_light_colors = extract_per_scene_config(object_type_specific_scene_configs, "dome_light_color")
+            dome_light_intensities = [1000 for _ in range(len(dome_light_colors))]  # 1000 is default value according to
+        else:
+            dome_light_configs = extract_per_scene_config(object_type_specific_scene_configs, "dome_light_configs")
+            dome_light_colors = [dome_light_config["color"] for dome_light_config in dome_light_configs]
+            dome_light_intensities = [dome_light_config["intensity"] for dome_light_config in dome_light_configs]
 
         # Reset simulation
         # We need to reset every num_frames_per_object because the usd models change after num_frames_per_object
@@ -153,8 +159,10 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             sphere_light_config = [sphere_light_per_frame_config[sphere_light_idx] for sphere_light_per_frame_config in sphere_light_configs]
             sphere_light_positions = [config["position"] for config in sphere_light_config]
             sphere_light_colors = [config["color"] for config in sphere_light_config]
+            sphere_light_intensities = [config["intensity"] if "intensity" in config else 1000 for config in sphere_light_config]  # if expression required for compatibility with older configs. 1000 is default value according to https://docs.omniverse.nvidia.com/py/replicator/1.10.10/source/extensions/omni.replicator.core/docs/API.html#omni.replicator.core.create.light (08.02.2024)
             with sphere_light:
                 rep.modify.attribute("color", rep.distribution.sequence(sphere_light_colors))
+                rep.modify.attribute("intensity", rep.distribution.sequence(sphere_light_intensities))
                 rep.modify.pose(position=rep.distribution.sequence(sphere_light_positions))
             return sphere_light
 
@@ -168,6 +176,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Change dome_light color
             with dome_light:
                 rep.modify.attribute("color", rep.distribution.sequence(dome_light_colors))
+                rep.modify.attribute("intensity", rep.distribution.sequence(dome_light_intensities))
 
             # Change sphere light color and position
             for i in range(len(sphere_lights)):
