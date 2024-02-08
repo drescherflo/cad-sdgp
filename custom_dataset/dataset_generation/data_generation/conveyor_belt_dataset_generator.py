@@ -58,6 +58,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     image_height = config["camera_frame_config"]["frame_height"]
     sub_frames_per_frame = config["sub_frames_per_frame"]
     conveyor_belt_speed = config["conveyor_belt_speed"]
+    min_x_pos_for_record_start = config["min_x_pos_for_record_start"]
 
     # Parse writer config
     # writer_configs = parse_writer_args(args.writer)  TODO uncomment
@@ -140,7 +141,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Run simulation until all objects stopped falling
         objects_stopped_falling = False
         while not objects_stopped_falling:
-            # Run simulation for one step
+            # Run simulation for one step and check linear velocity
             world.step(render=True, step_sim=True)
             objects_stopped_falling = all([np.linalg.norm(object_prim.get_linear_velocity()) < 0.001 for object_prim in object_rigid_prims])
 
@@ -148,6 +149,14 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         conveyor_nodes = get_conveyor_node_prims()
         with conveyor_nodes:
            rep.modify.attribute("velocity", conveyor_belt_speed)
+
+        # Wait for min one object to pass min_x_pos_for_record_start before start of recording
+        min_x_pos_for_record_start_passed = False
+        while not min_x_pos_for_record_start_passed:
+            # Run simulation for one step and check x coordinates
+            world.step(render=True, step_sim=True)
+            min_x_pos_for_record_start_passed = any(
+                [np.linalg.norm(object_prim.get_world_pose()[0][0]) > min_x_pos_for_record_start for object_prim in object_rigid_prims])
 
         while simulation_app.is_running():
             simulation_app.update()

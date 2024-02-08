@@ -378,6 +378,8 @@ def main(argv: list[str]) -> None:
                         help="The minimum light intensity of the direct light")
     parser.add_argument("--conveyor_belt_speed", default=0.2, type=float,
                         help="The speed of the conveyor belt in the simulation")
+    parser.add_argument("--min_x_pos_for_record_start", default=-2.0, type=float,
+                        help="Defines the minimum x coordinate at least one object needs to have passed to start writing the dataset")
 
 
     # TODO: evaulation-data-flag
@@ -441,6 +443,7 @@ def main(argv: list[str]) -> None:
     direct_light_min_intensity = args.direct_light_min_intensity
     direct_light_max_intensity = args.direct_light_max_intensity
     conveyor_belt_speed = args.conveyor_belt_speed
+    min_x_pos_for_record_start = args.min_x_pos_for_record_start
 
     # Check range args for plausibility
     check_range_plausibility(object_init_min_x, object_init_max_x)
@@ -499,6 +502,7 @@ def main(argv: list[str]) -> None:
                          camera_rot_min_z, camera_rot_max_z,
                          direct_light_min_intensity, direct_light_max_intensity),
         "conveyor_belt_speed": conveyor_belt_speed,
+        "min_x_pos_for_record_start": min_x_pos_for_record_start,
         "usd_models": usd_models,
         "num_frames_per_scene": num_frames_per_scene,
         "num_scenes_per_object": num_scenes_per_object,
