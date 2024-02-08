@@ -100,8 +100,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             print("Could not open world. Exiting...", file=sys.stderr)
             quit_on_error(simulation_app)
 
-        #FIXME: Isaac Sim adds a default light, because there is none in the usd stage
-
         # Get world
         world = World()
 
