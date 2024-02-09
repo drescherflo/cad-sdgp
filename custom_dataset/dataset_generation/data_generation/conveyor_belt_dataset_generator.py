@@ -32,8 +32,6 @@ from utils import quit_on_error
 # Enable conveyor belt extension
 extensions.enable_extension("omni.isaac.conveyor")
 
-import omni.isaac.conveyor.bindings as test
-
 
 def get_conveyor_node_prims():
     return rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/ConveyorBeltGraph\/ConveyorNode")
@@ -87,11 +85,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
         json.dump(train_val_split_config, f, indent=4)
 
-    # Set conveyor speed to 1 m/s
-    #conveyor_nodes = rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/ConveyorBeltGraph\/ConveyorNode")
-    #with conveyor_nodes:
-    #    rep.modify.attribute("velocity", 1.0)
-
     # Scene generation loop
     frame_number = 0
     num_frames = len(config["scenes"]) * num_frames_per_scene
@@ -125,6 +118,13 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Add camera
         camera = rep.create.camera()
         render_product = rep.create.render_product(camera=camera, resolution=(image_width, image_height))
+
+        # Add material for custom colors to ground plane
+        plane_material = rep.create.material_omnipbr(roughness=1, diffuse=(1.0, 1.0, 1.0))  # white color
+        plane = rep.get.prims(path_match="/World/GroundPlane")
+        with plane:
+            rep.modify.material(plane_material)
+
 
         # Initialize writers
         # writers = []
@@ -238,7 +238,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                 rep.modify.pose(position=rep.distribution.sequence(camera_positions), rotation=rep.distribution.sequence(camera_orientations))
 
             # Change ground plane color
-            # TODO
+            with plane_material:
+                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(ground_plane_colors))
 
             # Change distant light color, intensity and orientation
             with distant_light:
