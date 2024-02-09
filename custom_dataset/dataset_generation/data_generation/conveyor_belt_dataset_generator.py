@@ -14,9 +14,9 @@ simulation_app = SimulationApp(launch_config=CONFIG)
 
 # Omniverse imports and omniverse related imports need to be done after the simulation has been started
 import omni.replicator.core as rep
+import omni.isaac.core.utils.stage as stage_utils
 from omni.isaac.core import World
 from omni.isaac.core.utils import extensions
-from omni.isaac.core.utils.stage import close_stage, open_stage, is_stage_loading
 from omni.isaac.core.utils import prims
 from omni.isaac.core.utils.rotations import euler_angles_to_quat
 from omni.isaac.core.prims import RigidPrim, XFormPrim, GeometryPrim
@@ -105,10 +105,11 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         ground_plane_colors = per_frame_config["ground_plane_colors"]
         object_material_assignments = per_frame_config["object_material_assignments"]
         
-        # Reset simulation by loading stage
-        if not open_stage(os.path.join(os.path.dirname(os.path.abspath(__file__)), "isaac_worlds/conveyor.usd")):
-            print("Could not load conveyor world. Exiting...", file=sys.stderr)
-            quit_on_error(simulation_app)
+        # Reset simulation by creating new stage
+        stage_utils.create_new_stage()
+
+        # Add conveyor environment (don't use stage_utils.open_stage(); reopening leads to simulation crash)
+        stage_utils.add_reference_to_stage(os.path.join(os.path.dirname(os.path.abspath(__file__)), "isaac_worlds/conveyor.usd"), "/World")
 
         # Get world
         world = World()
@@ -167,16 +168,25 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         world.reset()
 
         # Set conveyor belt speed to 0 (until all objects stopped falling to prevent lower objects already moving on the conveyor belt)
-        conveyor_nodes = get_conveyor_node_prims()
+        # test = rep.get.prims(path_pattern="\/objects(.)*")
+        # with test:
+        #     rep.modify.pose(position=[0, 0, 0])
+        conveyor_nodes = get_conveyor_node_prims()  # FIXME: does not work since adding as reference
         with conveyor_nodes:
            rep.modify.attribute("velocity", 0.0)
+
+        # while simulation_app.is_running():
+        #     simulation_app.update()
+        # simulation_app.close()
+        # exit(0)
 
         # Run simulation until all objects stopped falling
         objects_stopped_falling = False
         while not objects_stopped_falling:
             # Run simulation for one step and check linear velocity
             world.step(render=True, step_sim=True)
-            objects_stopped_falling = all([np.linalg.norm(object_prim.get_linear_velocity()) < 0.001 for object_prim in object_rigid_prims])
+            #print("max_vel:", str(np.max([np.linalg.norm(object_prim.get_linear_velocity()) for object_prim in object_rigid_prims])))
+            objects_stopped_falling = all([np.linalg.norm(object_prim.get_linear_velocity()) < 0.01 for object_prim in object_rigid_prims])
 
         # Set conveyor belt speed to specified value
         conveyor_nodes = get_conveyor_node_prims()
