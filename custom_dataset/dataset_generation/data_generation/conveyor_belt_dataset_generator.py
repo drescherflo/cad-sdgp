@@ -4,6 +4,7 @@ import os
 import json
 import sys
 import numpy as np
+import collections
 from utils.config import parse_writer_args
 
 # Launch Isaac Sim
@@ -178,12 +179,31 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             assert og.Controller.set(og.Controller.attribute(conveyor_node_prim_path + ".inputs:velocity"), 0.0)
 
         # Run simulation until all objects stopped falling
-        objects_stopped_falling = False
-        while not objects_stopped_falling:
+        num_velocities_to_check = 10
+        max_lin_velocity_for_finished_falling = 0.001
+        last_max_velocities = collections.deque(maxlen=num_velocities_to_check)
+        while True:
             # Run simulation for one step and check linear velocity
             world.step(render=True, step_sim=True)
-            #print("max_vel:", str(np.max([np.linalg.norm(object_prim.get_linear_velocity()) for object_prim in object_rigid_prims])))
-            objects_stopped_falling = all([np.linalg.norm(object_prim.get_linear_velocity()) < 0.01 for object_prim in object_rigid_prims])
+
+            # If linear velocity of all objects is small, they stopped falling
+            if all([np.linalg.norm(object_prim.get_linear_velocity()) < max_lin_velocity_for_finished_falling for object_prim in object_rigid_prims]):
+                break
+
+            # Sometimes objects fall through the conveyor belt
+            # Then PhysX / Isaac Sim don't calculate the correct velocity which results in objects_stopped_falling not beeing set to True
+            # To prevent an endless loop the last 10 max velocities are checked if they are in a specified delta
+            # If so one can assume that the objects don't move anymore are not falling anymore
+            # Else the max velocity would have large changes due to gravity or the collision with the belt / ground plane / etc
+            max_lin_vel = max([np.linalg.norm(object_prim.get_linear_velocity()) for object_prim in object_rigid_prims])
+            print("max_vel:", max_lin_vel)
+            last_max_velocities.append(max_lin_vel)
+            if len(last_max_velocities) < num_velocities_to_check:
+                continue
+            max_last_lin_vel = max(last_max_velocities)
+            min_last_lin_vel = min(last_max_velocities)
+            if max_last_lin_vel - min_last_lin_vel < max_lin_velocity_for_finished_falling:
+                break
 
         # Set conveyor belt speed to specified value
         for conveyor_node_prim_path in conveyor_node_prim_paths:
