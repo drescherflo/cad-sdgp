@@ -13,8 +13,10 @@ CONFIG = {"renderer": "RayTracedLighting", "headless": False}# args.headless}
 simulation_app = SimulationApp(launch_config=CONFIG)
 
 # Omniverse imports and omniverse related imports need to be done after the simulation has been started
+import omni.graph.core as og
 import omni.replicator.core as rep
 import omni.isaac.core.utils.stage as stage_utils
+import omni.isaac.core.utils.prims as prim_utils
 from omni.isaac.core import World
 from omni.isaac.core.utils import extensions
 from omni.isaac.core.utils import prims
@@ -28,6 +30,8 @@ from utils import quit_on_error
 
 # Enable conveyor belt extension
 extensions.enable_extension("omni.isaac.conveyor")
+
+import omni.isaac.conveyor.bindings as test
 
 
 def get_conveyor_node_prims():
@@ -104,7 +108,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         distant_light_intensities = [conf["intensity"] for conf in per_frame_config["distant_light_configs"]]
         ground_plane_colors = per_frame_config["ground_plane_colors"]
         object_material_assignments = per_frame_config["object_material_assignments"]
-        
+
         # Reset simulation by creating new stage
         stage_utils.create_new_stage()
 
@@ -163,22 +167,15 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             world.scene.add(rigid_prim)  # Register in world's scene to enable physics simulation
             world.scene.add(geometry_prim)  # Register in world's scene to enable collision calculations
             object_rigid_prims.append(rigid_prim)
-        
+
         # Reset the world to handle the physics of the newly created prims
         world.reset()
 
         # Set conveyor belt speed to 0 (until all objects stopped falling to prevent lower objects already moving on the conveyor belt)
-        # test = rep.get.prims(path_pattern="\/objects(.)*")
-        # with test:
-        #     rep.modify.pose(position=[0, 0, 0])
-        conveyor_nodes = get_conveyor_node_prims()  # FIXME: does not work since adding as reference
-        with conveyor_nodes:
-           rep.modify.attribute("velocity", 0.0)
-
-        # while simulation_app.is_running():
-        #     simulation_app.update()
-        # simulation_app.close()
-        # exit(0)
+        # Use OmniGraph for this since replicator does not work since world is not loaded with open_stage()
+        conveyor_node_prim_paths = prim_utils.find_matching_prim_paths("/World/ConveyorTrack(.)*/ConveyorBeltGraph/ConveyorNode")
+        for conveyor_node_prim_path in conveyor_node_prim_paths:
+            assert og.Controller.set(og.Controller.attribute(conveyor_node_prim_path + ".inputs:velocity"), 0.0)
 
         # Run simulation until all objects stopped falling
         objects_stopped_falling = False
@@ -189,9 +186,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             objects_stopped_falling = all([np.linalg.norm(object_prim.get_linear_velocity()) < 0.01 for object_prim in object_rigid_prims])
 
         # Set conveyor belt speed to specified value
-        conveyor_nodes = get_conveyor_node_prims()
-        with conveyor_nodes:
-           rep.modify.attribute("velocity", conveyor_belt_speed)
+        for conveyor_node_prim_path in conveyor_node_prim_paths:
+            assert og.Controller.set(og.Controller.attribute(conveyor_node_prim_path + ".inputs:velocity"), conveyor_belt_speed)
 
         # Wait for min one object to pass min_x_pos_for_record_start before start of recording
         min_x_pos_for_record_start_passed = False
