@@ -165,9 +165,8 @@ def generate_per_frame_config(num_random_materials: int,
         "ground_plane_colors": [generate_random_rgb_color() for _ in range(num_frames_per_scene)],
         "object_material_assignments": [
             [{
-                "object_idx": i,
                 "material_idx": random.randint(0, num_random_materials - 1)
-            } for i in range(num_objects_per_scene)]
+            } for _ in range(num_objects_per_scene)]
             for _ in range(num_frames_per_scene)]
     }
 
@@ -503,9 +502,7 @@ def main(argv: list[str]) -> None:
                          distant_light_min_intensity, distant_light_max_intensity),
         "conveyor_belt_speed": conveyor_belt_speed,
         "min_x_pos_for_record_start": min_x_pos_for_record_start,
-        "usd_models": usd_models,
         "num_frames_per_scene": num_frames_per_scene,
-        "num_scenes_per_object": num_scenes_per_object,
         "generation_script_args": vars(args)
     }
 
