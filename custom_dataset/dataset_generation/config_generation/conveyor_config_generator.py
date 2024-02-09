@@ -327,9 +327,9 @@ def main(argv: list[str]) -> None:
                         help="The minimum y coordinate of light spheres in the scene")
     parser.add_argument("--sphere_max_y", default=0.5, type=float,
                         help="The maximum y coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_z", default=1.8, type=float,
+    parser.add_argument("--sphere_min_z", default=2.3, type=float,
                         help="The minimum z coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_z", default=2.2, type=float,
+    parser.add_argument("--sphere_max_z", default=2.7, type=float,
                         help="The maximum z coordinate of light spheres in the scene")
     parser.add_argument("--sphere_min_intensity", default=5000, type=float,
                         help="The minimum light intensity of a sphere light")
