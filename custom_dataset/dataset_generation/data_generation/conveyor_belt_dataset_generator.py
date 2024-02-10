@@ -102,6 +102,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         distant_light_intensities = [conf["intensity"] for conf in per_frame_config["distant_light_configs"]]
         ground_plane_colors = per_frame_config["ground_plane_colors"]
         object_material_assignments = per_frame_config["object_material_assignments"]
+        conveyor_belt_colors = per_frame_config["conveyor_belt_colors"]
+        conveyor_frame_colors = per_frame_config["conveyor_frame_colors"]
 
         # Reset simulation by creating new stage
         stage_utils.create_new_stage()
@@ -119,11 +121,24 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         camera = rep.create.camera()
         render_product = rep.create.render_product(camera=camera, resolution=(image_width, image_height))
 
-        # Add material for custom colors to ground plane
-        plane_material = rep.create.material_omnipbr(roughness=1, diffuse=(1.0, 1.0, 1.0))  # white color
+        # Add material for custom colors of ground plane
+        plane_material = rep.create.material_omnipbr(roughness=1)
         plane = rep.get.prims(path_match="/World/GroundPlane")
         with plane:
             rep.modify.material(plane_material)
+
+        # Add material for custom colors of conveyor belt belts
+        conveyor_belt_material = rep.create.material_omnipbr(roughness=1)
+        conveyor_belts = rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/Belt\/SM_ConveyorBelt_A09_Belt_02")
+        with conveyor_belts:
+            rep.modify.material(conveyor_belt_material)  # FIXME
+
+        # Add material for custom color of conveyor belt frame
+        conveyor_frame_material = rep.create.material_omnipbr(roughness=1)
+        conveyor_frames = rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/SM_ConveyorBelt_A09_02")
+        with conveyor_frames:
+            rep.modify.material(conveyor_belt_material)  # FIXME
+
 
 
         # Initialize writers
@@ -196,7 +211,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # If so one can assume that the objects don't move anymore are not falling anymore
             # Else the max velocity would have large changes due to gravity or the collision with the belt / ground plane / etc
             max_lin_vel = max([np.linalg.norm(object_prim.get_linear_velocity()) for object_prim in object_rigid_prims])
-            print("max_vel:", max_lin_vel)
             last_max_velocities.append(max_lin_vel)
             if len(last_max_velocities) < num_velocities_to_check:
                 continue
@@ -251,7 +265,13 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             for i in range(len(sphere_lights)):
                 rep.randomizer.randomize_sphere_light(sphere_lights, i, sphere_light_configs)
 
-            # TODO: change conveyor belt and conveyor belt frame color
+            # Change conveyor belt color
+            with conveyor_belt_material:
+                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_belt_colors))   # FIXME
+
+            # Change conveyor frame color
+            with conveyor_frame_material:
+                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))  # FIXME
 
         # Capture data
         for scene_frame_nr in range(num_frames_per_scene):
@@ -259,7 +279,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                 print("Simulation has been stopped. Exiting...", file=sys.stderr)
                 quit_on_error(simulation_app)
 
-            print(f"Writing scene frame {scene_frame_nr + 1} of {num_frames_per_scene} (total frame {str(frame_number + 1)} of {num_frames})")
+            print(f"Writing scene frame {scene_frame_nr + 1} of {num_frames_per_scene} (total frame {frame_number + 1} of {num_frames})")
 
             # Assign material to object manually since replicator does not support sequential assignment
             for obj_idx, object_prim in enumerate(object_prims):

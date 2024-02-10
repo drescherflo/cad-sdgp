@@ -167,7 +167,9 @@ def generate_per_frame_config(num_random_materials: int,
             [{
                 "material_idx": random.randint(0, num_random_materials - 1)
             } for _ in range(num_objects_per_scene)]
-            for _ in range(num_frames_per_scene)]
+            for _ in range(num_frames_per_scene)],
+        "conveyor_belt_colors": [generate_random_rgb_color() for _ in range(num_frames_per_scene)],
+        "conveyor_frame_colors": [generate_random_rgb_color() for _ in range(num_frames_per_scene)]
     }
 
 
@@ -193,14 +195,6 @@ def generate_scenes_conf(usd_models: list[str], num_random_materials: int,
                          camera_rot_min_z: float, camera_rot_max_z: float,
                          distant_light_min_intensity: float, distant_light_max_intensity: float
                          ) -> list:
-
-    # TODO-List:
-    # - ok Configurations-Liste für Camera-Posen pro Szene
-    # - ok Configurations-Liste für Materialien pro Szene
-    # - ok Configurations-Liste für Sphere-Lights Position und Farbe pro Szene
-    # - ok Configurations-Liste für Direct-Light Position und Farbe pro Szene(Orientierung wird in Simulation auf look-at: (0, 0, 0) gesetzt)
-    # - ok Configurations-Liste für Ground-Plane Farbe pro Szene
-    # - ok Configurations-Liste für Init-Pose der Objekte pro Szene
 
     # Generate single object scenes
     scene_configs = []
