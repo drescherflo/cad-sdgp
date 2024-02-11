@@ -197,6 +197,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Run simulation until all objects stopped falling
         num_velocities_to_check = 10
         max_lin_velocity_for_finished_falling = 0.001
+        max_lin_velocity_delta_for_finished_falling = 0.1
         last_max_velocities = collections.deque(maxlen=num_velocities_to_check)
         while True:
             # Run simulation for one step and check linear velocity
@@ -213,11 +214,15 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Else the max velocity would have large changes due to gravity or the collision with the belt / ground plane / etc
             max_lin_vel = max([np.linalg.norm(object_prim.get_linear_velocity()) for object_prim in object_rigid_prims])
             last_max_velocities.append(max_lin_vel)
+            print("Last max linear velocity:", max_lin_vel)
             if len(last_max_velocities) < num_velocities_to_check:
                 continue
             max_last_lin_vel = max(last_max_velocities)
             min_last_lin_vel = min(last_max_velocities)
-            if max_last_lin_vel - min_last_lin_vel < max_lin_velocity_for_finished_falling:
+            lin_vel_delta = max_last_lin_vel - min_last_lin_vel
+            print("Linear velocity delta", lin_vel_delta)
+            if lin_vel_delta < max_lin_velocity_delta_for_finished_falling:
+                print("Warning! Min one object glitched through the conveyor belt. The detection if objects stopped falling may be inaccurate!")
                 break
 
         # Set conveyor belt speed to specified value
