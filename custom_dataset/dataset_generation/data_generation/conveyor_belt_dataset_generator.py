@@ -230,7 +230,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Run simulation for one step and check x coordinates
             world.step(render=True, step_sim=True)
             min_x_pos_for_record_start_passed = any(
-                [np.linalg.norm(object_prim.get_world_pose()[0][0]) > min_x_pos_for_record_start for object_prim in object_rigid_prims])
+                [object_prim.get_world_pose()[0][0] > min_x_pos_for_record_start for object_prim in object_rigid_prims])
 
         # Configure replicator "randomization"
         def randomize_sphere_light(sphere_lights, sphere_light_idx, sphere_light_configs):
