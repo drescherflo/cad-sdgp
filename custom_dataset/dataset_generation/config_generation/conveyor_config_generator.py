@@ -285,8 +285,8 @@ def main(argv: list[str]) -> None:
     default_min_x_pos_for_record_start = -2.0
     end_x_of_conveyor_in_simulation = 2.0
     distance_to_capture = end_x_of_conveyor_in_simulation - default_min_x_pos_for_record_start
-    time_for_recording = default_conveyor_belt_speed / distance_to_capture
-    default_num_frames_per_scene = time_for_recording * 60  # Sim runs at 60 FPS (https://docs.omniverse.nvidia.com/py/isaacsim/source/extensions/omni.isaac.core/docs/index.html#module-omni.isaac.core.world)
+    time_for_recording = distance_to_capture / default_conveyor_belt_speed
+    default_num_frames_per_scene = int(time_for_recording * 60)  # Sim runs at 60 FPS (https://docs.omniverse.nvidia.com/py/isaacsim/source/extensions/omni.isaac.core/docs/index.html#module-omni.isaac.core.world)
 
     # Setup argument parser
     parser = argparse.ArgumentParser(description="Generates a configuration for the training data generation script")
