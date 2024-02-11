@@ -150,14 +150,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             xform_conveyor_frame_prim.apply_visual_material(conveyor_frame_material)
         rep_conveyor_frame_material = rep.get.material(conveyor_frame_material_path)
 
-        # Initialize writers
-        # writers = []
-        # for writer_config in writer_configs:
-        #     writer = rep.WriterRegistry.get(writer_config["name"])
-        #     writer.initialize(output_dir=out_dir, init_frame_nr=frame_number, **writer_config["args"])
-        #     writer.attach(render_product)
-        #     writers.append(writer)
-
         # Add distant light
         distant_light = rep.create.light(light_type="distant")
 
@@ -282,6 +274,18 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             with rep_conveyor_frame_material:
                 rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))
 
+        # Initialize writers
+        writer_configs = [{"name": "ResumableBasicWriter", "args": {"rgb": True}}]  # TODO remove me
+        writers = []
+        for writer_config in writer_configs:
+            writer = rep.WriterRegistry.get(writer_config["name"])
+            writer.initialize(output_dir=out_dir, init_frame_nr=frame_number, **writer_config["args"])
+            writer.attach(render_product)
+            writers.append(writer)
+
+        # Generate replicator graphs
+        rep.orchestrator.preview()
+
         # Capture data
         for scene_frame_nr in range(num_frames_per_scene):
             if not simulation_app.is_running():
@@ -314,7 +318,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 if __name__ == '__main__':
     conf_path = "custom_dataset/dataset_generation/config_generation/config.json"
     usd_dir = "CAD Models/OBJ_converted"
-    out_dir = "temp_replicator_out"
+    out_dir = os.path.abspath("temp_replicator_out")
 
     main(conf_path, usd_dir, out_dir)
     simulation_app.close()
