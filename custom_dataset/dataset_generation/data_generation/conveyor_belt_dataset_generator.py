@@ -23,6 +23,7 @@ from omni.isaac.core.utils import extensions
 from omni.isaac.core.utils import prims
 from omni.isaac.core.utils.rotations import euler_angles_to_quat
 from omni.isaac.core.prims import RigidPrim, XFormPrim, GeometryPrim
+from omni.isaac.core.materials import OmniPBR
 
 from resumable_writers import load_resumable_writer_plugins
 from utils.scene_setup import generate_materials
@@ -128,18 +129,26 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             rep.modify.material(plane_material)
 
         # Add material for custom colors of conveyor belt belts
-        conveyor_belt_material = rep.create.material_omnipbr(roughness=1)
-        conveyor_belts = rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/Belt\/SM_ConveyorBelt_A09_Belt_02")
-        with conveyor_belts:
-            rep.modify.material(conveyor_belt_material)  # FIXME
+        conveyor_belt_material_path = "/materials/conveyor_belt"
+        conveyor_belt_material = OmniPBR(conveyor_belt_material_path)
+        conveyor_belt_material.set_reflection_roughness(1.0)
+        conveyor_belt_prim_paths = prim_utils.find_matching_prim_paths(
+            "/World/ConveyorTrack(.)*/Belt/SM_ConveyorBelt_A09_Belt_02")
+        for conveyor_belt_prim_path in conveyor_belt_prim_paths:
+            xform_conveyor_belt_prim = XFormPrim(conveyor_belt_prim_path)
+            xform_conveyor_belt_prim.apply_visual_material(conveyor_belt_material)
+        rep_conveyor_belt_material = rep.get.material(conveyor_belt_material_path)
 
         # Add material for custom color of conveyor belt frame
-        conveyor_frame_material = rep.create.material_omnipbr(roughness=1)
-        conveyor_frames = rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/SM_ConveyorBelt_A09_02")
-        with conveyor_frames:
-            rep.modify.material(conveyor_belt_material)  # FIXME
-
-
+        conveyor_frame_material_path = "/materials/conveyor_frame"
+        conveyor_frame_material = OmniPBR(conveyor_frame_material_path)
+        conveyor_frame_material.set_reflection_roughness(1.0)
+        conveyor_frame_prim_paths = prim_utils.find_matching_prim_paths(
+            "/World/ConveyorTrack(.)*/SM_ConveyorBelt_A09_02")
+        for conveyor_frame_prim_path in conveyor_frame_prim_paths:
+            xform_conveyor_frame_prim = XFormPrim(conveyor_frame_prim_path)
+            xform_conveyor_frame_prim.apply_visual_material(conveyor_frame_material)
+        rep_conveyor_frame_material = rep.get.material(conveyor_frame_material_path)
 
         # Initialize writers
         # writers = []
@@ -266,12 +275,12 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                 rep.randomizer.randomize_sphere_light(sphere_lights, i, sphere_light_configs)
 
             # Change conveyor belt color
-            with conveyor_belt_material:
-                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_belt_colors))   # FIXME
+            with rep_conveyor_belt_material:
+                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_belt_colors))
 
             # Change conveyor frame color
-            with conveyor_frame_material:
-                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))  # FIXME
+            with rep_conveyor_frame_material:
+                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))
 
         # Capture data
         for scene_frame_nr in range(num_frames_per_scene):
