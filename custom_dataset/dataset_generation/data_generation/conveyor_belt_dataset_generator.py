@@ -225,12 +225,35 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             assert og.Controller.set(og.Controller.attribute(conveyor_node_prim_path + ".inputs:velocity"), conveyor_belt_speed)
 
         # Wait for min one object to pass min_x_pos_for_record_start before start of recording
-        min_x_pos_for_record_start_passed = False
-        while not min_x_pos_for_record_start_passed:
-            # Run simulation for one step and check x coordinates
+        # Calc max num frames before checking if objects are moving
+        max_object_distance_to_min_x_pos_for_record_start = min_x_pos_for_record_start - min(object["object_init_pose"]["position"][0] for object in scene_config["objects"])
+        max_time_to_wait = max_object_distance_to_min_x_pos_for_record_start / conveyor_belt_speed
+        num_frames_to_wait_for_movement_check = max_time_to_wait * 60  # Sim runs at 60 FPS (https://docs.omniverse.nvidia.com/py/isaacsim/source/extensions/omni.isaac.core/docs/index.html#module-omni.isaac.core.world)
+
+        waited_frames_before_movement_check = 0
+        num_x_positions_to_check = 10
+        max_x_diff = 0.001
+        last_max_x_positions = collections.deque(maxlen=num_velocities_to_check)
+        while True:
+            # Run simulation for one step and check if one object passed min_x_pos_for_record_start
             world.step(render=True, step_sim=True)
-            min_x_pos_for_record_start_passed = any(
-                [object_prim.get_world_pose()[0][0] > min_x_pos_for_record_start for object_prim in object_rigid_prims])
+            if any([object_prim.get_world_pose()[0][0] > min_x_pos_for_record_start for object_prim in object_rigid_prims]):
+                break
+
+            # Check if objects are even moving on the conveyor belt
+            # If not, proceed with recording
+            if waited_frames_before_movement_check > num_frames_to_wait_for_movement_check:
+                max_x_pos = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
+                last_max_x_positions.append(max_x_pos)
+                if len(last_max_velocities) < num_x_positions_to_check:
+                    continue
+                max_last_x_pos = max(last_max_x_positions)
+                min_last_x_pos = min(last_max_x_positions)
+                if max_last_x_pos - min_last_x_pos < max_x_diff:
+                    print("Warning! None of the objects in the scene is moving on the conveyor belt. Resuming with data recording...")
+                    break
+            else:
+                waited_frames_before_movement_check += 1
 
         # Configure replicator "randomization"
         def randomize_sphere_light(sphere_lights, sphere_light_idx, sphere_light_configs):
