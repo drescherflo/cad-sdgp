@@ -280,6 +280,15 @@ def main(argv: list[str]) -> None:
     :type argv: list[str]
     """
 
+    # Calculate default num frames per scene
+    default_conveyor_belt_speed = 0.2
+    default_min_x_pos_for_record_start = -2.0
+    end_x_of_conveyor_in_simulation = 2.0
+    distance_to_capture = end_x_of_conveyor_in_simulation - default_min_x_pos_for_record_start
+    time_for_recording = default_conveyor_belt_speed / distance_to_capture
+    default_num_frames_per_scene = time_for_recording * 60  # Sim runs at 60 FPS (https://docs.omniverse.nvidia.com/py/isaacsim/source/extensions/omni.isaac.core/docs/index.html#module-omni.isaac.core.world)
+
+    # Setup argument parser
     parser = argparse.ArgumentParser(description="Generates a configuration for the training data generation script")
     parser.add_argument("--usd_dir", help="Directory containing the converted CAD models as USD files", required=True)
     parser.add_argument("--out_path", default="config.json", help="Output path for the generated configuration")
@@ -291,7 +300,7 @@ def main(argv: list[str]) -> None:
                         help="Defines the number of random materials to generate")
     parser.add_argument("--probability_of_glass_material", default=0.5, type=float,
                         help="Defines the probability of generating glass objects")
-    parser.add_argument("--num_frames_per_scene", default=1000, type=int,
+    parser.add_argument("--num_frames_per_scene", default=default_num_frames_per_scene, type=int,
                         help="Number of frames to record per simulation run / simulation scene")
     parser.add_argument("--num_objects_per_scene", default=20, type=int,
                         help="Specifies the number of objects in the scene")
@@ -325,9 +334,9 @@ def main(argv: list[str]) -> None:
                         help="The minimum z coordinate of light spheres in the scene")
     parser.add_argument("--sphere_max_z", default=2.7, type=float,
                         help="The maximum z coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_intensity", default=5000, type=float,
+    parser.add_argument("--sphere_min_intensity", default=1000, type=float,
                         help="The minimum light intensity of a sphere light")
-    parser.add_argument("--sphere_max_intensity", default=50000, type=float,
+    parser.add_argument("--sphere_max_intensity", default=5000, type=float,
                         help="The maximum light intensity of a sphere light")
     parser.add_argument("--camera_pos_min_x", default=-0.5, type=float,
                         help="The minimum x coordinate of the camera in the scene")
@@ -365,13 +374,13 @@ def main(argv: list[str]) -> None:
                         help="The minimum z coordinate of the direct light in the scene")
     parser.add_argument("--distant_light_max_rot_z", default=180, type=float,
                         help="The maximum z coordinate of the direct light in the scene")
-    parser.add_argument("--distant_light_min_intensity", default=1000, type=float,
+    parser.add_argument("--distant_light_min_intensity", default=200, type=float,
                         help="The minimum light intensity of the direct light")
-    parser.add_argument("--distant_light_max_intensity", default=10000, type=float,
+    parser.add_argument("--distant_light_max_intensity", default=1000, type=float,
                         help="The minimum light intensity of the direct light")
-    parser.add_argument("--conveyor_belt_speed", default=0.2, type=float,
+    parser.add_argument("--conveyor_belt_speed", default=default_conveyor_belt_speed, type=float,
                         help="The speed of the conveyor belt in the simulation")
-    parser.add_argument("--min_x_pos_for_record_start", default=-2.0, type=float,
+    parser.add_argument("--min_x_pos_for_record_start", default=default_min_x_pos_for_record_start, type=float,
                         help="Defines the minimum x coordinate at least one object needs to have passed to start writing the dataset")
 
 
