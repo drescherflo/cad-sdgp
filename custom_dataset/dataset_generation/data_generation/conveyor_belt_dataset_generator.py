@@ -113,7 +113,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         stage_utils.add_reference_to_stage(os.path.join(os.path.dirname(os.path.abspath(__file__)), "isaac_worlds/conveyor.usd"), "/World")
 
         # Get world
-        world = World(physics_dt=(1/60.))  # TODO: check if higher dt reduces object glitching
+        world = World(physics_dt=(1/240.))  # 1/240 was first multiple of 60 Hz where objects in test data did not glitch through conveyor belt or were "catapulted" out of conveyor belt because being detected inside the belt
 
         # Generate object materials
         materials = generate_materials(config["materials"])
@@ -225,7 +225,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             lin_vel_delta = max_last_lin_vel - min_last_lin_vel
             print("Linear velocity delta", lin_vel_delta)
             if lin_vel_delta < max_lin_velocity_delta_for_finished_falling:
-                print("Warning! Min one object glitched through the conveyor belt. The detection if objects stopped falling may be inaccurate!")
+                print("Warning! Min one object may glitched through the conveyor belt or fell off the belt. The detection if objects stopped falling may be inaccurate!")
                 break
 
         # Set conveyor belt speed to specified value
@@ -262,6 +262,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                     break
             else:
                 waited_frames_before_movement_check += 1
+
+        continue
 
         # Configure replicator "randomization"
         def randomize_sphere_light(sphere_lights, sphere_light_idx, sphere_light_configs):
@@ -334,6 +336,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
 
+            # Caluculate object speed on conveyor belt (for debugging)
             new_max_x_pose = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
             delta = new_max_x_pose - last_max_x_pos
             print("object velocity on conveyor:", delta / (1/60.0))
