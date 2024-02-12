@@ -263,8 +263,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             else:
                 waited_frames_before_movement_check += 1
 
-        continue
-
         # Configure replicator "randomization"
         def randomize_sphere_light(sphere_lights, sphere_light_idx, sphere_light_configs):
             sphere_light = sphere_lights[sphere_light_idx]
@@ -336,7 +334,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
 
-            # Caluculate object speed on conveyor belt (for debugging)
+            # Calculate object speed on conveyor belt (for debugging)
             new_max_x_pose = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
             delta = new_max_x_pose - last_max_x_pos
             print("object velocity on conveyor:", delta / (1/60.0))
