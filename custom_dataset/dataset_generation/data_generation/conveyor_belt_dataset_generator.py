@@ -117,6 +117,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
         # Generate object materials
         materials = generate_materials(config["materials"])
+        rep_materials = [rep.get.prims(path_match=material.prim_path) for material in materials]  # Use get.prims() instead of get.material() because replicator only supports OmniPbr-Materials and not OmniGlass, etc.
+        #test_mat = rep.get.prims(path_match="/obj_materials/material_0")
 
         # Add camera
         camera = rep.create.camera()
@@ -129,6 +131,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             rep.modify.material(plane_material)
 
         # Add material for custom colors of conveyor belt belts
+        # Use isaac API for assigning materials, because replicator does not apply changes for unknown reasons
         conveyor_belt_material_path = "/materials/conveyor_belt"
         conveyor_belt_material = OmniPBR(conveyor_belt_material_path)
         conveyor_belt_material.set_reflection_roughness(1.0)
@@ -140,6 +143,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         rep_conveyor_belt_material = rep.get.material(conveyor_belt_material_path)
 
         # Add material for custom color of conveyor belt frame
+        # Use isaac API for assigning materials, because replicator does not apply changes for unknown reasons
         conveyor_frame_material_path = "/materials/conveyor_frame"
         conveyor_frame_material = OmniPBR(conveyor_frame_material_path)
         conveyor_frame_material.set_reflection_roughness(1.0)
@@ -160,6 +164,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         num_objects_per_scene = len(scene_config["objects"])
         object_prims = []
         object_rigid_prims = []
+        rep_object_prims = []
         for i, object in enumerate(scene_config["objects"]):
             usd_path = os.path.abspath(os.path.join(usd_dir, object["usd_model"]))
             if not os.path.isfile(usd_path):
@@ -183,7 +188,9 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
             world.scene.add(rigid_prim)  # Register in world's scene to enable physics simulation
             world.scene.add(geometry_prim)  # Register in world's scene to enable collision calculations
+
             object_rigid_prims.append(rigid_prim)
+            rep_object_prims.append(rep.get.xform(path_pattern=prim_path))
 
         # Reset the world to handle the physics of the newly created prims
         world.reset()
@@ -275,7 +282,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # simulation_app.close()
         # exit(0)
         # TODO: remove me
-        
+
         # Configure replicator "randomization"
         def randomize_sphere_light(sphere_lights, sphere_light_idx, sphere_light_configs):
             sphere_light = sphere_lights[sphere_light_idx]
@@ -290,6 +297,17 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             return sphere_light
 
         rep.randomizer.register(randomize_sphere_light)
+
+        # def randomize_object_materials(objects, object_idx, materials, object_material_assignments):
+        #     # does not work since rep.distribution.sequence only allows basic types as input and prim paths as input lead to duplicate element error
+        #     object = objects[object_idx]
+        #     object_material_indices = [per_frame_assignments[object_idx]["material_idx"] for per_frame_assignments in object_material_assignments]
+        #     object_materials = [materials[idx].prim_path for idx in object_material_indices]
+        #     with object:
+        #         rep.modify.material(rep.distribution.sequence(object_materials))
+        #     return object
+        #
+        # rep.randomizer.register(randomize_object_materials)
 
         with rep.trigger.on_frame():  # Change on every rendered frame
             # Change camera position and orientation
@@ -318,6 +336,18 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             with rep_conveyor_frame_material:
                 rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))
 
+            # # Change assigned object materials
+            # for i in range(len(rep_object_prims)):
+            #     rep.randomizer.randomize_object_materials(rep_object_prims, i, materials, object_material_assignments)
+
+            # rep_prim = rep.get.xform(object_prims[0].GetPrimPath().pathString)
+            # #test_mat = rep.get.material("/obj_materials/material_0")
+            # #test_mat = rep.get.material(conveyor_belt_material_path)
+            # test_mat = rep.get.prims(path_match="/obj_materials/material_0")
+            # with rep_prim:
+            #     rep.modify.material(test_mat)
+            #     rep.modify.pose(position=[2, 0, 0])
+
         # Initialize writers
         writer_configs = [{"name": "ResumableBasicWriter", "args": {"rgb": True}}]  # TODO remove me
         writers = []
@@ -340,17 +370,23 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             print(f"Writing scene frame {scene_frame_nr + 1} of {num_frames_per_scene} (total frame {frame_number + 1} of {num_frames})")
 
             # Assign material to object manually since replicator does not support sequential assignment
-            # for obj_idx, object_prim in enumerate(object_prims):
+            # for obj_idx, rep_object_prim in enumerate(rep_object_prims):
             #     material_idx = object_material_assignments[scene_frame_nr][obj_idx]["material_idx"]
-            #     xform_object_prim = XFormPrim(object_prim.GetPrimPath().pathString)
-            #     xform_object_prim.apply_visual_material(materials[material_idx])
+            #     with rep_object_prim:
+            #         rep.modify.material(rep_materials[material_idx])
 
+            # Assign material to object manually since replicator does not support sequential assignment
+            for obj_idx, object_prim in enumerate(object_rigid_prims):
+                material_idx = object_material_assignments[scene_frame_nr][obj_idx]["material_idx"]
+                #xform_object_prim = XFormPrim(object_prim.GetPrimPath().pathString)
+                object_prim.apply_visual_material(materials[material_idx])
+            
             # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
 
             new_max_x_pose = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
             delta = new_max_x_pose - last_max_x_pos
-            print(delta / (1/60.0))
+            print("object velocity on conveyor:", delta / (1/60.0))
             last_max_x_pos = new_max_x_pose
 
             # Increase frame_number count
