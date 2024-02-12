@@ -31,8 +31,9 @@ from omni.isaac.core.utils import prims
 from omni.isaac.core.utils.rotations import euler_angles_to_quat
 
 from resumable_writers import load_resumable_writer_plugins
-from utils.scene_setup import generate_materials
-from utils import quit_on_error
+from utils.scene_setup import generate_materials, randomize_sphere_light
+from utils.simulation import quit_on_error
+from utils.io import quit_if_out_dir_not_empty
 
 
 def extract_per_scene_config(scenes: list[dict], config_key: str) -> list:
@@ -89,10 +90,9 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     os.makedirs(out_dir, exist_ok=True)
 
     # Check for empty out_dir
-    if len(os.listdir(out_dir)) != 0:
-        print("Output directory is not empty. Exiting...")
-        quit_on_error(simulation_app)
+    quit_if_out_dir_not_empty(out_dir, simulation_app)
 
+    # Write train val split config
     with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
         json.dump(train_val_split_config, f, indent=4)
 
@@ -140,7 +140,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
         # Add ground plane to scene as background
         plane_material = rep.create.material_omnipbr(roughness=1)
-        plane = rep.create.plane(scale=10, visible=True, material=plane_material)
+        rep.create.plane(scale=10, visible=True, material=plane_material)
 
         # Add objects
         num_objects_per_scene = len(object_configs[0])
@@ -148,24 +148,11 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         for i, object_config in enumerate(object_configs[0]):
             usd_path = os.path.abspath(os.path.join(usd_dir, object_config["usd_model"]))
             if not os.path.isfile(usd_path):
-                print(f"USD file at path '{usd_path}' could not be found. Exiting...", file=sys.stderr)
-                quit_on_error(simulation_app)
+                quit_on_error(f"USD file at path '{usd_path}' could not be found. Exiting...", simulation_app)
                 
             object_prims.append(prims.create_prim(prim_path=f"/objects/object_{i:0{len(str(num_objects_per_scene))}}", usd_path=usd_path, semantic_label=object_config["semantic_class_label"]))
 
         # Configure replicator "randomization"
-        def randomize_sphere_light(sphere_lights, sphere_light_idx, sphere_light_configs):
-            sphere_light = sphere_lights[sphere_light_idx]
-            sphere_light_config = [sphere_light_per_frame_config[sphere_light_idx] for sphere_light_per_frame_config in sphere_light_configs]
-            sphere_light_positions = [config["position"] for config in sphere_light_config]
-            sphere_light_colors = [config["color"] for config in sphere_light_config]
-            sphere_light_intensities = [config["intensity"] if "intensity" in config else 1000 for config in sphere_light_config]  # if expression required for compatibility with older configs. 1000 is default value according to https://docs.omniverse.nvidia.com/py/replicator/1.10.10/source/extensions/omni.replicator.core/docs/API.html#omni.replicator.core.create.light (08.02.2024)
-            with sphere_light:
-                rep.modify.attribute("color", rep.distribution.sequence(sphere_light_colors))
-                rep.modify.attribute("intensity", rep.distribution.sequence(sphere_light_intensities))
-                rep.modify.pose(position=rep.distribution.sequence(sphere_light_positions))
-            return sphere_light
-
         rep.randomizer.register(randomize_sphere_light)
 
         with rep.trigger.on_frame():  # Change on every rendered frame
@@ -185,8 +172,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Capture training data
         for current_scene_config in object_type_specific_scene_configs:
             if not simulation_app.is_running():
-                print("Simulation has been stopped. Exiting...")
-                quit_on_error(simulation_app)
+                quit_on_error("Simulation has been stopped. Exiting...", simulation_app)
 
             print(f"Writing frame {str(frame_number + 1)} of {num_frames}")
 

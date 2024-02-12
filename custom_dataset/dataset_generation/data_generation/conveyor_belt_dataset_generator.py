@@ -5,12 +5,22 @@ import json
 import sys
 import numpy as np
 import collections
+
 from utils.config import parse_writer_args
+
+# Parse args
+parser = argparse.ArgumentParser(description="Generates training data for Alignment neural networks with Omniverse Replicator with moving objects on a conveyor belt")
+parser.add_argument("--headless", help="Run in headless mode", action="store_true")
+parser.add_argument("--output_dir", help="Output directory", required=True)
+parser.add_argument("--usd_dir", help="Directory containing the USD versions of the CAD models to be used for data generation", required=True)
+parser.add_argument("--config_file", help="Path to the JSON configuration file describing the to be generated scenes", required=True)
+parser.add_argument("--writer", nargs="*", action="append", help="Configures writers from the resumable_writers plugin package. Argument can be added multiple times", required=True)
+args = parser.parse_args(sys.argv[1:])
 
 # Launch Isaac Sim
 from omni.isaac.kit import SimulationApp
 
-CONFIG = {"renderer": "RayTracedLighting", "headless": False}# args.headless}
+CONFIG = {"renderer": "RayTracedLighting", "headless":False} # args.headless}
 simulation_app = SimulationApp(launch_config=CONFIG)
 
 # Omniverse imports and omniverse related imports need to be done after the simulation has been started
@@ -26,16 +36,13 @@ from omni.isaac.core.prims import RigidPrim, XFormPrim, GeometryPrim
 from omni.isaac.core.materials import OmniPBR
 
 from resumable_writers import load_resumable_writer_plugins
-from utils.scene_setup import generate_materials
-from utils import quit_on_error
+from utils.scene_setup import generate_materials, randomize_sphere_light
+from utils.simulation import quit_on_error
+from utils.io import quit_if_out_dir_not_empty
 
 
 # Enable conveyor belt extension
 extensions.enable_extension("omni.isaac.conveyor")
-
-
-def get_conveyor_node_prims():
-    return rep.get.prims(path_pattern="\/World\/ConveyorTrack(.)*\/ConveyorBeltGraph\/ConveyorNode")
 
 
 def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
@@ -66,7 +73,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     num_frames_per_scene = config["num_frames_per_scene"]
 
     # Parse writer config
-    # writer_configs = parse_writer_args(args.writer)  TODO uncomment
+    writer_configs = parse_writer_args(args.writer)
 
     # Write train val split
     train_val_split_config = {
@@ -78,11 +85,9 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     os.makedirs(out_dir, exist_ok=True)
 
     # Check for empty out_dir
-    #if len(os.listdir(out_dir)) != 0:
-    #    print("Output directory is not empty. Exiting...")
-    #    quit_on_error(simulation_app)
-    # TODO uncomment and move to separate function
+    quit_if_out_dir_not_empty(out_dir, simulation_app)
 
+    # Write train val split config
     with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
         json.dump(train_val_split_config, f, indent=4)
 
@@ -165,8 +170,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         for i, object in enumerate(scene_config["objects"]):
             usd_path = os.path.abspath(os.path.join(usd_dir, object["usd_model"]))
             if not os.path.isfile(usd_path):
-                print(f"USD file at path '{usd_path}' could not be found. Exiting...", file=sys.stderr)
-                quit_on_error(simulation_app)
+                quit_on_error(f"USD file at path '{usd_path}' could not be found. Exiting...", simulation_app)
 
             prim_name = f"object_{i:0{len(str(num_objects_per_scene))}}"
             prim_path = f"/objects/{prim_name}"
@@ -217,13 +221,13 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Else the max velocity would have large changes due to gravity or the collision with the belt / ground plane / etc
             max_lin_vel = max([np.linalg.norm(object_prim.get_linear_velocity()) for object_prim in object_rigid_prims])
             last_max_velocities.append(max_lin_vel)
-            print("Last max linear velocity:", max_lin_vel)
+            # print("Last max linear velocity:", max_lin_vel) # for debugging
             if len(last_max_velocities) < num_velocities_to_check:
                 continue
             max_last_lin_vel = max(last_max_velocities)
             min_last_lin_vel = min(last_max_velocities)
             lin_vel_delta = max_last_lin_vel - min_last_lin_vel
-            print("Linear velocity delta", lin_vel_delta)
+            # print("Linear velocity delta", lin_vel_delta) # for debugging
             if lin_vel_delta < max_lin_velocity_delta_for_finished_falling:
                 print("Warning! Min one object may glitched through the conveyor belt or fell off the belt. The detection if objects stopped falling may be inaccurate!")
                 break
@@ -264,18 +268,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                 waited_frames_before_movement_check += 1
 
         # Configure replicator "randomization"
-        def randomize_sphere_light(sphere_lights, sphere_light_idx, sphere_light_configs):
-            sphere_light = sphere_lights[sphere_light_idx]
-            sphere_light_config = [sphere_light_per_frame_config[sphere_light_idx] for sphere_light_per_frame_config in sphere_light_configs]
-            sphere_light_positions = [config["position"] for config in sphere_light_config]
-            sphere_light_colors = [config["color"] for config in sphere_light_config]
-            sphere_light_intensities = [config["intensity"] if "intensity" in config else 1000 for config in sphere_light_config]  # if expression required for compatibility with older configs. 1000 is default value according to https://docs.omniverse.nvidia.com/py/replicator/1.10.10/source/extensions/omni.replicator.core/docs/API.html#omni.replicator.core.create.light (08.02.2024)
-            with sphere_light:
-                rep.modify.attribute("color", rep.distribution.sequence(sphere_light_colors))
-                rep.modify.attribute("intensity", rep.distribution.sequence(sphere_light_intensities))
-                rep.modify.pose(position=rep.distribution.sequence(sphere_light_positions))
-            return sphere_light
-
         rep.randomizer.register(randomize_sphere_light)
 
         with rep.trigger.on_frame():  # Change on every rendered frame
@@ -306,7 +298,6 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                 rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))
 
         # Initialize writers
-        writer_configs = [{"name": "ResumableBasicWriter", "args": {"rgb": True}}]  # TODO remove me
         writers = []
         for writer_config in writer_configs:
             writer = rep.WriterRegistry.get(writer_config["name"])
@@ -317,12 +308,11 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Generate replicator graphs
         rep.orchestrator.preview()
 
-        last_max_x_pos = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
         # Capture data
+        # last_max_x_pos = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])  # for debugging
         for scene_frame_nr in range(num_frames_per_scene):
             if not simulation_app.is_running():
-                print("Simulation has been stopped. Exiting...", file=sys.stderr)
-                quit_on_error(simulation_app)
+                quit_on_error("Simulation has been stopped. Exiting...", simulation_app)
 
             print(f"Writing scene frame {scene_frame_nr + 1} of {num_frames_per_scene} (total frame {frame_number + 1} of {num_frames})")
 
@@ -334,25 +324,17 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
 
-            # Calculate object speed on conveyor belt (for debugging)
-            new_max_x_pose = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
-            delta = new_max_x_pose - last_max_x_pos
-            print("object velocity on conveyor:", delta / (1/60.0))
-            last_max_x_pos = new_max_x_pose
+            # # Calculate object speed on conveyor belt (for debugging)
+            # new_max_x_pose = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
+            # delta = new_max_x_pose - last_max_x_pos
+            # print("object velocity on conveyor:", delta / (1/60.0))
+            # last_max_x_pos = new_max_x_pose
 
             # Increase frame_number count
             frame_number += 1
-
-    while simulation_app.is_running():
-        simulation_app.update()
-    simulation_app.close()
-    exit(0)
     
 
 if __name__ == '__main__':
-    conf_path = "custom_dataset/dataset_generation/config_generation/config.json"
-    usd_dir = "CAD Models/OBJ_converted"
-    out_dir = os.path.abspath("temp_replicator_out")
-
-    main(conf_path, usd_dir, out_dir)
+    out_dir = args.output_dir if os.path.isabs(args.output_dir) else os.path.join(os.getcwd(), args.output_dir)
+    main(args.config_file, args.usd_dir, out_dir)
     simulation_app.close()
