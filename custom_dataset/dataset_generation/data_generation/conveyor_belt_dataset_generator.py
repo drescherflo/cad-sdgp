@@ -113,7 +113,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         stage_utils.add_reference_to_stage(os.path.join(os.path.dirname(os.path.abspath(__file__)), "isaac_worlds/conveyor.usd"), "/World")
 
         # Get world
-        world = World()
+        world = World(physics_dt=(1/60.))  # TODO: check if higher dt reduces object glitching
 
         # Generate object materials
         materials = generate_materials(config["materials"])
@@ -260,6 +260,22 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             else:
                 waited_frames_before_movement_check += 1
 
+        # frame = 0
+        # last_max_x_pos = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
+        # while simulation_app.is_running():
+        #     print(frame)
+        #     simulation_app.update()
+        #     new_max_x_pose = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
+        #     delta = new_max_x_pose - last_max_x_pos
+        #     print(delta / (1/60.0))
+        #     last_max_x_pos = new_max_x_pose
+        #     frame += 1
+        #     if any([object_prim.get_world_pose()[0][0] > 2 for object_prim in object_rigid_prims]):
+        #         break
+        # simulation_app.close()
+        # exit(0)
+        # TODO: remove me
+        
         # Configure replicator "randomization"
         def randomize_sphere_light(sphere_lights, sphere_light_idx, sphere_light_configs):
             sphere_light = sphere_lights[sphere_light_idx]
@@ -314,6 +330,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Generate replicator graphs
         rep.orchestrator.preview()
 
+        last_max_x_pos = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
         # Capture data
         for scene_frame_nr in range(num_frames_per_scene):
             if not simulation_app.is_running():
@@ -323,16 +340,18 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             print(f"Writing scene frame {scene_frame_nr + 1} of {num_frames_per_scene} (total frame {frame_number + 1} of {num_frames})")
 
             # Assign material to object manually since replicator does not support sequential assignment
-            for obj_idx, object_prim in enumerate(object_prims):
-                material_idx = object_material_assignments[scene_frame_nr][obj_idx]["material_idx"]
-                xform_object_prim = XFormPrim(object_prim.GetPrimPath().pathString)
-                xform_object_prim.apply_visual_material(materials[material_idx])
-
-            # Run simulation for one step, but don't render, since rendering is done by replicator
-            #TODO world.step(render=False, step_sim=True)?  render False?
+            # for obj_idx, object_prim in enumerate(object_prims):
+            #     material_idx = object_material_assignments[scene_frame_nr][obj_idx]["material_idx"]
+            #     xform_object_prim = XFormPrim(object_prim.GetPrimPath().pathString)
+            #     xform_object_prim.apply_visual_material(materials[material_idx])
 
             # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
+
+            new_max_x_pose = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
+            delta = new_max_x_pose - last_max_x_pos
+            print(delta / (1/60.0))
+            last_max_x_pos = new_max_x_pose
 
             # Increase frame_number count
             frame_number += 1
