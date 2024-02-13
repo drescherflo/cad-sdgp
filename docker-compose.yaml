@@ -51,6 +51,7 @@ services:
               count: all
               capabilities: [ gpu ]
     profiles: [ "manual" ]  # Disable autostart with compose up
+# TODO: Add conveyor config and dataset generator
   dataset_converter:
     build: custom_dataset/dataset_conversion/
     image: drescherflo/ma_dataset_converter

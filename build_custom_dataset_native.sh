@@ -22,6 +22,10 @@ deactivate
 ## Generate 6 DOF dataset
 "$ISAAC_SIM_INSTALL_DIR"/python.sh custom_dataset/dataset_generation/data_generation/6_dof_dataset_generator.py --headless --output_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" --config_file "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" --writer ResumableBasicWriter rgb=True camera_params=True --writer WorldPoseWriter
 
+
+# TODO: Add conveyor config and dataset generation
+
+
 ## Convert dataset
 source custom_dataset/dataset_conversion/venv/bin/activate
 python custom_dataset/dataset_conversion/dataset_converter.py --obj_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ/" --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" --output_dir "$CUSTOM_DATASET_DIR/converted/"
