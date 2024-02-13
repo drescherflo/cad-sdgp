@@ -5,7 +5,25 @@ from omni.isaac.core.prims import XFormPrim
 
 
 class WorldPoseWriter(ResumableWriterInterface):
+    """
+    ResumableWriter that focuses on writing the world pose of visible objects.
+    """
+
     def __init__(self, output_dir: str, init_frame_nr: int = 0, frame_padding: int = 4):
+        """
+        Initializes an instance of WorldPoseWriter for writing world poses of visible objects to a specified output directory.
+
+        This class captures and writes the world pose (position and orientation) of visible objects within a scene,
+        starting from a given frame number. It supports frame numbering with customizable padding for filename consistency.
+
+        :param output_dir: The directory where world pose data files will be written.
+        :type output_dir: str
+        :param init_frame_nr: The initial frame number from which to start writing data. Defaults to 0.
+        :type init_frame_nr: int
+        :param frame_padding: The number of digits to use for zero-padding the frame number in the output filenames. Defaults to 4.
+        :type frame_padding: int
+        """
+
         self._output_dir = output_dir
         self._frame_nr = init_frame_nr
         self._frame_padding = frame_padding
@@ -14,6 +32,18 @@ class WorldPoseWriter(ResumableWriterInterface):
         self.annotators.append(AnnotatorRegistry.get_annotator("bounding_box_2d_tight"))
 
     def write(self, data: dict):
+        """
+        Writes the world poses of visible objects for the current frame to a JSON file. The data includes both position and orientation
+        for each visible object identified by bounding box annotations. The output JSON file is named using the frame number with
+        zero-padding as configured.
+
+        This method processes data provided by the 'bounding_box_2d_tight' annotator, extracting the world poses of objects visible in
+        the scene and saving them to a JSON file in the output directory.
+
+        :param data: Dictionary containing data for the current frame, expected to include 'bounding_box_2d_tight' information.
+        :type data: dict
+        """
+
         if "bounding_box_2d_tight" in data:
             # Store world pose of visible objects in the image
             bbox_data = data["bounding_box_2d_tight"]
