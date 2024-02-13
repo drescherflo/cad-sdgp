@@ -468,6 +468,10 @@ def main(argv: list[str]) -> None:
                         help="The speed of the conveyor belt in the simulation")
     parser.add_argument("--min_x_pos_for_record_start", default=default_min_x_pos_for_record_start, type=float,
                         help="Defines the minimum x coordinate at least one object needs to have passed to start writing the dataset")
+    parser.add_argument("--render_frequency", default=60, type=int,
+                        help="The render frequency in Hz")
+    parser.add_argument("--physics_frequency", default=240, type=int,
+                        help="The frequency at which the physics are calculated")
 
     # Parse args
     args = parser.parse_args(argv)
@@ -525,6 +529,8 @@ def main(argv: list[str]) -> None:
     distant_light_max_intensity = args.distant_light_max_intensity
     conveyor_belt_speed = args.conveyor_belt_speed
     min_x_pos_for_record_start = args.min_x_pos_for_record_start
+    render_frequency = args.render_frequency
+    physics_frequency = args.physics_frequency
 
     # Check range args for plausibility
     config.check_range_plausibility(object_init_min_x, object_init_max_x)
@@ -585,6 +591,8 @@ def main(argv: list[str]) -> None:
         "conveyor_belt_speed": conveyor_belt_speed,
         "min_x_pos_for_record_start": min_x_pos_for_record_start,
         "num_frames_per_scene": num_frames_per_scene,
+        "render_frequency": render_frequency,
+        "physics_frequency": physics_frequency,
         "generation_script_args": vars(args)
     }
 

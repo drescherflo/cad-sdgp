@@ -71,6 +71,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     conveyor_belt_speed = config["conveyor_belt_speed"]
     min_x_pos_for_record_start = config["min_x_pos_for_record_start"]
     num_frames_per_scene = config["num_frames_per_scene"]
+    render_frequency = config["render_frequency"]
+    physics_frequency = config["physics_frequency"]
 
     # Parse writer config
     writer_configs = parse_writer_args(args.writer)
@@ -118,7 +120,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         stage_utils.add_reference_to_stage(os.path.join(os.path.dirname(os.path.abspath(__file__)), "isaac_worlds/conveyor.usd"), "/World")
 
         # Get world
-        world = World(physics_dt=(1/240.))  # 1/240 was first multiple of 60 Hz where objects in test data did not glitch through conveyor belt or were "catapulted" out of conveyor belt because being detected inside the belt
+        world = World(physics_dt=1.0/physics_frequency, rendering_dt=1.0/render_frequency)
 
         # Generate object materials
         materials = generate_materials(config["materials"])
@@ -240,7 +242,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Calc max num frames before checking if objects are moving
         max_object_distance_to_min_x_pos_for_record_start = min_x_pos_for_record_start - min(object["object_init_pose"]["position"][0] for object in scene_config["objects"])
         max_time_to_wait = max_object_distance_to_min_x_pos_for_record_start / conveyor_belt_speed
-        num_frames_to_wait_for_movement_check = max_time_to_wait * 60  # Sim runs at 60 FPS (https://docs.omniverse.nvidia.com/py/isaacsim/source/extensions/omni.isaac.core/docs/index.html#module-omni.isaac.core.world)
+        num_frames_to_wait_for_movement_check = max_time_to_wait * render_frequency
 
         waited_frames_before_movement_check = 0
         num_x_positions_to_check = 10
@@ -327,7 +329,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # # Calculate object speed on conveyor belt (for debugging)
             # new_max_x_pose = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
             # delta = new_max_x_pose - last_max_x_pos
-            # print("object velocity on conveyor:", delta / (1/60.0))
+            # print("object velocity on conveyor:", delta / (1.0/render_frequency))
             # last_max_x_pos = new_max_x_pose
 
             # Increase frame_number count
