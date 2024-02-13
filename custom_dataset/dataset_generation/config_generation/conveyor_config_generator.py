@@ -4,120 +4,45 @@ The term scene means one data generation run, before the simulator reset.
 In one scene multiple frames are generated.
 """
 
-import inspect
 import sys
 import json
 import os
 import argparse
 import random
-from typing import Any
 
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-
-def get_usd_models(usd_dir: str) -> list[str]:
-    """
-    List all files with the '.usd' extension in the specified directory.
-
-    :param usd_dir: The path to the directory to search in.
-    :type usd_dir: str
-    :return: A list of file names with the '.usd' extension found in the specified directory.
-    :rtype: list
-    """
-    return [file for file in os.listdir(usd_dir) if file.endswith('.usd')]
-
-
-def generate_random_rgb_color() -> list[float]:
-    """
-    Generates a random RGB color.
-
-    Each color component is a float between 0 and 1, representing the intensity of red, green, and blue.
-
-    :return: A list containing three floats, each representing the red, green, and blue color components.
-    :rtype: list[float]
-    """
-
-    return [random.uniform(0, 1) for _ in range(3)]
-
-
-def generate_materials_conf(num_random_materials: int, probability_of_glass_material: float) -> list[dict]:
-    """
-    Generates a list of random material configurations.
-
-    The function randomly decides if a material is glass or metallic based on the provided probability, and assigns a random RGB color to each material.
-    For metallic materials, a random surface roughness is also assigned.
-
-    :param num_random_materials: Number of random materials to generate.
-    :type num_random_materials: int
-    :param probability_of_glass_material: Probability that a material is glass.
-    :type probability_of_glass_material: float
-    :return: A list of dictionaries, each containing the configuration of a material.
-    :rtype: list[dict]
-    """
-
-    mat_configs = []
-    for i in range(num_random_materials):
-        if random.uniform(0, 1) < probability_of_glass_material:
-            # Material is glass
-            mat_configs.append({
-                "material_idx": i,
-                "is_glass": True,
-                "color": generate_random_rgb_color()
-            })
-        else:
-            # Material is metallic
-            mat_configs.append({
-                "material_idx": i,
-                "is_glass": False,
-                "color": generate_random_rgb_color(),
-                "surface_roughness": random.uniform(0, 1)
-            })
-
-    return mat_configs
-
-
-def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: float, max_x: float, min_y: float,
-                                              max_y: float, min_z: float, max_z: float, min_intensity: float, max_intensity: float) -> list[dict]:
-    """
-    Generates configurations for sphere lights in a single frame.
-
-    Each sphere light configuration includes a random position and color.
-
-    :param num_sphere_lights: Number of sphere lights to generate.
-    :type num_sphere_lights: int
-    :param min_x: Minimum x coordinate for a light sphere.
-    :type min_x: float
-    :param max_x: Maximum x coordinate for a light sphere.
-    :type max_x: float
-    :param min_y: Minimum y coordinate for a light sphere.
-    :type min_y: float
-    :param max_y: Maximum y coordinate for a light sphere.
-    :type max_y: float
-    :param min_z: Minimum z coordinate for a light sphere.
-    :type min_z: float
-    :param max_z: Maximum z coordinate for a light sphere.
-    :type max_z: float
-    :return: A list containing the configurations of sphere lights.
-    :rtype: list[dict]
-    """
-
-    return [
-        {
-            "position": generate_random_vec_3(min_x, max_x, min_y, max_y, min_z, max_z),
-            "color": generate_random_rgb_color(),
-            "intensity": random.uniform(min_intensity, max_intensity)
-        }
-        for _ in range(num_sphere_lights)]
-
-
-def generate_random_vec_3(min_x: float, max_x: float, min_y: float, max_y: float, min_z: float, max_z: float):
-    return [random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.uniform(min_z, max_z)]
+from utils import io, config
+from utils.scene_randomization import generate_random_vec_3, generate_random_rgb_color, generate_materials_conf, generate_sphere_light_confs_for_one_frame
 
 
 def generate_object_config(usd_model: str, object_init_min_x: float, object_init_max_x: float,
                          object_init_min_y: float, object_init_max_y: float,
                          object_init_min_z: float, object_init_max_z: float) -> dict:
+    """
+    Generates a configuration dictionary for an object to be used in a conveyor dataset scene.
+    The configuration includes the USD model reference and the initial pose of the object,
+    with a randomly generated position within specified ranges.
+
+    :param usd_model: The USD model path or identifier for the object.
+    :type usd_model: str
+    :param object_init_min_x: Minimum x-coordinate for the initial position of the object.
+    :type object_init_min_x: float
+    :param object_init_max_x: Maximum x-coordinate for the initial position of the object.
+    :type object_init_max_x: float
+    :param object_init_min_y: Minimum y-coordinate for the initial position of the object.
+    :type object_init_min_y: float
+    :param object_init_max_y: Maximum y-coordinate for the initial position of the object.
+    :type object_init_max_y: float
+    :param object_init_min_z: Minimum z-coordinate for the initial position of the object.
+    :type object_init_min_z: float
+    :param object_init_max_z: Maximum z-coordinate for the initial position of the object.
+    :type object_init_max_z: float
+    :return: A dictionary containing the object's USD model path and initial pose.
+    :rtype: dict
+    """
+
     return {
                 "usd_model": usd_model,
                 "object_init_pose": {
@@ -145,6 +70,78 @@ def generate_per_frame_config(num_random_materials: int,
                          camera_rot_min_y: float, camera_rot_max_y: float,
                          camera_rot_min_z: float, camera_rot_max_z: float,
                          distant_light_min_intensity: float, distant_light_max_intensity: float) -> dict:
+    """
+    Generates a configuration dictionary for each frame in a scene, including camera poses,
+    lighting configurations (sphere lights and distant lights), and material assignments for objects.
+
+    :param num_random_materials: Number of random materials to choose from.
+    :type num_random_materials: int
+    :param num_frames_per_scene: Number of frames in each scene.
+    :type num_frames_per_scene: int
+    :param num_objects_per_scene: Number of objects in each scene.
+    :type num_objects_per_scene: int
+    :param num_sphere_lights: Number of sphere lights per frame.
+    :type num_sphere_lights: int
+    :param sphere_min_x: Minimum x-coordinate for sphere light positions.
+    :type sphere_min_x: float
+    :param sphere_max_x: Maximum x-coordinate for sphere light positions.
+    :type sphere_max_x: float
+    :param sphere_min_y: Minimum y-coordinate for sphere light positions.
+    :type sphere_min_y: float
+    :param sphere_max_y: Maximum y-coordinate for sphere light positions.
+    :type sphere_max_y: float
+    :param sphere_min_z: Minimum z-coordinate for sphere light positions.
+    :type sphere_min_z: float
+    :param sphere_max_z: Maximum z-coordinate for sphere light positions.
+    :type sphere_max_z: float
+    :param sphere_min_intensity: Minimum intensity for sphere lights.
+    :type sphere_min_intensity: float
+    :param sphere_max_intensity: Maximum intensity for sphere lights.
+    :type sphere_max_intensity: float
+    :param distant_light_min_rot_x: Minimum rotation angle for distant lights in the x-axis.
+    :type distant_light_min_rot_x: float
+    :param distant_light_max_rot_x: Maximum rotation angle for distant lights in the x-axis.
+    :type distant_light_max_rot_x: float
+    :param distant_light_min_rot_y: Minimum rotation angle for distant lights in the y-axis.
+    :type distant_light_min_rot_y: float
+    :param distant_light_max_rot_y: Maximum rotation angle for distant lights in the y-axis.
+    :type distant_light_max_rot_y: float
+    :param distant_light_min_rot_z: Minimum rotation angle for distant lights in the z-axis.
+    :type distant_light_min_rot_z: float
+    :param distant_light_max_rot_z: Maximum rotation angle for distant lights in the z-axis.
+    :type distant_light_max_rot_z: float
+    :param camera_pos_min_x: Minimum x-coordinate for camera positions.
+    :type camera_pos_min_x: float
+    :param camera_pos_max_x: Maximum x-coordinate for camera positions.
+    :type camera_pos_max_x: float
+    :param camera_pos_min_y: Minimum y-coordinate for camera positions.
+    :type camera_pos_min_y: float
+    :param camera_pos_max_y: Maximum y-coordinate for camera positions.
+    :type camera_pos_max_y: float
+    :param camera_pos_min_z: Minimum z-coordinate for camera positions.
+    :type camera_pos_min_z: float
+    :param camera_pos_max_z: Maximum z-coordinate for camera positions.
+    :type camera_pos_max_z: float
+    :param camera_rot_min_x: Minimum x-angle for camera rotation.
+    :type camera_rot_min_x: float
+    :param camera_rot_max_x: Maximum x-angle for camera rotation.
+    :type camera_rot_max_x: float
+    :param camera_rot_min_y: Minimum y-angle for camera rotation.
+    :type camera_rot_min_y: float
+    :param camera_rot_max_y: Maximum y-angle for camera rotation.
+    :type camera_rot_max_y: float
+    :param camera_rot_min_z: Minimum z-angle for camera rotation.
+    :type camera_rot_min_z: float
+    :param camera_rot_max_z: Maximum z-angle for camera rotation.
+    :type camera_rot_max_z: float
+    :param distant_light_min_intensity: Minimum intensity for distant lights.
+    :type distant_light_min_intensity: float
+    :param distant_light_max_intensity: Maximum intensity for distant lights.
+    :type distant_light_max_intensity: float
+    :return: Dictionary with configuration for per frame settings including camera poses, lighting, and material assignments.
+    :rtype: dict
+    """
+
     return {
         "camera_poses": [{
             "position": generate_random_vec_3(camera_pos_min_x, camera_pos_max_x, camera_pos_min_y, camera_pos_max_y,
@@ -173,7 +170,6 @@ def generate_per_frame_config(num_random_materials: int,
     }
 
 
-
 def generate_scenes_conf(usd_models: list[str], num_random_materials: int,
                          num_frames_per_scene: int, num_objects_per_scene: int, num_scenes_per_object: int,
                          num_sphere_lights: int,
@@ -195,6 +191,93 @@ def generate_scenes_conf(usd_models: list[str], num_random_materials: int,
                          camera_rot_min_z: float, camera_rot_max_z: float,
                          distant_light_min_intensity: float, distant_light_max_intensity: float
                          ) -> list:
+    """
+    Generates a list of scene configurations, each containing object configurations and per-frame configurations
+    for lighting, camera positions, and materials based on input parameters.
+
+    :param usd_models: List of USD model paths or identifiers for the objects.
+    :type usd_models: list[str]
+    :param num_random_materials: Number of random materials to choose from.
+    :type num_random_materials: int
+    :param num_frames_per_scene: Number of frames in each scene.
+    :type num_frames_per_scene: int
+    :param num_objects_per_scene: Number of objects in each scene.
+    :type num_objects_per_scene: int
+    :param num_scenes_per_object: Number of scenes to generate per object.
+    :type num_scenes_per_object: int
+    :param num_sphere_lights: Number of sphere lights per frame.
+    :type num_sphere_lights: int
+    :param object_init_min_x: Minimum x-coordinate for object initial positions.
+    :type object_init_min_x: float
+    :param object_init_max_x: Maximum x-coordinate for object initial positions.
+    :type object_init_max_x: float
+    :param object_init_min_y: Minimum y-coordinate for object initial positions.
+    :type object_init_min_y: float
+    :param object_init_max_y: Maximum y-coordinate for object initial positions.
+    :type object_init_max_y: float
+    :param object_init_min_z: Minimum z-coordinate for object initial positions.
+    :type object_init_min_z: float
+    :param object_init_max_z: Maximum z-coordinate for object initial positions.
+    :type object_init_max_z: float
+    :param sphere_min_x: Minimum x-coordinate for sphere light positions.
+    :type sphere_min_x: float
+    :param sphere_max_x: Maximum x-coordinate for sphere light positions.
+    :type sphere_max_x: float
+    :param sphere_min_y: Minimum y-coordinate for sphere light positions.
+    :type sphere_min_y: float
+    :param sphere_max_y: Maximum y-coordinate for sphere light positions.
+    :type sphere_max_y: float
+    :param sphere_min_z: Minimum z-coordinate for sphere light positions.
+    :type sphere_min_z: float
+    :param sphere_max_z: Maximum z-coordinate for sphere light positions.
+    :type sphere_max_z: float
+    :param sphere_min_intensity: Minimum intensity for sphere lights.
+    :type sphere_min_intensity: float
+    :param sphere_max_intensity: Maximum intensity for sphere lights.
+    :type sphere_max_intensity: float
+    :param distant_light_min_rot_x: Minimum rotation angle for distant lights in the x-axis.
+    :type distant_light_min_rot_x: float
+    :param distant_light_max_rot_x: Maximum rotation angle for distant lights in the x-axis.
+    :type distant_light_max_rot_x: float
+    :param distant_light_min_rot_y: Minimum rotation angle for distant lights in the y-axis.
+    :type distant_light_min_rot_y: float
+    :param distant_light_max_rot_y: Maximum rotation angle for distant lights in the y-axis.
+    :type distant_light_max_rot_y: float
+    :param distant_light_min_rot_z: Minimum rotation angle for distant lights in the z-axis.
+    :type distant_light_min_rot_z: float
+    :param distant_light_max_rot_z: Maximum rotation angle for distant lights in the z-axis.
+    :type distant_light_max_rot_z: float
+    :param camera_pos_min_x: Minimum x-coordinate for camera positions.
+    :type camera_pos_min_x: float
+    :param camera_pos_max_x: Maximum x-coordinate for camera positions.
+    :type camera_pos_max_x: float
+    :param camera_pos_min_y: Minimum y-coordinate for camera positions.
+    :type camera_pos_min_y: float
+    :param camera_pos_max_y: Maximum y-coordinate for camera positions.
+    :type camera_pos_max_y: float
+    :param camera_pos_min_z: Minimum z-coordinate for camera positions.
+    :type camera_pos_min_z: float
+    :param camera_pos_max_z: Maximum z-coordinate for camera positions.
+    :type camera_pos_max_z: float
+    :param camera_rot_min_x: Minimum x-angle for camera rotation.
+    :type camera_rot_min_x: float
+    :param camera_rot_max_x: Maximum x-angle for camera rotation.
+    :type camera_rot_max_x: float
+    :param camera_rot_min_y: Minimum y-angle for camera rotation.
+    :type camera_rot_min_y: float
+    :param camera_rot_max_y: Maximum y-angle for camera rotation.
+    :type camera_rot_max_y: float
+    :param camera_rot_min_z: Minimum z-angle for camera rotation.
+    :type camera_rot_min_z: float
+    :param camera_rot_max_z: Maximum z-angle for camera rotation.
+    :type camera_rot_max_z: float
+    :param distant_light_min_intensity: Minimum intensity for distant lights.
+    :type distant_light_min_intensity: float
+    :param distant_light_max_intensity: Maximum intensity for distant lights.
+    :type distant_light_max_intensity: float
+    :return: List of dictionaries, each representing a scene's configuration.
+    :rtype: list
+    """
 
     # Generate single object scenes
     scene_configs = []
@@ -258,18 +341,21 @@ def generate_scenes_conf(usd_models: list[str], num_random_materials: int,
 
 
 def generate_train_val_splits(num_scenes: int, num_frames_per_scene: int, val_share: float) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Splits the scene indices into training and validation sets based on the specified validation share.
+
+    :param num_scenes: Total number of scenes.
+    :type num_scenes: int
+    :param num_frames_per_scene: Number of frames in each scene.
+    :type num_frames_per_scene: int
+    :param val_share: Fraction of the dataset to be used as the validation set.
+    :type val_share: float
+    :return: Two numpy arrays containing the indices for the training and validation sets, respectively.
+    :rtype: tuple[np.ndarray, np.ndarray]
+    """
+
     scene_indices = np.arange(num_scenes * num_frames_per_scene)
     return train_test_split(scene_indices, test_size=val_share)
-
-
-def check_range_plausibility(min_val: float, max_val: float) -> None:
-    if min_val > max_val:
-        def get_var_name(var: Any) -> str:
-            # Code from https://stackoverflow.com/questions/18425225/getting-the-name-of-a-variable-as-a-string (02.02.2024)
-            callers_local_vars = inspect.currentframe().f_back.f_back.f_locals.items()
-            return [var_name for var_name, var_val in callers_local_vars if var_val is var][0]
-
-        raise ValueError(f"{get_var_name(min_val)} must be less or equal than {get_var_name(max_val)}")
 
 
 def main(argv: list[str]) -> None:
@@ -383,13 +469,6 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--min_x_pos_for_record_start", default=default_min_x_pos_for_record_start, type=float,
                         help="Defines the minimum x coordinate at least one object needs to have passed to start writing the dataset")
 
-
-    # TODO: evaulation-data-flag
-
-
-
-    # TODO (falls möglich): Bandfarbe randomisieren
-
     # Parse args
     args = parser.parse_args(argv)
 
@@ -448,23 +527,23 @@ def main(argv: list[str]) -> None:
     min_x_pos_for_record_start = args.min_x_pos_for_record_start
 
     # Check range args for plausibility
-    check_range_plausibility(object_init_min_x, object_init_max_x)
-    check_range_plausibility(object_init_min_y, object_init_max_y)
-    check_range_plausibility(object_init_min_z, object_init_max_z)
-    check_range_plausibility(sphere_min_x, sphere_max_x)
-    check_range_plausibility(sphere_min_y, sphere_max_y)
-    check_range_plausibility(sphere_min_z, sphere_max_z)
-    check_range_plausibility(sphere_min_intensity, sphere_max_intensity)
-    check_range_plausibility(camera_pos_min_x, camera_pos_max_x)
-    check_range_plausibility(camera_pos_min_y, camera_pos_max_y)
-    check_range_plausibility(camera_pos_min_z, camera_pos_max_z)
-    check_range_plausibility(camera_rot_min_x, camera_rot_max_x)
-    check_range_plausibility(camera_rot_min_y, camera_rot_max_y)
-    check_range_plausibility(camera_rot_min_z, camera_rot_max_z)
-    check_range_plausibility(distant_light_min_rot_x, distant_light_max_rot_x)
-    check_range_plausibility(distant_light_min_rot_y, distant_light_max_rot_y)
-    check_range_plausibility(distant_light_min_rot_z, distant_light_max_rot_z)
-    check_range_plausibility(distant_light_min_intensity, distant_light_max_intensity)
+    config.check_range_plausibility(object_init_min_x, object_init_max_x)
+    config.check_range_plausibility(object_init_min_y, object_init_max_y)
+    config.check_range_plausibility(object_init_min_z, object_init_max_z)
+    config.check_range_plausibility(sphere_min_x, sphere_max_x)
+    config.check_range_plausibility(sphere_min_y, sphere_max_y)
+    config.check_range_plausibility(sphere_min_z, sphere_max_z)
+    config.check_range_plausibility(sphere_min_intensity, sphere_max_intensity)
+    config.check_range_plausibility(camera_pos_min_x, camera_pos_max_x)
+    config.check_range_plausibility(camera_pos_min_y, camera_pos_max_y)
+    config.check_range_plausibility(camera_pos_min_z, camera_pos_max_z)
+    config.check_range_plausibility(camera_rot_min_x, camera_rot_max_x)
+    config.check_range_plausibility(camera_rot_min_y, camera_rot_max_y)
+    config.check_range_plausibility(camera_rot_min_z, camera_rot_max_z)
+    config.check_range_plausibility(distant_light_min_rot_x, distant_light_max_rot_x)
+    config.check_range_plausibility(distant_light_min_rot_y, distant_light_max_rot_y)
+    config.check_range_plausibility(distant_light_min_rot_z, distant_light_max_rot_z)
+    config.check_range_plausibility(distant_light_min_intensity, distant_light_max_intensity)
 
     # Check for existing config at out_path
     if os.path.exists(out_path):
@@ -476,7 +555,7 @@ def main(argv: list[str]) -> None:
         print("USD directory does not exist. Exiting...")
         exit(-1)
 
-    usd_models = get_usd_models(usd_dir)
+    usd_models = io.get_usd_models(usd_dir)
 
     # Build final config
     data_generation_config = {

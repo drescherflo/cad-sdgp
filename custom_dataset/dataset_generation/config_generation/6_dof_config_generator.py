@@ -12,17 +12,8 @@ import random
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-
-def get_usd_models(usd_dir: str) -> list[str]:
-    """
-    List all files with the '.usd' extension in the specified directory.
-
-    :param usd_dir: The path to the directory to search in.
-    :type usd_dir: str
-    :return: A list of file names with the '.usd' extension found in the specified directory.
-    :rtype: list
-    """
-    return [file for file in os.listdir(usd_dir) if file.endswith('.usd')]
+from utils import io, config
+from utils.scene_randomization import generate_random_vec_3, generate_random_rgb_color, generate_materials_conf, generate_sphere_light_confs_for_one_frame
 
 
 def generate_camera_conf(frame_width: int, frame_height: int, cam_distance_to_background: float) -> dict:
@@ -50,55 +41,6 @@ def generate_camera_conf(frame_width: int, frame_height: int, cam_distance_to_ba
             "orientation": [-90, -90, 0]  # Look at (0, 0, 0) with x-axis to the right
         }
     }
-
-
-def generate_random_rgb_color() -> list[float]:
-    """
-    Generates a random RGB color.
-
-    Each color component is a float between 0 and 1, representing the intensity of red, green, and blue.
-
-    :return: A list containing three floats, each representing the red, green, and blue color components.
-    :rtype: list[float]
-    """
-
-    return [random.uniform(0, 1) for _ in range(3)]
-
-
-def generate_materials_conf(num_random_materials: int, probability_of_glass_material: float) -> list[dict]:
-    """
-    Generates a list of random material configurations.
-
-    The function randomly decides if a material is glass or metallic based on the provided probability, and assigns a random RGB color to each material.
-    For metallic materials, a random surface roughness is also assigned.
-
-    :param num_random_materials: Number of random materials to generate.
-    :type num_random_materials: int
-    :param probability_of_glass_material: Probability that a material is glass.
-    :type probability_of_glass_material: float
-    :return: A list of dictionaries, each containing the configuration of a material.
-    :rtype: list[dict]
-    """
-
-    mat_configs = []
-    for i in range(num_random_materials):
-        if random.uniform(0, 1) < probability_of_glass_material:
-            # Material is glass
-            mat_configs.append({
-                "material_idx": i,
-                "is_glass": True,
-                "color": generate_random_rgb_color()
-            })
-        else:
-            # Material is metallic
-            mat_configs.append({
-                "material_idx": i,
-                "is_glass": False,
-                "color": generate_random_rgb_color(),
-                "surface_roughness": random.uniform(0, 1)
-            })
-
-    return mat_configs
 
 
 def generate_obj_conf(num_random_materials: int, usd_model: str, min_x: float, max_x: float, min_y: float, max_y: float,
@@ -129,9 +71,8 @@ def generate_obj_conf(num_random_materials: int, usd_model: str, min_x: float, m
     return {
         "usd_model": usd_model,
         "pose": {
-            "position": [random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.uniform(0, max_z)],
-            "orientation": [random.randint(-180, 180), random.randint(-180, 180), random.randint(-180, 180)]
-            # all axes from (-180° to 180°) (including)
+            "position": generate_random_vec_3(min_x, max_x, min_y, max_y, 0, max_z),
+            "orientation": generate_random_vec_3(-180, 180, -180, 180, -180, 180) # all axes from (-180° to 180°) (including)
         },
         "material_idx": random.randint(0, num_random_materials - 1),
         "semantic_class_label": usd_model.removesuffix("_obj.usd").lower().replace(" ", "_")
@@ -217,40 +158,6 @@ def generate_multiple_object_scene_confs(num_frames_per_object: int, num_objects
     return scene_confs
 
 
-def generate_sphere_light_confs_for_one_frame(num_sphere_lights: int, min_x: float, max_x: float, min_y: float,
-                                              max_y: float, max_z: float, sphere_min_intensity: float, sphere_max_intensity: float) -> list[dict]:
-    """
-    Generates configurations for sphere lights in a single frame.
-
-    Each sphere light configuration includes a random position and color.
-
-    :param num_sphere_lights: Number of sphere lights to generate.
-    :type num_sphere_lights: int
-    :param min_x: Minimum x coordinate for a light sphere.
-    :type min_x: float
-    :param max_x: Maximum x coordinate for a light sphere.
-    :type max_x: float
-    :param min_y: Minimum y coordinate for a light sphere.
-    :type min_y: float
-    :param max_y: Maximum y coordinate for a light sphere.
-    :type max_y: float
-    :param max_z: Maximum z coordinate for a light sphere.
-    :type max_z: float
-    :return: A list containing the configurations of sphere lights.
-    :rtype: list[dict]
-
-    TODO: Add missing args
-    """
-
-    return [
-        {
-            "position": [random.uniform(min_x, max_x), random.uniform(min_y, max_y), random.uniform(0, max_z)],
-            "color": generate_random_rgb_color(),
-            "intensity": random.uniform(sphere_min_intensity, sphere_max_intensity)
-        }
-        for _ in range(num_sphere_lights)]
-
-
 def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int, usd_models: list[str],
                          num_random_materials: int, num_sphere_lights: int, sphere_min_intensity: float, sphere_max_intensity: float,
                          min_x: float, max_x: float, min_y: float,
@@ -271,6 +178,10 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
     :type num_random_materials: int
     :param num_sphere_lights: Number of sphere lights in each scene.
     :type num_sphere_lights: int
+    :param sphere_min_intensity: Minimum intensity for a sphere light
+    :type sphere_min_intensity: int
+    :param sphere_max_intensity: Maximum intensity for a sphere light
+    :type sphere_min_intensity: int
     :param min_x: Minimum x coordinate for a light sphere or an object.
     :type min_x: float
     :param max_x: Maximum x coordinate for a light sphere or an object.
@@ -281,10 +192,12 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
     :type max_y: float
     :param max_z: Maximum z coordinate for a light sphere or an object.
     :type max_z: float
+    :param dome_light_min_intensity: Minimum intensity for a dome light
+    :type dome_light_min_intensity: int
+    :param dome_light_max_intensity: Maximum intensity for a dome light
+    :type dome_light_max_intensity: int
     :return: A list of a list of dictionaries, each representing a scene configuration.
     :rtype: list[list[dict]]
-
-    TODO: add missing args
     """
 
     # Generate single object scenes
@@ -306,10 +219,9 @@ def generate_scenes_conf(num_frames_per_object: int, num_objects_per_frame: int,
             # Add randomized dome light color
             scene_config["dome_light_configs"] = {"color": generate_random_rgb_color(), "intensity": np.random.uniform(dome_light_min_intensity, dome_light_max_intensity)}
 
-
             # Add randomized sphere lights
             scene_config["sphere_light_configs"] = generate_sphere_light_confs_for_one_frame(num_sphere_lights, min_x,
-                                                                                             max_x, min_y, max_y, max_z, sphere_min_intensity, sphere_max_intensity)
+                                                                                             max_x, min_y, max_y, 0, max_z, sphere_min_intensity, sphere_max_intensity)
 
     return scene_configs
 
@@ -407,16 +319,10 @@ def main(argv: list[str]) -> None:
         print("cam_distance_to_background must be greater than 0. Exiting...")
         exit(-1)
 
-    # TODO: use check function from conveyor config
-    if min_x > max_x:
-        print("min_x must be less than max_x. Exiting...")
-        exit(-1)
-
-    if min_y > max_y:
-        print("min_y must be less than max_y. Exiting...")
-        exit(-1)
-
-    # TODO: check dome light and sphere light intensities
+    config.check_range_plausibility(min_x, max_x)
+    config.check_range_plausibility(min_y, max_y)
+    config.check_range_plausibility(sphere_min_intensity, sphere_max_intensity)
+    config.check_range_plausibility(dome_light_min_intensity, dome_light_max_intensity)
 
     # Check for existing config at out_path
     if os.path.exists(out_path):
@@ -428,7 +334,7 @@ def main(argv: list[str]) -> None:
         print("USD directory does not exist. Exiting...")
         exit(-1)
 
-    usd_models = get_usd_models(usd_dir)
+    usd_models = io.get_usd_models(usd_dir)
 
     # Build final config
     data_generation_config = {
