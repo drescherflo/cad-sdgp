@@ -1,31 +1,8 @@
 import sys
 import argparse
 import os
-import importlib
-from typing import Type
 
-from converter_plugins.converter_interface import ConverterInterface
-
-
-def load_converter_plugins(plugin_dir: str, plugin_package_name) -> list[Type[ConverterInterface]]:
-    """
-    Loads converter plugins from a specified directory.
-
-    :param plugin_dir: Directory containing the plugin files.
-    :param plugin_package_name: Name of the package where plugins are located.
-    :return: A list of types derived from the ConverterInterface class.
-    """
-
-    converter_plugins = []
-    for filename in os.listdir(plugin_dir):
-        if filename.endswith('.py') and not filename.startswith('_'):
-            module_name = filename[:-3]
-            module = importlib.import_module('.' + module_name, package=plugin_package_name)
-            for attribute_name in dir(module):
-                attribute = getattr(module, attribute_name)
-                if isinstance(attribute, type) and issubclass(attribute, ConverterInterface) and attribute is not ConverterInterface:
-                    converter_plugins.append(attribute)
-    return converter_plugins
+from converter_plugins import load_converter_plugins
 
 
 def main(args: list[str]) -> None:
@@ -49,15 +26,11 @@ def main(args: list[str]) -> None:
             print(f"The NVIDIA replicator directory {replicator_dataset_dir} does not exist. Existing...")
             exit(-1)
     if not os.path.isdir(args.obj_dir):
-        print(f"The OBJ model directory {replicator_dataset_dir} does not exist. Existing...")
+        print(f"The OBJ model directory {args.obj_dir} does not exist. Existing...")
         exit(-1)
 
     # Load converter plugins
-    plugin_package_name = "converter_plugins"
-    script_location_dir = os.path.dirname(os.path.abspath(__file__))
-    plugin_dir = os.path.join(script_location_dir,
-                              plugin_package_name)  # plugin_dir has to be relative to the script. Depending on the execution method, this is not always the case
-    converter_plugins = load_converter_plugins(plugin_dir, plugin_package_name)
+    converter_plugins = load_converter_plugins()
 
     # Convert every dataset
     for replicator_dataset_dir in replicator_dataset_dirs:
