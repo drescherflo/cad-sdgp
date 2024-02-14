@@ -5,22 +5,24 @@ import json
 import sys
 import numpy as np
 import collections
+from math import inf
+from functools import partial
 
 from utils.config import parse_writer_args
 
 # Parse args
-parser = argparse.ArgumentParser(description="Generates training data for Alignment neural networks with Omniverse Replicator with moving objects on a conveyor belt")
-parser.add_argument("--headless", help="Run in headless mode", action="store_true")
-parser.add_argument("--output_dir", help="Output directory", required=True)
-parser.add_argument("--usd_dir", help="Directory containing the USD versions of the CAD models to be used for data generation", required=True)
-parser.add_argument("--config_file", help="Path to the JSON configuration file describing the to be generated scenes", required=True)
-parser.add_argument("--writer", nargs="*", action="append", help="Configures writers from the resumable_writers plugin package. Argument can be added multiple times", required=True)
-args = parser.parse_args(sys.argv[1:])
+# parser = argparse.ArgumentParser(description="Generates training data for Alignment neural networks with Omniverse Replicator with moving objects on a conveyor belt")
+# parser.add_argument("--headless", help="Run in headless mode", action="store_true")
+# parser.add_argument("--output_dir", help="Output directory", required=True)
+# parser.add_argument("--usd_dir", help="Directory containing the USD versions of the CAD models to be used for data generation", required=True)
+# parser.add_argument("--config_file", help="Path to the JSON configuration file describing the to be generated scenes", required=True)
+# parser.add_argument("--writer", nargs="*", action="append", help="Configures writers from the resumable_writers plugin package. Argument can be added multiple times", required=True)
+# args = parser.parse_args(sys.argv[1:])
 
 # Launch Isaac Sim
 from omni.isaac.kit import SimulationApp
 
-CONFIG = {"renderer": "RayTracedLighting", "headless":False} # args.headless}
+CONFIG = {"renderer": "RayTracedLighting", "headless": False}  # args.headless}
 simulation_app = SimulationApp(launch_config=CONFIG)
 
 # Omniverse imports and omniverse related imports need to be done after the simulation has been started
@@ -75,7 +77,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     physics_frequency = config["physics_frequency"]
 
     # Parse writer config
-    writer_configs = parse_writer_args(args.writer)
+    # writer_configs = parse_writer_args(args.writer)
 
     # Write train val split
     train_val_split_config = {
@@ -87,7 +89,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     os.makedirs(out_dir, exist_ok=True)
 
     # Check for empty out_dir
-    quit_if_out_dir_not_empty(out_dir, simulation_app)
+    # quit_if_out_dir_not_empty(out_dir, simulation_app)
 
     # Write train val split config
     with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
@@ -124,6 +126,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
         # Generate object materials
         materials = generate_materials(config["materials"])
+        rep_materials = [rep.get.prims(path_match=material.prim_path) for material in materials]  # Use get.prims() instead of get.material() because replicator only supports OmniPbr-Materials and not OmniGlass, etc.
 
         # Add camera
         camera = rep.create.camera()
@@ -169,6 +172,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         num_objects_per_scene = len(scene_config["objects"])
         object_prims = []
         object_rigid_prims = []
+        rep_object_prims = []
         for i, object in enumerate(scene_config["objects"]):
             usd_path = os.path.abspath(os.path.join(usd_dir, object["usd_model"]))
             if not os.path.isfile(usd_path):
@@ -193,6 +197,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             world.scene.add(geometry_prim)  # Register in world's scene to enable collision calculations
 
             object_rigid_prims.append(rigid_prim)
+            rep_object_prims.append(rep.get.xform(path_pattern=prim_path))
 
         # Reset the world to handle the physics of the newly created prims
         world.reset()
@@ -234,6 +239,13 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                 print("Warning! Min one object may glitched through the conveyor belt or fell off the belt. The detection if objects stopped falling may be inaccurate!")
                 break
 
+        num_objects_under_conveyor = len(list(filter(lambda obj_rigid_prim: obj_rigid_prim.get_world_pose()[0][2] < 1.78, object_rigid_prims)))  # 1.78m is z-coordinate of conveyor belt surface
+        print(f"Warning! {num_objects_under_conveyor} are under the conveyor belt. Number of objects in the scene: {num_objects_per_scene}")
+
+        # while simulation_app.is_running:
+        #     simulation_app.update()
+        # quit_on_error("Simulation stopped", simulation_app)
+
         # Set conveyor belt speed to specified value
         for conveyor_node_prim_path in conveyor_node_prim_paths:
             assert og.Controller.set(og.Controller.attribute(conveyor_node_prim_path + ".inputs:velocity"), conveyor_belt_speed)
@@ -272,6 +284,23 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Configure replicator "randomization"
         rep.randomizer.register(randomize_sphere_light)
 
+        # def randomize_object_materials(objects, object_idx, materials, object_material_assignments):
+        #     # does not work since rep.distribution.sequence only allows basic types as input and prim paths as input lead to duplicate element error
+        #     object = objects[object_idx]
+        #     object_material_indices = [per_frame_assignments[object_idx]["material_idx"] for per_frame_assignments in object_material_assignments]
+        #     #object_materials = [materials[idx].prim_path for idx in object_material_indices]
+        #     object_materials = [(materials[idx].prim_path, ) for idx in object_material_indices]
+        #     #object_materials = rep.create.group(object_materials)
+        #     test = ["/test", "/test"]
+        #     with object:
+        #         distribution = rep.distribution.sequence(object_materials)
+        #         materials = rep.get.material(distribution)
+        #         # distribution = rep.distribution.sequence(object_material_indices)
+        #         rep.modify.material(materials)
+        #     return object
+
+        # rep.randomizer.register(randomize_object_materials)
+
         with rep.trigger.on_frame():  # Change on every rendered frame
             # Change camera position and orientation
             with camera:
@@ -299,26 +328,40 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             with rep_conveyor_frame_material:
                 rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))
 
+            # # # Change assigned object materials
+            # for i in range(len(rep_object_prims)):
+            #     rep.randomizer.randomize_object_materials(rep_object_prims, i, materials, object_material_assignments)
+
+        # scene_frame_nr = 0
+        # for i in range(num_frames_per_scene):
+        #     print(f"Setting up material assignments for frame {i + 1} of {num_frames_per_scene}")
+        #     with rep.trigger.on_condition(condition=partial(lambda x: x == i, x=scene_frame_nr)):
+        #         for object_idx, rep_object in enumerate(rep_object_prims):
+        #             with rep_object:
+        #                 rep.modify.material(rep_materials[object_material_assignments[i][object_idx]["material_idx"]])
+
         # Initialize writers
-        writers = []
-        for writer_config in writer_configs:
-            writer = rep.WriterRegistry.get(writer_config["name"])
-            writer.initialize(output_dir=out_dir, init_frame_nr=frame_number, **writer_config["args"])
-            writer.attach(render_product)
-            writers.append(writer)
+        # writers = []
+        # for writer_config in writer_configs:
+        #     writer = rep.WriterRegistry.get(writer_config["name"])
+        #     writer.initialize(output_dir=out_dir, init_frame_nr=frame_number, **writer_config["args"])
+        #     writer.attach(render_product)
+        #     writers.append(writer)
 
         # Generate replicator graphs
         rep.orchestrator.preview()
 
         # Capture data
-        # last_max_x_pos = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])  # for debugging
-        for scene_frame_nr in range(num_frames_per_scene):
+        last_max_x_pos = max([object_prim.get_world_pose()[0][0] if object_prim.get_world_pose()[0][2] > 1.5 else -inf for object_prim in object_rigid_prims])  # for debugging
+        for _ in range(num_frames_per_scene):
             if not simulation_app.is_running():
                 quit_on_error("Simulation has been stopped. Exiting...", simulation_app)
 
             print(f"Writing scene frame {scene_frame_nr + 1} of {num_frames_per_scene} (total frame {frame_number + 1} of {num_frames})")
 
-            # Assign material to object manually since replicator does not support sequential assignment
+            # Assign material to object manually since replicator does not support sequential assignment of materials
+            # Setting a per frame trigger results in [Error] [omni.graph.core.plugin] [/Replicator/SDGPipeline] Assertion raised in compute
+            # Warning this leads to simulation slow down! Objects are not moving with the expected speed
             for obj_idx, object_prim in enumerate(object_rigid_prims):
                 material_idx = object_material_assignments[scene_frame_nr][obj_idx]["material_idx"]
                 object_prim.apply_visual_material(materials[material_idx])
@@ -326,17 +369,27 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
 
-            # # Calculate object speed on conveyor belt (for debugging)
-            # new_max_x_pose = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
-            # delta = new_max_x_pose - last_max_x_pos
-            # print("object velocity on conveyor:", delta / (1.0/render_frequency))
-            # last_max_x_pos = new_max_x_pose
+            # Calculate object speed on conveyor belt (for debugging)
+            new_max_x_pose = max([object_prim.get_world_pose()[0][0] if object_prim.get_world_pose()[0][2] > 1.5 else -inf for object_prim in object_rigid_prims])
+            delta = new_max_x_pose - last_max_x_pos
+            print("object velocity on conveyor:", delta / (1.0/render_frequency), "m/s ; conveyor belt speed / target speed:", conveyor_belt_speed, "m/s")
+            last_max_x_pos = new_max_x_pose
 
             # Increase frame_number count
             frame_number += 1
+            scene_frame_nr += 1
+
+            #quit_on_error("Simulation has been stopped. Exiting...", simulation_app)
     
 
 if __name__ == '__main__':
-    out_dir = args.output_dir if os.path.isabs(args.output_dir) else os.path.join(os.getcwd(), args.output_dir)
-    main(args.config_file, args.usd_dir, out_dir)
+    # out_dir = args.output_dir if os.path.isabs(args.output_dir) else os.path.join(os.getcwd(), args.output_dir)
+    # main(args.config_file, args.usd_dir, out_dir)
+    # simulation_app.close()
+
+    conf_path = "custom_dataset/dataset_generation/config_generation/config.json"
+    usd_dir = "CAD Models/OBJ_converted"
+    out_dir = os.path.abspath("temp_replicator_out")
+
+    main(conf_path, usd_dir, out_dir)
     simulation_app.close()
