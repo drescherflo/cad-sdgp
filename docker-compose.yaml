@@ -33,7 +33,7 @@ services:
       - "${CUSTOM_DATASET_DIR}/dataset_generator_configs/:/dataset_generator_configs/:rw"
     command: [ "--usd_dir", "/usd_models",
                "--out_path", "/dataset_generator_configs/6_dof_generator_config.json",
-               "--num_frames_per_object", "1" ]  #TODO 1000
+               "--num_frames_per_object", "1000" ]
     profiles: [ "manual" ]  # Disable autostart with compose up
   6_dof_dataset_generator:
     image: nvcr.io/nvidia/isaac-sim:2023.1.1
@@ -70,10 +70,10 @@ services:
                "--out_path", "/dataset_generator_configs/conveyor_generator_config.json",
                "--object_init_min_x", "-6.0",
                "--object_init_max_x", "2.0",
-               "--conveyor_belt_speed", "0.0",
+               "--conveyor_belt_speed", "0.2",
                "--num_objects_per_scene", "200",
-               "--num_frames_per_scene", "1",
-               "--num_scenes_per_object", "1"]  #TODO: 1000
+               "--num_frames_per_scene", "100",
+               "--num_scenes_per_object", "10"]
     profiles: [ "manual" ]  # Disable autostart with compose up
   conveyor_dataset_generator:
     image: nvcr.io/nvidia/isaac-sim:2023.1.1
