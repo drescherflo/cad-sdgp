@@ -367,12 +367,14 @@ def main(argv: list[str]) -> None:
     """
 
     # Calculate default num frames per scene
+    # These are the number of frames the object needs to travel from recording start to the end of the conveyor belt
+    default_render_frequency = 60
     default_conveyor_belt_speed = 0.2
-    default_min_x_pos_for_record_start = -2.0
+    default_min_x_pos_for_record_start = -1.5
     end_x_of_conveyor_in_simulation = 2.0
     distance_to_capture = end_x_of_conveyor_in_simulation - default_min_x_pos_for_record_start
     time_for_recording = distance_to_capture / default_conveyor_belt_speed
-    default_num_frames_per_scene = int(time_for_recording * 60)  # Sim runs at 60 FPS (https://docs.omniverse.nvidia.com/py/isaacsim/source/extensions/omni.isaac.core/docs/index.html#module-omni.isaac.core.world)
+    default_num_frames_per_scene = int(time_for_recording * default_render_frequency)  # Sim runs at 60 FPS (https://docs.omniverse.nvidia.com/py/isaacsim/source/extensions/omni.isaac.core/docs/index.html#module-omni.isaac.core.world)
 
     # Setup argument parser
     parser = argparse.ArgumentParser(description="Generates a configuration for the training data generation script")
@@ -382,23 +384,23 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--frame_height", default=360, type=int, help="Width of the generated frames")
     parser.add_argument("--sub_frames_per_frame", default=32, type=int,
                         help="Number of frames to render before saving the frame to avoid artifacts after fast object movement")
-    parser.add_argument("--num_random_materials", default=100, type=int,
+    parser.add_argument("--num_random_materials", default=1000, type=int,
                         help="Defines the number of random materials to generate")
     parser.add_argument("--probability_of_glass_material", default=0.5, type=float,
                         help="Defines the probability of generating glass objects")
     parser.add_argument("--num_frames_per_scene", default=default_num_frames_per_scene, type=int,
                         help="Number of frames to record per simulation run / simulation scene")
-    parser.add_argument("--num_objects_per_scene", default=20, type=int,
+    parser.add_argument("--num_objects_per_scene", default=100, type=int,
                         help="Specifies the number of objects in the scene")
-    parser.add_argument("--num_scenes_per_object", default=5, type=int,
+    parser.add_argument("--num_scenes_per_object", default=10, type=int,
                         help="Specifies the number of scenes to generate for each object in the USD directory. Additionally n * num_scenes_per_object scenes will be generated with all objects in the scene. (n is num_frames_per_object times objects in the USD directory)")
     parser.add_argument("--num_sphere_lights", default=5, type=int,
                         help="Specifies the number of sphere lights with random light color in the scene")
     parser.add_argument("--train_val_split", default=0.2, type=float,
                         help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
-    parser.add_argument("--object_init_min_x", default=-5, type=float,
+    parser.add_argument("--object_init_min_x", default=-2.0, type=float,
                         help="The minimum initial x coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_x", default=-2.5, type=float,
+    parser.add_argument("--object_init_max_x", default=-1.5, type=float,
                         help="The maximum initial x coordinate of the object in the scene")
     parser.add_argument("--object_init_min_y", default=-0.4, type=float,
                         help="The minimum initial y coordinate of the object in the scene")
@@ -468,9 +470,9 @@ def main(argv: list[str]) -> None:
                         help="The speed of the conveyor belt in the simulation")
     parser.add_argument("--min_x_pos_for_record_start", default=default_min_x_pos_for_record_start, type=float,
                         help="Defines the minimum x coordinate at least one object needs to have passed to start writing the dataset")
-    parser.add_argument("--render_frequency", default=60, type=int,
+    parser.add_argument("--render_frequency", default=default_render_frequency, type=int,
                         help="The render frequency in Hz")
-    parser.add_argument("--physics_frequency", default=240, type=int,
+    parser.add_argument("--physics_frequency", default=360, type=int,
                         help="The frequency at which the physics are calculated")
 
     # Parse args
