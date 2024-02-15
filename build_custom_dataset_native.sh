@@ -20,7 +20,7 @@ echo "Converting OBJ to USD"
   --folders "$CUSTOM_DATASET_DIR/cad_models/OBJ"
 
 ## Generate config for 6 DOF dataset
- echo "Generating config for the 6 DOF dataset generation"
+echo "Generating config for the 6 DOF dataset generation"
 source custom_dataset/dataset_generation/config_generation/venv/bin/activate
 python custom_dataset/dataset_generation/config_generation/6_dof_config_generator.py \
    --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" \
@@ -29,8 +29,8 @@ python custom_dataset/dataset_generation/config_generation/6_dof_config_generato
 deactivate
 
 ## Generate 6 DOF dataset
- echo "Generating 6 DOF dataset"
- "$ISAAC_SIM_INSTALL_DIR"/python.sh custom_dataset/dataset_generation/data_generation/6_dof_dataset_generator.py \
+echo "Generating 6 DOF dataset"
+"$ISAAC_SIM_INSTALL_DIR"/python.sh custom_dataset/dataset_generation/data_generation/6_dof_dataset_generator.py \
    --headless \
    --output_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" \
    --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" \
