@@ -268,9 +268,9 @@ def main(argv: list[str]) -> None:
                         help="Specifies the number of objects in the scene")
     parser.add_argument("--num_sphere_lights", default=5, type=int,
                         help="Specifies the number of sphere lights with random light color in the scene")
-    parser.add_argument("--sphere_min_intensity", default=5000, type=float,
+    parser.add_argument("--sphere_min_intensity", default=1000, type=float,
                         help="The minimum light intensity of a sphere light")
-    parser.add_argument("--sphere_max_intensity", default=50000, type=float,
+    parser.add_argument("--sphere_max_intensity", default=5000, type=float,
                         help="The maximum light intensity of a sphere light")
     parser.add_argument("--train_val_split", default=0.2, type=float,
                         help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
@@ -280,9 +280,9 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--max_y", default=1, type=float, help="The maximum y coordinate of the object in the scene")
     parser.add_argument("--cam_distance_to_background", default=5, type=float,
                         help="Defines the distance between the camera and the background plane")
-    parser.add_argument("--dome_light_min_intensity", default=5000, type=float,
+    parser.add_argument("--dome_light_min_intensity", default=200, type=float,
                         help="The minimum light intensity of the dome light")
-    parser.add_argument("--dome_light_max_intensity", default=50000, type=float,
+    parser.add_argument("--dome_light_max_intensity", default=1000, type=float,
                         help="The maximum light intensity of the dome light")
 
     # Parse args
