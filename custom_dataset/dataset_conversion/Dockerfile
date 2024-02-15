@@ -9,7 +9,7 @@ RUN pip install -r requirements.txt
 
 # Copy converter script and plugins
 COPY dataset_converter.py .
-COPY converter_plugins .
+COPY converter_plugins ./converter_plugins
 
 # Set generator as entrypoint
 ENTRYPOINT ["python", "dataset_converter.py"]

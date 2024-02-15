@@ -10,7 +10,7 @@ RUN pip install -r requirements.txt
 # Copy generator scripts and packages
 COPY 6_dof_config_generator.py .
 COPY conveyor_config_generator.py .
-COPY utils .
+COPY utils ./utils
 
 # Set generator as entrypoint
 ENTRYPOINT ["python", "6_dof_config_generator.py"]
