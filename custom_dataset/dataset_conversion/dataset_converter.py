@@ -35,7 +35,10 @@ def main(args: list[str]) -> None:
     # Convert every dataset
     for replicator_dataset_dir in replicator_dataset_dirs:
         # Get base dir for building correct output dir
-        base_dir = os.path.basename(os.path.dirname(replicator_dataset_dir))
+        if replicator_dataset_dir.endswith("/"):
+            base_dir = os.path.basename(os.path.dirname(replicator_dataset_dir))
+        else:
+            base_dir = os.path.basename(replicator_dataset_dir)
 
         # Run conversion process for each converter plugin
         for converter_plugin in converter_plugins:
