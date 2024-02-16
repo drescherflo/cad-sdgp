@@ -8,8 +8,8 @@
   docker compose --profile manual build
   ```
   
-- Sollen Container nicht verwendet werden stehen READMEs in den Ordnern der einzelnen Komponenten mit Installationsanleitungen zur Verfügung.
-- Argumente für Python-Skripte können mit Flag -h angezeigt werden und sind in den Skripten selbst dokumentiert
+- In den Ordnern der einzelnen Komponenten stehen READMEs mit einer Gebrauchsanweisung zur Verfügung
+- Argumente für Python-Skripte können mit Flag -h angezeigt werden und sind zusätzlich in den Skripten selbst dokumentiert
 - Die nachfolgende Dokumentation ist für Linux Ubuntu 22.04 erstellt worden
 
 ## Voraussetzungen
