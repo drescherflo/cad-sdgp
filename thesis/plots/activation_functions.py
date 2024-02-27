@@ -21,7 +21,7 @@ def sigmoid(x):
 def relu(x):
     return np.maximum(0, x)
 
-def leaky_relu(x, alpha=0.01):
+def leaky_relu(x, alpha=0.1):
     return np.where(x > 0, x, x * alpha)
 
 # Erzeugen eines Arrays von Werten für die Visualisierung
