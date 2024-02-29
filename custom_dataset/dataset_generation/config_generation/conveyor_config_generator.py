@@ -451,17 +451,17 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--camera_rot_max_z", default=180, type=float,
                         help="The maximum rotation of the camera around the z axis in degrees")
     parser.add_argument("--distant_light_min_rot_x", default=-90, type=float,
-                        help="The minimum x coordinate of the direct light in the scene")
+                        help="The minimum rotation around x of the direct light in the scene")
     parser.add_argument("--distant_light_max_rot_x", default=90, type=float,
-                        help="The maximum x coordinate of the direct light in the scene")
+                        help="The maximum rotation around x of the direct light in the scene")
     parser.add_argument("--distant_light_min_rot_y", default=-90, type=float,
-                        help="The minimum y coordinate of the direct light in the scene")
+                        help="The minimum rotation around y of the direct light in the scene")
     parser.add_argument("--distant_light_max_rot_y", default=90, type=float,
-                        help="The maximum y coordinate of the direct light in the scene")
+                        help="The maximum rotation around y of the direct light in the scene")
     parser.add_argument("--distant_light_min_rot_z", default=-180, type=float,
-                        help="The minimum z coordinate of the direct light in the scene")
+                        help="The minimum rotation around z of the direct light in the scene")
     parser.add_argument("--distant_light_max_rot_z", default=180, type=float,
-                        help="The maximum z coordinate of the direct light in the scene")
+                        help="The maximum rotation around z of the direct light in the scene")
     parser.add_argument("--distant_light_min_intensity", default=200, type=float,
                         help="The minimum light intensity of the direct light")
     parser.add_argument("--distant_light_max_intensity", default=1000, type=float,
