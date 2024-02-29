@@ -379,7 +379,7 @@ def main(argv: list[str]) -> None:
     # Setup argument parser
     parser = argparse.ArgumentParser(description="Generates a configuration for the training data generation script")
     parser.add_argument("--usd_dir", help="Directory containing the converted CAD models as USD files", required=True)
-    parser.add_argument("--out_path", default="config.json", help="Output path for the generated configuration")
+    parser.add_argument("--out_dir", default="configs", help="Output directory for the generated configurations")
     parser.add_argument("--frame_width", default=480, type=int, help="Width of the generated frames")
     parser.add_argument("--frame_height", default=360, type=int, help="Width of the generated frames")
     parser.add_argument("--sub_frames_per_frame", default=32, type=int,
@@ -392,24 +392,38 @@ def main(argv: list[str]) -> None:
                         help="Number of frames to record per simulation run / simulation scene")
     parser.add_argument("--num_objects_per_scene", default=100, type=int,
                         help="Specifies the number of objects in the scene")
-    parser.add_argument("--num_scenes_per_object", default=10, type=int,
+    parser.add_argument("--num_objects_per_cluttered_scene", default=100, type=int,
+                        help="Specifies the number of objects in the cluttered scene")
+    parser.add_argument("--num_scenes_per_object", default=5, type=int,
                         help="Specifies the number of scenes to generate for each object in the USD directory. Additionally n * num_scenes_per_object scenes will be generated with all objects in the scene. (n is num_frames_per_object times objects in the USD directory)")
-    parser.add_argument("--num_sphere_lights", default=5, type=int,
+    parser.add_argument("--num_cluttered_scenes_per_object", default=5, type=int,
+                        help="Specifies the number of cluttered scenes to generate for each object in the USD directory. Additionally n * num_scenes_per_object scenes will be generated with all objects in the scene. (n is num_frames_per_object times objects in the USD directory)")
+    parser.add_argument("--num_sphere_lights", default=0, type=int,
                         help="Specifies the number of sphere lights with random light color in the scene")
-    parser.add_argument("--train_val_split", default=0.2, type=float,
-                        help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
-    parser.add_argument("--object_init_min_x", default=-2.0, type=float,
+    parser.add_argument("--object_init_min_x", default=-2.0, type=float,  # TODO
                         help="The minimum initial x coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_x", default=-1.5, type=float,
+    parser.add_argument("--object_init_max_x", default=-1.5, type=float,  # TODO
                         help="The maximum initial x coordinate of the object in the scene")
-    parser.add_argument("--object_init_min_y", default=-0.4, type=float,
+    parser.add_argument("--object_init_min_y", default=-0.4, type=float,  # TODO
                         help="The minimum initial y coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_y", default=0.4, type=float,
+    parser.add_argument("--object_init_max_y", default=0.4, type=float,   # TODO
                         help="The maximum initial y coordinate of the object in the scene")
-    parser.add_argument("--object_init_min_z", default=3, type=float,
+    parser.add_argument("--object_init_min_z", default=3, type=float,     # TODO
                         help="The minimum initial z coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_z", default=6, type=float,
+    parser.add_argument("--object_init_max_z", default=6, type=float,     # TODO
                         help="The maximum initial z coordinate of the object in the scene")
+    parser.add_argument("--cluttered_scene_object_init_min_x", default=-2.0, type=float,  # TODO
+                        help="The minimum initial x coordinate of the object in the cluttered scene")
+    parser.add_argument("--cluttered_scene_object_init_max_x", default=-1.5, type=float,  # TODO
+                        help="The maximum initial x coordinate of the object in the cluttered scene")
+    parser.add_argument("--cluttered_scene_object_init_min_y", default=-0.4, type=float,  # TODO
+                        help="The minimum initial y coordinate of the object in the cluttered scene")
+    parser.add_argument("--cluttered_scene_object_init_max_y", default=0.4, type=float,  # TODO
+                        help="The maximum initial y coordinate of the object in the cluttered scene")
+    parser.add_argument("--cluttered_scene_object_init_min_z", default=3, type=float,  # TODO
+                        help="The minimum initial z coordinate of the object in the cluttered scene")
+    parser.add_argument("--cluttered_scene_object_init_max_z", default=6, type=float,  # TODO
+                        help="The maximum initial z coordinate of the object in the cluttered scene")
     parser.add_argument("--sphere_min_x", default=-2.5, type=float,
                         help="The minimum x coordinate of light spheres in the scene")
     parser.add_argument("--sphere_max_x", default=2.5, type=float,
@@ -426,46 +440,28 @@ def main(argv: list[str]) -> None:
                         help="The minimum light intensity of a sphere light")
     parser.add_argument("--sphere_max_intensity", default=5000, type=float,
                         help="The maximum light intensity of a sphere light")
-    parser.add_argument("--camera_pos_min_x", default=-0.5, type=float,
-                        help="The minimum x coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_max_x", default=0.5, type=float,
-                        help="The maximum x coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_min_y", default=-0.3, type=float,
-                        help="The minimum y coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_max_y", default=0.3, type=float,
-                        help="The maximum y coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_min_z", default=3, type=float,
-                        help="The minimum z coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_max_z", default=6, type=float,
-                        help="The maximum z coordinate of the camera in the scene")
-    parser.add_argument("--camera_rot_min_x", default=-180, type=float,
-                        help="The minimum rotation of the camera around the x axis in degrees")
-    parser.add_argument("--camera_rot_max_x", default=180, type=float,
-                        help="The maximum rotation of the camera around the x axis in degrees")
-    parser.add_argument("--camera_rot_min_y", default=-120, type=float,
-                        help="The minimum rotation of the camera around the y axis in degrees")
-    parser.add_argument("--camera_rot_max_y", default=-60, type=float,
-                        help="The maximum rotation of the camera around the y axis in degrees")
-    parser.add_argument("--camera_rot_min_z", default=-180, type=float,
-                        help="The minimum rotation of the camera around the z axis in degrees")
-    parser.add_argument("--camera_rot_max_z", default=180, type=float,
-                        help="The maximum rotation of the camera around the z axis in degrees")
-    parser.add_argument("--distant_light_min_rot_x", default=-90, type=float,
-                        help="The minimum x coordinate of the direct light in the scene")
-    parser.add_argument("--distant_light_max_rot_x", default=90, type=float,
-                        help="The maximum x coordinate of the direct light in the scene")
-    parser.add_argument("--distant_light_min_rot_y", default=-90, type=float,
-                        help="The minimum y coordinate of the direct light in the scene")
-    parser.add_argument("--distant_light_max_rot_y", default=90, type=float,
-                        help="The maximum y coordinate of the direct light in the scene")
-    parser.add_argument("--distant_light_min_rot_z", default=-180, type=float,
-                        help="The minimum z coordinate of the direct light in the scene")
-    parser.add_argument("--distant_light_max_rot_z", default=180, type=float,
-                        help="The maximum z coordinate of the direct light in the scene")
-    parser.add_argument("--distant_light_min_intensity", default=200, type=float,
+    parser.add_argument("--camera_pos_x", default=-0.5, type=float,  #TODO
+                        help="The x coordinate of the camera in the scene")
+    parser.add_argument("--camera_pos_y", default=-0.3, type=float,  #TODO
+                        help="The y coordinate of the camera in the scene")
+    parser.add_argument("--camera_pos_z", default=3, type=float,     #TODO
+                        help="The z coordinate of the camera in the scene")
+    parser.add_argument("--camera_rot_x", default=-180, type=float,  #TODO
+                        help="The rotation of the camera around the x axis in degrees")
+    parser.add_argument("--camera_rot_y", default=-120, type=float,  #TODO
+                        help="The rotation of the camera around the y axis in degrees")
+    parser.add_argument("--camera_rot_z", default=-180, type=float,  #TODO
+                        help="The rotation of the camera around the z axis in degrees")  #TODO
+    parser.add_argument("--distant_light_rot_x", default=-90, type=float,
+                        help="The rotation around x of the direct light in the scene")   #TODO
+    parser.add_argument("--distant_light_rot_y", default=-90, type=float,
+                        help="The rotation around y of the direct light in the scene")   #TODO
+    parser.add_argument("--distant_light_rot_z", default=-180, type=float,
+                        help="The z coordinate of the direct light in the scene")  #TODO
+    parser.add_argument("--distant_light_intensity", default=200, type=float,
                         help="The minimum light intensity of the direct light")
-    parser.add_argument("--distant_light_max_intensity", default=1000, type=float,
-                        help="The minimum light intensity of the direct light")
+    parser.add_argument("--metallic_scene_distant_light_intensity", default=200, type=float,  #TODO
+                        help="The minimum light intensity of the direct light in scenes with metallic material")
     parser.add_argument("--conveyor_belt_speed", default=default_conveyor_belt_speed, type=float,
                         help="The speed of the conveyor belt in the simulation")
     parser.add_argument("--min_x_pos_for_record_start", default=default_min_x_pos_for_record_start, type=float,
@@ -480,7 +476,7 @@ def main(argv: list[str]) -> None:
 
     # Assign variables
     usd_dir = args.usd_dir
-    out_path = args.out_path
+    out_dir = args.out_dir
     frame_width = args.frame_width
     frame_height = args.frame_height
     sub_frames_per_frame = args.sub_frames_per_frame
@@ -492,15 +488,22 @@ def main(argv: list[str]) -> None:
         probability_of_glass_material = 1
     num_frames_per_scene = args.num_frames_per_scene
     num_objects_per_scene = args.num_objects_per_scene
+    num_objects_per_cluttered_scene = args.num_objects_per_cluttered_scene
     num_scenes_per_object = args.num_scenes_per_object
+    num_cluttered_scenes_per_object = args.num_cluttered_scenes_per_object
     num_sphere_lights = args.num_sphere_lights
-    val_dataset_share = args.train_val_split
     object_init_min_x = args.object_init_min_x
     object_init_max_x = args.object_init_max_x
     object_init_min_y = args.object_init_min_y
     object_init_max_y = args.object_init_max_y
     object_init_min_z = args.object_init_min_z
     object_init_max_z = args.object_init_max_z
+    cluttered_scene_object_init_min_x = args.cluttered_scene_object_init_min_x
+    cluttered_scene_object_init_max_x = args.cluttered_scene_object_init_max_x
+    cluttered_scene_object_init_min_y = args.cluttered_scene_object_init_min_y
+    cluttered_scene_object_init_max_y = args.cluttered_scene_object_init_max_y
+    cluttered_scene_object_init_min_z = args.cluttered_scene_object_init_min_z
+    cluttered_scene_object_init_max_z = args.cluttered_scene_object_init_max_z
     sphere_min_x = args.sphere_min_x
     sphere_max_x = args.sphere_max_x
     sphere_min_y = args.sphere_min_y
@@ -509,26 +512,17 @@ def main(argv: list[str]) -> None:
     sphere_max_z = args.sphere_max_z
     sphere_min_intensity = args.sphere_min_intensity
     sphere_max_intensity = args.sphere_max_intensity
-    camera_pos_min_x = args.camera_pos_min_x
-    camera_pos_max_x = args.camera_pos_max_x
-    camera_pos_min_y = args.camera_pos_min_y
-    camera_pos_max_y = args.camera_pos_max_y
-    camera_pos_min_z = args.camera_pos_min_z
-    camera_pos_max_z = args.camera_pos_max_z
-    camera_rot_min_x = args.camera_rot_min_x
-    camera_rot_max_x = args.camera_rot_max_x
-    camera_rot_min_y = args.camera_rot_min_y
-    camera_rot_max_y = args.camera_rot_max_y
-    camera_rot_min_z = args.camera_rot_min_z
-    camera_rot_max_z = args.camera_rot_max_z
-    distant_light_min_rot_x = args.distant_light_min_rot_x
-    distant_light_max_rot_x = args.distant_light_max_rot_x
-    distant_light_min_rot_y = args.distant_light_min_rot_y
-    distant_light_max_rot_y = args.distant_light_max_rot_y
-    distant_light_min_rot_z = args.distant_light_min_rot_z
-    distant_light_max_rot_z = args.distant_light_max_rot_z
-    distant_light_min_intensity = args.distant_light_min_intensity
-    distant_light_max_intensity = args.distant_light_max_intensity
+    camera_pos_x = args.camera_pos_x
+    camera_pos_y = args.camera_pos_y
+    camera_pos_z = args.camera_pos_z
+    camera_rot_x = args.camera_rot_x
+    camera_rot_y = args.camera_rot_y
+    camera_rot_z = args.camera_rot_z
+    distant_light_rot_x = args.distant_light_rot_x
+    distant_light_rot_y = args.distant_light_rot_y
+    distant_light_rot_z = args.distant_light_rot_z
+    distant_light_intensity = args.distant_light_intensity
+    metallic_scene_distant_light_intensity = args.metallic_scene_distant_light_intensity
     conveyor_belt_speed = args.conveyor_belt_speed
     min_x_pos_for_record_start = args.min_x_pos_for_record_start
     render_frequency = args.render_frequency
@@ -542,20 +536,10 @@ def main(argv: list[str]) -> None:
     config.check_range_plausibility(sphere_min_y, sphere_max_y)
     config.check_range_plausibility(sphere_min_z, sphere_max_z)
     config.check_range_plausibility(sphere_min_intensity, sphere_max_intensity)
-    config.check_range_plausibility(camera_pos_min_x, camera_pos_max_x)
-    config.check_range_plausibility(camera_pos_min_y, camera_pos_max_y)
-    config.check_range_plausibility(camera_pos_min_z, camera_pos_max_z)
-    config.check_range_plausibility(camera_rot_min_x, camera_rot_max_x)
-    config.check_range_plausibility(camera_rot_min_y, camera_rot_max_y)
-    config.check_range_plausibility(camera_rot_min_z, camera_rot_max_z)
-    config.check_range_plausibility(distant_light_min_rot_x, distant_light_max_rot_x)
-    config.check_range_plausibility(distant_light_min_rot_y, distant_light_max_rot_y)
-    config.check_range_plausibility(distant_light_min_rot_z, distant_light_max_rot_z)
-    config.check_range_plausibility(distant_light_min_intensity, distant_light_max_intensity)
 
     # Check for existing config at out_path
-    if os.path.exists(out_path):
-        print(f"Config file at '{out_path}' already exists. Exiting...")
+    if os.path.exists(out_dir):
+        print(f"Output directory at '{out_dir}' already exists. Exiting...")
         exit(-1)
 
     # Test usd_dir
@@ -580,16 +564,16 @@ def main(argv: list[str]) -> None:
                          sphere_min_y, sphere_max_y,
                          sphere_min_z, sphere_max_z,
                          sphere_min_intensity, sphere_max_intensity,
-                         distant_light_min_rot_x, distant_light_max_rot_x,
-                         distant_light_min_rot_y, distant_light_max_rot_y,
-                         distant_light_min_rot_z, distant_light_max_rot_z,
-                         camera_pos_min_x, camera_pos_max_x,
-                         camera_pos_min_y, camera_pos_max_y,
-                         camera_pos_min_z, camera_pos_max_z,
-                         camera_rot_min_x, camera_rot_max_x,
-                         camera_rot_min_y, camera_rot_max_y,
-                         camera_rot_min_z, camera_rot_max_z,
-                         distant_light_min_intensity, distant_light_max_intensity),
+                         distant_light_rot_x, distant_light_rot_x,
+                         distant_light_rot_y, distant_light_rot_y,
+                         distant_light_rot_z, distant_light_rot_z,
+                         camera_pos_x, camera_pos_x,
+                         camera_pos_y, camera_pos_y,
+                         camera_pos_z, camera_pos_z,
+                         camera_rot_x, camera_rot_x,
+                         camera_rot_y, camera_rot_y,
+                         camera_rot_z, camera_rot_z,
+                         distant_light_intensity, distant_light_intensity),
         "conveyor_belt_speed": conveyor_belt_speed,
         "min_x_pos_for_record_start": min_x_pos_for_record_start,
         "num_frames_per_scene": num_frames_per_scene,
@@ -598,15 +582,13 @@ def main(argv: list[str]) -> None:
         "generation_script_args": vars(args)
     }
 
-    (train_frames, val_frames) = generate_train_val_splits(len(data_generation_config["scenes"]), num_frames_per_scene, val_dataset_share)
-    data_generation_config["train_frames"] = train_frames.tolist()
-    data_generation_config["val_frames"] = val_frames.tolist()
+    data_generation_config["train_frames"] = None
+    data_generation_config["val_frames"] = None
 
     # Write config
-    out_dir = os.path.dirname(out_path)
     if out_dir != "":
         os.makedirs(out_dir, exist_ok=True)
-    with open(out_path, "w") as f:
+    with open(out_dir + "/test.conf", "w") as f:
         json.dump(data_generation_config, f, indent=4)
 
 
