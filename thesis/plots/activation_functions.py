@@ -33,7 +33,7 @@ fig.suptitle("Aktivierungsfunktionen")
 
 # Identitätsfunktion
 axs[0, 0].plot(x, identity(x), label=r"$f(x) = x$")
-axs[0, 0].set_title("Identitätsfunktion")
+axs[0, 0].set_title("Identität")
 axs[0, 0].spines['left'].set_position('zero')
 axs[0, 0].spines['left'].set_color('gray')
 axs[0, 0].spines['bottom'].set_position('zero')
@@ -46,7 +46,7 @@ axs[0, 0].legend()
 
 # Sigmoidfunktion
 axs[0, 1].plot(x, sigmoid(x), label=r"$f(x) = \frac{1}{1 + e^{-x}}$", color="orange")
-axs[0, 1].set_title("Sigmoidfunktion")
+axs[0, 1].set_title("Sigmoid")
 axs[0, 1].spines['left'].set_position('zero')
 axs[0, 1].spines['left'].set_color('gray')
 axs[0, 1].spines['bottom'].set_position('zero')
