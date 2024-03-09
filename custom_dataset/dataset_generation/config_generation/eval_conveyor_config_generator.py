@@ -26,7 +26,7 @@ def main(argv: list[str]) -> None:
     # These are the number of frames the object needs to travel from recording start to the end of the conveyor belt
     default_render_frequency = 60
     default_conveyor_belt_speed = 0.2
-    default_min_x_pos_for_record_start = -1.5
+    default_min_x_pos_for_record_start = 0
     end_x_of_conveyor_in_simulation = 2.0
     distance_to_capture = end_x_of_conveyor_in_simulation - default_min_x_pos_for_record_start
     time_for_recording = distance_to_capture / default_conveyor_belt_speed
@@ -42,39 +42,39 @@ def main(argv: list[str]) -> None:
                         help="Number of frames to render before saving the frame to avoid artifacts after fast object movement")
     parser.add_argument("--num_frames_per_scene", default=default_num_frames_per_scene, type=int,
                         help="Number of frames to record per simulation run / simulation scene")
-    parser.add_argument("--num_objects_per_scene", default=100, type=int,
+    parser.add_argument("--num_objects_per_scene", default=15, type=int,  # TODO
                         help="Specifies the number of objects in the scene")
-    parser.add_argument("--num_objects_per_cluttered_scene", default=100, type=int,
+    parser.add_argument("--num_objects_per_cluttered_scene", default=100, type=int,  # TODO
                         help="Specifies the number of objects in the cluttered scene")
-    parser.add_argument("--num_scenes_per_object", default=5, type=int,
-                        help="Specifies the number of scenes to generate for each object in the USD directory. Additionally n * num_scenes_per_object scenes will be generated with all objects in the scene. (n is num_frames_per_object times objects in the USD directory)")
-    parser.add_argument("--num_cluttered_scenes_per_object", default=5, type=int,
-                        help="Specifies the number of cluttered scenes to generate for each object in the USD directory. Additionally n * num_scenes_per_object scenes will be generated with all objects in the scene. (n is num_frames_per_object times objects in the USD directory)")
+    parser.add_argument("--num_scenes_scenes", default=5, type=int,
+                        help="Specifies the number of uncluttered scenes to generate")
+    parser.add_argument("--num_cluttered_scenes", default=5, type=int,
+                        help="Specifies the number of cluttered scenes to generate")
     parser.add_argument("--num_sphere_lights", default=0, type=int,
                         help="Specifies the number of sphere lights with random light color in the scene")
-    parser.add_argument("--object_init_min_x", default=-2.0, type=float,  # TODO
+    parser.add_argument("--object_init_min_x", default=-2.0, type=float,
                         help="The minimum initial x coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_x", default=-1.5, type=float,  # TODO
+    parser.add_argument("--object_init_max_x", default=0, type=float,
                         help="The maximum initial x coordinate of the object in the scene")
-    parser.add_argument("--object_init_min_y", default=-0.4, type=float,  # TODO
+    parser.add_argument("--object_init_min_y", default=-0.4, type=float,
                         help="The minimum initial y coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_y", default=0.4, type=float,   # TODO
+    parser.add_argument("--object_init_max_y", default=0.4, type=float,
                         help="The maximum initial y coordinate of the object in the scene")
-    parser.add_argument("--object_init_min_z", default=3, type=float,     # TODO
+    parser.add_argument("--object_init_min_z", default=3, type=float,
                         help="The minimum initial z coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_z", default=6, type=float,     # TODO
+    parser.add_argument("--object_init_max_z", default=6, type=float,
                         help="The maximum initial z coordinate of the object in the scene")
-    parser.add_argument("--cluttered_scene_object_init_min_x", default=-2.0, type=float,  # TODO
+    parser.add_argument("--cluttered_scene_object_init_min_x", default=-0.5, type=float,
                         help="The minimum initial x coordinate of the object in the cluttered scene")
-    parser.add_argument("--cluttered_scene_object_init_max_x", default=-1.5, type=float,  # TODO
+    parser.add_argument("--cluttered_scene_object_init_max_x", default=0, type=float,
                         help="The maximum initial x coordinate of the object in the cluttered scene")
-    parser.add_argument("--cluttered_scene_object_init_min_y", default=-0.4, type=float,  # TODO
+    parser.add_argument("--cluttered_scene_object_init_min_y", default=-0.4, type=float,
                         help="The minimum initial y coordinate of the object in the cluttered scene")
-    parser.add_argument("--cluttered_scene_object_init_max_y", default=0.4, type=float,  # TODO
+    parser.add_argument("--cluttered_scene_object_init_max_y", default=0.4, type=float,
                         help="The maximum initial y coordinate of the object in the cluttered scene")
-    parser.add_argument("--cluttered_scene_object_init_min_z", default=3, type=float,  # TODO
+    parser.add_argument("--cluttered_scene_object_init_min_z", default=3, type=float,
                         help="The minimum initial z coordinate of the object in the cluttered scene")
-    parser.add_argument("--cluttered_scene_object_init_max_z", default=6, type=float,  # TODO
+    parser.add_argument("--cluttered_scene_object_init_max_z", default=6, type=float,
                         help="The maximum initial z coordinate of the object in the cluttered scene")
     parser.add_argument("--sphere_min_x", default=-2.5, type=float,
                         help="The minimum x coordinate of light spheres in the scene")
@@ -92,28 +92,26 @@ def main(argv: list[str]) -> None:
                         help="The minimum light intensity of a sphere light")
     parser.add_argument("--sphere_max_intensity", default=5000, type=float,
                         help="The maximum light intensity of a sphere light")
-    parser.add_argument("--camera_pos_x", default=-0.5, type=float,  #TODO
+    parser.add_argument("--camera_pos_x", default=1, type=float,
                         help="The x coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_y", default=-0.3, type=float,  #TODO
+    parser.add_argument("--camera_pos_y", default=0, type=float,
                         help="The y coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_z", default=3, type=float,     #TODO
+    parser.add_argument("--camera_pos_z", default=4.1, type=float,  # TODO: calc
                         help="The z coordinate of the camera in the scene")
-    parser.add_argument("--camera_rot_x", default=-180, type=float,  #TODO
+    parser.add_argument("--camera_rot_x", default=-90, type=float,
                         help="The rotation of the camera around the x axis in degrees")
-    parser.add_argument("--camera_rot_y", default=-120, type=float,  #TODO
+    parser.add_argument("--camera_rot_y", default=-90, type=float,
                         help="The rotation of the camera around the y axis in degrees")
-    parser.add_argument("--camera_rot_z", default=-180, type=float,  #TODO
-                        help="The rotation of the camera around the z axis in degrees")  #TODO
-    parser.add_argument("--distant_light_rot_x", default=-90, type=float,
-                        help="The rotation around x of the direct light in the scene")   #TODO
-    parser.add_argument("--distant_light_rot_y", default=-90, type=float,
-                        help="The rotation around y of the direct light in the scene")   #TODO
-    parser.add_argument("--distant_light_rot_z", default=-180, type=float,
-                        help="The z coordinate of the direct light in the scene")  #TODO
-    parser.add_argument("--distant_light_intensity", default=200, type=float,
+    parser.add_argument("--camera_rot_z", default=0, type=float,
+                        help="The rotation of the camera around the z axis in degrees")
+    parser.add_argument("--distant_light_rot_x", default=0, type=float,
+                        help="The rotation around x of the direct light in the scene")
+    parser.add_argument("--distant_light_rot_y", default=0, type=float,
+                        help="The rotation around y of the direct light in the scene")
+    parser.add_argument("--distant_light_rot_z", default=0, type=float,
+                        help="The z coordinate of the direct light in the scene")
+    parser.add_argument("--distant_light_intensity", default=1000, type=float,
                         help="The minimum light intensity of the direct light")
-    parser.add_argument("--metallic_scene_distant_light_intensity", default=200, type=float,  #TODO
-                        help="The minimum light intensity of the direct light in scenes with metallic material")
     parser.add_argument("--conveyor_belt_speed", default=default_conveyor_belt_speed, type=float,
                         help="The speed of the conveyor belt in the simulation")
     parser.add_argument("--min_x_pos_for_record_start", default=default_min_x_pos_for_record_start, type=float,
@@ -135,8 +133,8 @@ def main(argv: list[str]) -> None:
     num_frames_per_scene = args.num_frames_per_scene
     num_objects_per_scene = args.num_objects_per_scene
     num_objects_per_cluttered_scene = args.num_objects_per_cluttered_scene
-    num_scenes_per_object = args.num_scenes_per_object
-    num_cluttered_scenes_per_object = args.num_cluttered_scenes_per_object
+    num_scenes_scenes = args.num_scenes_scenes
+    num_cluttered_scenes = args.num_cluttered_scenes
     num_sphere_lights = args.num_sphere_lights
     object_init_min_x = args.object_init_min_x
     object_init_max_x = args.object_init_max_x
@@ -168,7 +166,6 @@ def main(argv: list[str]) -> None:
     distant_light_rot_y = args.distant_light_rot_y
     distant_light_rot_z = args.distant_light_rot_z
     distant_light_intensity = args.distant_light_intensity
-    metallic_scene_distant_light_intensity = args.metallic_scene_distant_light_intensity
     conveyor_belt_speed = args.conveyor_belt_speed
     min_x_pos_for_record_start = args.min_x_pos_for_record_start
     render_frequency = args.render_frequency
@@ -204,22 +201,28 @@ def main(argv: list[str]) -> None:
         {
             "material_idx": 0,
             "is_glass": False,
-            "color": [None, None, None],
-            "surface_roughness": None
-        },  # default material
+            "color": [0.2, 0.2, 0.2],
+            "surface_roughness": 0.5
+        },  # default material (default values from Isaac Sim OmniPBR)
         {
-            "material_idx": 0,
+            "material_idx": 1,
             "is_glass": False,
-            "color": [None, None, None],
+            "color": [0.2, 0.2, 0.2],
             "surface_roughness": 0
         },  # metallic, high reflective
         {
-            "material_idx": 1,
+            "material_idx": 2,
             "is_glass": True,
-            "color": [None, None, None]
-        }  # white glass / plastic
+            "color": [1, 1, 1]
+        },  # default white glass / plastic (default values from Isaac Sim OmniGlass)
+        {
+            "material_idx": 3,
+            "is_glass": False,
+            "color": [0, 0, 0],
+            "surface_roughness": 0.5
+        },  # default material (default values from Isaac Sim OmniPBR)
     ]
-    material_names = ["default", "metal", "glass"]
+    material_names = ["default", "metal", "glass", "black"]  # TODO conveyor material
 
     # Generate uncluttered config
     # Create uncluttered out dir
@@ -228,7 +231,7 @@ def main(argv: list[str]) -> None:
 
 
     # Use multiple object scenes as base
-    base_scenes = generate_multiple_object_scenes(
+    base_scenes = [generate_multiple_object_scenes(
         usd_models, len(materials),
         num_frames_per_scene, num_objects_per_scene, 1,
         num_sphere_lights,
@@ -248,14 +251,21 @@ def main(argv: list[str]) -> None:
         camera_rot_x, camera_rot_x,
         camera_rot_y, camera_rot_y,
         camera_rot_z, camera_rot_z,
-        distant_light_intensity, distant_light_intensity)  # ergibt 5 szenen (5 usd_models * 1 num_scenes_per_object) mit zufälligen Objekten und zufälligen Materialien
+        distant_light_intensity, distant_light_intensity)[0] for _ in range(num_scenes_scenes)]
+
+    # Replace ground plane colors
+
+    # Replace distant light configs
+
+    # Remove conveyor belt colors and conveyor frame colors
 
     for scene_idx, scene in enumerate(base_scenes):
+        print("Generating scene {} of {}".format(scene_idx + 1, num_scenes_scenes))
         for usd_model in usd_models:
             for mat_idx, material in enumerate(materials):
                 modified_scene = copy.deepcopy(scene)
                 # usd_models durch dieses usd_model ersetzen
-                # Replace all USD models with current configuration
+                # Replace all USD models with usd_model
                 for object_conf in modified_scene["objects"]:
                     object_conf["usd_model"] = usd_model
                     object_conf["semantic_class_label"] = usd_model_to_semantic_class_label(usd_model)
@@ -272,6 +282,7 @@ def main(argv: list[str]) -> None:
                     "num_frames_per_scene": num_frames_per_scene,
                     "render_frequency": render_frequency,
                     "physics_frequency": physics_frequency,
+                    "eval_dataset": True,
                     "generation_script_args": vars(args)
                 }
 
@@ -281,8 +292,7 @@ def main(argv: list[str]) -> None:
                 with open(file_path, "w") as f:
                     json.dump(scene_config, f, indent=4)
 
-
-                # ergibt 15 Szenen, jede dritte mit neuem Objekt, jede mit versch Material -> 5 Szenen pro Objekt mit gleichem Material
+                # vollständige config mit random objekten und materialien (also die unveränderten base conifgs) speichern
 
 
     # TODO das gleiche noch mal für cluttered scenes
