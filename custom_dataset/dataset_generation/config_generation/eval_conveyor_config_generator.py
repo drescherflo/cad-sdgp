@@ -355,6 +355,7 @@ def main(argv: list[str]) -> None:
     ]
     material_names = ["default", "metal", "glass", "black", "conveyor"]
 
+    print("Generating uncluttered scenes...")
     uncluttered_out_dir = os.path.join(out_dir, "uncluttered")
     generate_scenes(uncluttered_out_dir,
                     usd_models,
@@ -384,6 +385,7 @@ def main(argv: list[str]) -> None:
                     render_frequency,
                     args)
 
+    print("Generating cluttered scenes...")
     cluttered_out_dir = os.path.join(out_dir, "cluttered")
     generate_scenes(cluttered_out_dir,
                     usd_models,
