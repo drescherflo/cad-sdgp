@@ -239,8 +239,12 @@ def main(argv: list[str]) -> None:
             "color": [0, 0, 0],
             "surface_roughness": 0.5
         },  # default material (default values from Isaac Sim OmniPBR)
+        {
+            "material_idx": 4,
+            "is_conveyor": True
+        }
     ]
-    material_names = ["default", "metal", "glass", "black"]  # TODO conveyor material
+    material_names = ["default", "metal", "glass", "black", "conveyor"]
 
     # Generate uncluttered config
     # Create uncluttered out dir
