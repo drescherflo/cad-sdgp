@@ -1,7 +1,8 @@
 """
-Script to create a config file for the conveyor dataset generation.
+Script to create a config files for the evaluation dataset generation.
 The term scene means one data generation run, before the simulator reset.
 In one scene multiple frames are generated.
+TODO: README and doc comments
 """
 import copy
 import sys
@@ -205,7 +206,7 @@ def main(argv: list[str]) -> None:
                         help="The x coordinate of the camera in the scene")
     parser.add_argument("--camera_pos_y", default=0, type=float,
                         help="The y coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_z", default=4.1, type=float,  # TODO: calc
+    parser.add_argument("--camera_pos_z", default=4.0, type=float,  # TODO: calc
                         help="The z coordinate of the camera in the scene")
     parser.add_argument("--camera_rot_x", default=-90, type=float,
                         help="The rotation of the camera around the x axis in degrees")
