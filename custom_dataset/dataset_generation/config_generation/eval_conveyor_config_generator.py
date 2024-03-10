@@ -110,6 +110,12 @@ def main(argv: list[str]) -> None:
                         help="The rotation around y of the direct light in the scene")
     parser.add_argument("--distant_light_rot_z", default=0, type=float,
                         help="The z coordinate of the direct light in the scene")
+    parser.add_argument("--distant_light_color_r", default=1, type=float,
+                        help="The direct light light color in rgb (r value, value should be between 0 and 1)")
+    parser.add_argument("--distant_light_color_g", default=1, type=float,
+                        help="The direct light light color in rgb (g value, value should be between 0 and 1)")
+    parser.add_argument("--distant_light_color_b", default=1, type=float,
+                        help="The direct light light color in rgb (b value, value should be between 0 and 1))")
     parser.add_argument("--distant_light_intensity", default=1000, type=float,
                         help="The minimum light intensity of the direct light")
     parser.add_argument("--conveyor_belt_speed", default=default_conveyor_belt_speed, type=float,
@@ -120,6 +126,12 @@ def main(argv: list[str]) -> None:
                         help="The render frequency in Hz")
     parser.add_argument("--physics_frequency", default=360, type=int,
                         help="The frequency at which the physics are calculated")
+    parser.add_argument("--ground_plane_color_r", default=1, type=float,
+                        help="The ground plane color in rgb (r value, value should be between 0 and 1)")
+    parser.add_argument("--ground_plane_color_g", default=1, type=float,
+                        help="The ground plane color in rgb (g value, value should be between 0 and 1)")
+    parser.add_argument("--ground_plane_color_b", default=1, type=float,
+                        help="The ground plane color in rgb (b value, value should be between 0 and 1))")
 
     # Parse args
     args = parser.parse_args(argv)
@@ -166,10 +178,16 @@ def main(argv: list[str]) -> None:
     distant_light_rot_y = args.distant_light_rot_y
     distant_light_rot_z = args.distant_light_rot_z
     distant_light_intensity = args.distant_light_intensity
+    distant_light_color_r = args.distant_light_color_r
+    distant_light_color_g = args.distant_light_color_g
+    distant_light_color_b = args.distant_light_color_b
     conveyor_belt_speed = args.conveyor_belt_speed
     min_x_pos_for_record_start = args.min_x_pos_for_record_start
     render_frequency = args.render_frequency
     physics_frequency = args.physics_frequency
+    ground_plane_color_r = args.ground_plane_color_r
+    ground_plane_color_g = args.ground_plane_color_g
+    ground_plane_color_b = args.ground_plane_color_b
 
     # Check range args for plausibility
     config.check_range_plausibility(object_init_min_x, object_init_max_x)
@@ -253,11 +271,17 @@ def main(argv: list[str]) -> None:
         camera_rot_z, camera_rot_z,
         distant_light_intensity, distant_light_intensity)[0] for _ in range(num_scenes_scenes)]
 
-    # Replace ground plane colors
+    for scene in base_scenes:
+        # Replace distant light configs
+        for distant_light_config in scene["per_frame_config"]["distant_light_configs"]:
+            distant_light_config["color"] = [distant_light_color_r, distant_light_color_g, distant_light_color_b]
 
-    # Replace distant light configs
+        # Replace ground plane color
+        scene["per_frame_config"]["ground_plane_colors"] = [[ground_plane_color_r, ground_plane_color_g, ground_plane_color_b] for _ in range(len(scene["per_frame_config"]["ground_plane_colors"]))]
 
-    # Remove conveyor belt colors and conveyor frame colors
+        # Remove conveyor belt colors and conveyor frame colors
+        scene["per_frame_config"]["conveyor_belt_colors"] = []
+        scene["per_frame_config"]["conveyor_frame_colors"] = []
 
     for scene_idx, scene in enumerate(base_scenes):
         print("Generating scene {} of {}".format(scene_idx + 1, num_scenes_scenes))
