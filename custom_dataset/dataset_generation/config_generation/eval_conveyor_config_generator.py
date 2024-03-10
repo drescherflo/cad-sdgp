@@ -292,13 +292,12 @@ def main(argv: list[str]) -> None:
         for usd_model in usd_models:
             for mat_idx, material in enumerate(materials):
                 modified_scene = copy.deepcopy(scene)
-                # usd_models durch dieses usd_model ersetzen
                 # Replace all USD models with usd_model
                 for object_conf in modified_scene["objects"]:
                     object_conf["usd_model"] = usd_model
                     object_conf["semantic_class_label"] = usd_model_to_semantic_class_label(usd_model)
 
-                # rest der config erstellen und dabei materials durch liste aus diesem material ersetzen
+                # Create missing config and replace materials with current material
                 materials = [material for _ in range(len(materials))]
                 scene_config = {
                     "camera_frame_config": {"frame_height": frame_height, "frame_width": frame_width},
@@ -314,13 +313,20 @@ def main(argv: list[str]) -> None:
                     "generation_script_args": vars(args)
                 }
 
-                # speichern
+                # Save config
                 file_name = f"{usd_model_to_semantic_class_label(usd_model)}_{scene_idx + 1}_{material_names[mat_idx]}.json"
                 file_path = os.path.join(sub_out_dir, file_name)
                 with open(file_path, "w") as f:
                     json.dump(scene_config, f, indent=4)
 
-                # vollständige config mit random objekten und materialien (also die unveränderten base conifgs) speichern
+                # Restore mixed object configuration
+                modified_scene["objects"] = scene["objects"]
+
+                # Save config with mixed objects
+                file_name = f"mixed_{scene_idx + 1}_{material_names[mat_idx]}.json"
+                file_path = os.path.join(sub_out_dir, file_name)
+                with open(file_path, "w") as f:
+                    json.dump(scene_config, f, indent=4)
 
 
     # TODO das gleiche noch mal für cluttered scenes
