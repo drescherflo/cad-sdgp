@@ -47,10 +47,10 @@ python custom_dataset/dataset_generation/config_generation/conveyor_config_gener
   --out_path "$CUSTOM_DATASET_DIR/dataset_generator_configs/conveyor_generator_config.json" \
   --object_init_min_x -6.0 \
   --object_init_max_x 2.0 \
-  --conveyor_belt_speed 0.0 \
+  --conveyor_belt_speed 0.2 \
   --num_objects_per_scene 200 \
-  --num_frames_per_scene 1 \
-  --num_scenes_per_object 1000
+  --num_frames_per_scene 100 \
+  --num_scenes_per_object 10
 deactivate
 
 ## Generate conveyor dataset
