@@ -354,3 +354,10 @@ if __name__ == '__main__':
     out_dir = args.output_dir if os.path.isabs(args.output_dir) else os.path.join(os.getcwd(), args.output_dir)
     main(args.config_file, args.usd_dir, out_dir)
     simulation_app.close()
+
+    # Uncomment for debug
+    # conf_path = "custom_dataset/dataset_generation/config_generation/configs/cluttered/ma_simple_object_1_conveyor.json"
+    # usd_dir = "CAD Models/OBJ_converted"
+    # out_dir = os.path.abspath("temp_replicator_out")
+    # main(conf_path, usd_dir, out_dir)
+    # simulation_app.close()

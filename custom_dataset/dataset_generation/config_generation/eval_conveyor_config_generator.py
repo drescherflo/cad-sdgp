@@ -14,6 +14,115 @@ from utils.conveyor_config import generate_multiple_object_scenes
 from utils.scene_randomization import usd_model_to_semantic_class_label
 
 
+def generate_scenes(
+                    out_dir: str,
+                    usd_models: list[str],
+                    camera_pos_x: float, camera_pos_y: float, camera_pos_z: float,
+                    camera_rot_x: float, camera_rot_y: float, camera_rot_z: float,
+                    conveyor_belt_speed: float,
+                    distant_light_color_r: float, distant_light_color_g: float, distant_light_color_b: float,
+                    distant_light_intensity: float,
+                    distant_light_rot_x: float, distant_light_rot_y: float, distant_light_rot_z: float,
+                    frame_height: int, frame_width: int,
+                    ground_plane_color_r: float, ground_plane_color_g: float, ground_plane_color_b: float,
+                    material_names: list[str], materials: list[dict],
+                    min_x_pos_for_record_start: float,
+                    num_frames_per_scene: int,
+                    num_objects_per_scene: int,
+                    num_scenes: int,
+                    num_sphere_lights: int,
+                    sphere_min_intensity: float, sphere_max_intensity: float,
+                    sphere_min_x: float, sphere_max_x: float,
+                    sphere_min_y: float, sphere_max_y: float,
+                    sphere_min_z: float, sphere_max_z: float,
+                    object_init_min_x: float, object_init_max_x: float,
+                    object_init_min_y: float, object_init_max_y: float,
+                    object_init_min_z: float, object_init_max_z: float,
+                    sub_frames_per_frame: int,
+                    physics_frequency: int,
+                    render_frequency: int,
+                    args
+                    ):
+    # Create out dir
+    os.makedirs(os.path.join(out_dir), exist_ok=True)
+    # Use multiple object scenes as base
+    base_scenes = [generate_multiple_object_scenes(
+        usd_models, len(materials),
+        num_frames_per_scene, num_objects_per_scene, 1,
+        num_sphere_lights,
+        object_init_min_x, object_init_max_x,
+        object_init_min_y, object_init_max_y,
+        object_init_min_z, object_init_max_z,
+        sphere_min_x, sphere_max_x,
+        sphere_min_y, sphere_max_y,
+        sphere_min_z, sphere_max_z,
+        sphere_min_intensity, sphere_max_intensity,
+        distant_light_rot_x, distant_light_rot_x,
+        distant_light_rot_y, distant_light_rot_y,
+        distant_light_rot_z, distant_light_rot_z,
+        camera_pos_x, camera_pos_x,
+        camera_pos_y, camera_pos_y,
+        camera_pos_z, camera_pos_z,
+        camera_rot_x, camera_rot_x,
+        camera_rot_y, camera_rot_y,
+        camera_rot_z, camera_rot_z,
+        distant_light_intensity, distant_light_intensity)[0] for _ in range(num_scenes)]
+    for scene in base_scenes:
+        # Replace distant light configs
+        for distant_light_config in scene["per_frame_config"]["distant_light_configs"]:
+            distant_light_config["color"] = [distant_light_color_r, distant_light_color_g, distant_light_color_b]
+
+        # Replace ground plane color
+        scene["per_frame_config"]["ground_plane_colors"] = [
+            [ground_plane_color_r, ground_plane_color_g, ground_plane_color_b] for _ in
+            range(len(scene["per_frame_config"]["ground_plane_colors"]))]
+
+        # Remove conveyor belt colors and conveyor frame colors
+        scene["per_frame_config"]["conveyor_belt_colors"] = []
+        scene["per_frame_config"]["conveyor_frame_colors"] = []
+
+    for scene_idx, scene in enumerate(base_scenes):
+        print("Generating scene {} of {}".format(scene_idx + 1, num_scenes))
+        for usd_model in usd_models:
+            for mat_idx, material in enumerate(materials):
+                modified_scene = copy.deepcopy(scene)
+                # Replace all USD models with usd_model
+                for object_conf in modified_scene["objects"]:
+                    object_conf["usd_model"] = usd_model
+                    object_conf["semantic_class_label"] = usd_model_to_semantic_class_label(usd_model)
+
+                # Create missing config and replace materials with current material
+                materials = [material for _ in range(len(materials))]
+                scene_config = {
+                    "camera_frame_config": {"frame_height": frame_height, "frame_width": frame_width},
+                    "sub_frames_per_frame": sub_frames_per_frame,
+                    "materials": materials,
+                    "scenes": [modified_scene],
+                    "conveyor_belt_speed": conveyor_belt_speed,
+                    "min_x_pos_for_record_start": min_x_pos_for_record_start,
+                    "num_frames_per_scene": num_frames_per_scene,
+                    "render_frequency": render_frequency,
+                    "physics_frequency": physics_frequency,
+                    "eval_dataset": True,
+                    "generation_script_args": vars(args)
+                }
+
+                # Save config
+                file_name = f"{usd_model_to_semantic_class_label(usd_model)}_{scene_idx + 1}_{material_names[mat_idx]}.json"
+                file_path = os.path.join(out_dir, file_name)
+                with open(file_path, "w") as f:
+                    json.dump(scene_config, f, indent=4)
+
+                # Restore mixed object configuration
+                modified_scene["objects"] = scene["objects"]
+
+                # Save config with mixed objects
+                file_name = f"mixed_{scene_idx + 1}_{material_names[mat_idx]}.json"
+                file_path = os.path.join(out_dir, file_name)
+                with open(file_path, "w") as f:
+                    json.dump(scene_config, f, indent=4)
+
+
 def main(argv: list[str]) -> None:
     """
     Main function to handle command-line arguments and execute the configuration generation process.
@@ -42,11 +151,11 @@ def main(argv: list[str]) -> None:
                         help="Number of frames to render before saving the frame to avoid artifacts after fast object movement")
     parser.add_argument("--num_frames_per_scene", default=default_num_frames_per_scene, type=int,
                         help="Number of frames to record per simulation run / simulation scene")
-    parser.add_argument("--num_objects_per_scene", default=15, type=int,  # TODO
+    parser.add_argument("--num_objects_per_scene", default=20, type=int,
                         help="Specifies the number of objects in the scene")
-    parser.add_argument("--num_objects_per_cluttered_scene", default=100, type=int,  # TODO
+    parser.add_argument("--num_objects_per_cluttered_scene", default=100, type=int,
                         help="Specifies the number of objects in the cluttered scene")
-    parser.add_argument("--num_scenes_scenes", default=5, type=int,
+    parser.add_argument("--num_scenes", default=5, type=int,
                         help="Specifies the number of uncluttered scenes to generate")
     parser.add_argument("--num_cluttered_scenes", default=5, type=int,
                         help="Specifies the number of cluttered scenes to generate")
@@ -145,7 +254,7 @@ def main(argv: list[str]) -> None:
     num_frames_per_scene = args.num_frames_per_scene
     num_objects_per_scene = args.num_objects_per_scene
     num_objects_per_cluttered_scene = args.num_objects_per_cluttered_scene
-    num_scenes_scenes = args.num_scenes_scenes
+    num_scenes = args.num_scenes
     num_cluttered_scenes = args.num_cluttered_scenes
     num_sphere_lights = args.num_sphere_lights
     object_init_min_x = args.object_init_min_x
@@ -201,7 +310,7 @@ def main(argv: list[str]) -> None:
     # Check for existing config at out_path
     if os.path.exists(out_dir):
         print(f"Output directory at '{out_dir}' already exists. Exiting...")
-        #exit(-1)  # TODO: uncomment
+        exit(-1)
 
     # Test usd_dir
     if not os.path.isdir(usd_dir):
@@ -246,90 +355,63 @@ def main(argv: list[str]) -> None:
     ]
     material_names = ["default", "metal", "glass", "black", "conveyor"]
 
-    # Generate uncluttered config
-    # Create uncluttered out dir
-    sub_out_dir = os.path.join(out_dir, "uncluttered")
-    os.makedirs(os.path.join(sub_out_dir), exist_ok=True)
+    uncluttered_out_dir = os.path.join(out_dir, "uncluttered")
+    generate_scenes(uncluttered_out_dir,
+                    usd_models,
+                    camera_pos_x, camera_pos_y, camera_pos_z,
+                    camera_rot_x, camera_rot_y, camera_rot_z,
+                    conveyor_belt_speed,
+                    distant_light_color_r, distant_light_color_g, distant_light_color_b,
+                    distant_light_intensity,
+                    distant_light_rot_x, distant_light_rot_y, distant_light_rot_z,
+                    frame_height, frame_width,
+                    ground_plane_color_r, ground_plane_color_g, ground_plane_color_b,
+                    material_names, materials,
+                    min_x_pos_for_record_start,
+                    num_frames_per_scene,
+                    num_objects_per_scene,
+                    num_scenes,
+                    num_sphere_lights,
+                    sphere_min_intensity, sphere_max_intensity,
+                    sphere_min_x, sphere_max_x,
+                    sphere_min_y, sphere_max_y,
+                    sphere_min_z, sphere_max_z,
+                    object_init_min_x, object_init_max_x,
+                    object_init_min_y, object_init_max_y,
+                    object_init_min_z, object_init_max_z,
+                    sub_frames_per_frame,
+                    physics_frequency,
+                    render_frequency,
+                    args)
 
-
-    # Use multiple object scenes as base
-    base_scenes = [generate_multiple_object_scenes(
-        usd_models, len(materials),
-        num_frames_per_scene, num_objects_per_scene, 1,
-        num_sphere_lights,
-        object_init_min_x, object_init_max_x,
-        object_init_min_y, object_init_max_y,
-        object_init_min_z, object_init_max_z,
-        sphere_min_x, sphere_max_x,
-        sphere_min_y, sphere_max_y,
-        sphere_min_z, sphere_max_z,
-        sphere_min_intensity, sphere_max_intensity,
-        distant_light_rot_x, distant_light_rot_x,
-        distant_light_rot_y, distant_light_rot_y,
-        distant_light_rot_z, distant_light_rot_z,
-        camera_pos_x, camera_pos_x,
-        camera_pos_y, camera_pos_y,
-        camera_pos_z, camera_pos_z,
-        camera_rot_x, camera_rot_x,
-        camera_rot_y, camera_rot_y,
-        camera_rot_z, camera_rot_z,
-        distant_light_intensity, distant_light_intensity)[0] for _ in range(num_scenes_scenes)]
-
-    for scene in base_scenes:
-        # Replace distant light configs
-        for distant_light_config in scene["per_frame_config"]["distant_light_configs"]:
-            distant_light_config["color"] = [distant_light_color_r, distant_light_color_g, distant_light_color_b]
-
-        # Replace ground plane color
-        scene["per_frame_config"]["ground_plane_colors"] = [[ground_plane_color_r, ground_plane_color_g, ground_plane_color_b] for _ in range(len(scene["per_frame_config"]["ground_plane_colors"]))]
-
-        # Remove conveyor belt colors and conveyor frame colors
-        scene["per_frame_config"]["conveyor_belt_colors"] = []
-        scene["per_frame_config"]["conveyor_frame_colors"] = []
-
-    for scene_idx, scene in enumerate(base_scenes):
-        print("Generating scene {} of {}".format(scene_idx + 1, num_scenes_scenes))
-        for usd_model in usd_models:
-            for mat_idx, material in enumerate(materials):
-                modified_scene = copy.deepcopy(scene)
-                # Replace all USD models with usd_model
-                for object_conf in modified_scene["objects"]:
-                    object_conf["usd_model"] = usd_model
-                    object_conf["semantic_class_label"] = usd_model_to_semantic_class_label(usd_model)
-
-                # Create missing config and replace materials with current material
-                materials = [material for _ in range(len(materials))]
-                scene_config = {
-                    "camera_frame_config": {"frame_height": frame_height, "frame_width": frame_width},
-                    "sub_frames_per_frame": sub_frames_per_frame,
-                    "materials": materials,
-                    "scenes": [modified_scene],
-                    "conveyor_belt_speed": conveyor_belt_speed,
-                    "min_x_pos_for_record_start": min_x_pos_for_record_start,
-                    "num_frames_per_scene": num_frames_per_scene,
-                    "render_frequency": render_frequency,
-                    "physics_frequency": physics_frequency,
-                    "eval_dataset": True,
-                    "generation_script_args": vars(args)
-                }
-
-                # Save config
-                file_name = f"{usd_model_to_semantic_class_label(usd_model)}_{scene_idx + 1}_{material_names[mat_idx]}.json"
-                file_path = os.path.join(sub_out_dir, file_name)
-                with open(file_path, "w") as f:
-                    json.dump(scene_config, f, indent=4)
-
-                # Restore mixed object configuration
-                modified_scene["objects"] = scene["objects"]
-
-                # Save config with mixed objects
-                file_name = f"mixed_{scene_idx + 1}_{material_names[mat_idx]}.json"
-                file_path = os.path.join(sub_out_dir, file_name)
-                with open(file_path, "w") as f:
-                    json.dump(scene_config, f, indent=4)
-
-
-    # TODO das gleiche noch mal für cluttered scenes
+    cluttered_out_dir = os.path.join(out_dir, "cluttered")
+    generate_scenes(cluttered_out_dir,
+                    usd_models,
+                    camera_pos_x, camera_pos_y, camera_pos_z,
+                    camera_rot_x, camera_rot_y, camera_rot_z,
+                    conveyor_belt_speed,
+                    distant_light_color_r, distant_light_color_g, distant_light_color_b,
+                    distant_light_intensity,
+                    distant_light_rot_x, distant_light_rot_y, distant_light_rot_z,
+                    frame_height, frame_width,
+                    ground_plane_color_r, ground_plane_color_g, ground_plane_color_b,
+                    material_names, materials,
+                    min_x_pos_for_record_start,
+                    num_frames_per_scene,
+                    num_objects_per_cluttered_scene,
+                    num_cluttered_scenes,
+                    num_sphere_lights,
+                    sphere_min_intensity, sphere_max_intensity,
+                    sphere_min_x, sphere_max_x,
+                    sphere_min_y, sphere_max_y,
+                    sphere_min_z, sphere_max_z,
+                    cluttered_scene_object_init_min_x, cluttered_scene_object_init_max_x,
+                    cluttered_scene_object_init_min_y, cluttered_scene_object_init_max_y,
+                    cluttered_scene_object_init_min_z, cluttered_scene_object_init_max_z,
+                    sub_frames_per_frame,
+                    physics_frequency,
+                    render_frequency,
+                    args)
 
 
 if __name__ == '__main__':
