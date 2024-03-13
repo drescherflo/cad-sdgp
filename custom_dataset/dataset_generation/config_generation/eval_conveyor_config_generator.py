@@ -136,9 +136,9 @@ def main(argv: list[str]) -> None:
     # These are the number of frames the object needs to travel from recording start to the end of the conveyor belt
     default_render_frequency = 60
     default_conveyor_belt_speed = 0.2
-    default_min_x_pos_for_record_start = 0
-    end_x_of_conveyor_in_simulation = 2.0
-    distance_to_capture = end_x_of_conveyor_in_simulation - default_min_x_pos_for_record_start
+    default_min_x_pos_for_record_start = -0.5
+    end_x_of_recording = 0.5
+    distance_to_capture = end_x_of_recording - default_min_x_pos_for_record_start
     time_for_recording = distance_to_capture / default_conveyor_belt_speed
     default_num_frames_per_scene = int(time_for_recording * default_render_frequency)  # Sim runs at 60 FPS (https://docs.omniverse.nvidia.com/py/isaacsim/source/extensions/omni.isaac.core/docs/index.html#module-omni.isaac.core.world)
 
@@ -174,9 +174,9 @@ def main(argv: list[str]) -> None:
                         help="The minimum initial z coordinate of the object in the scene")
     parser.add_argument("--object_init_max_z", default=6, type=float,
                         help="The maximum initial z coordinate of the object in the scene")
-    parser.add_argument("--cluttered_scene_object_init_min_x", default=0.75, type=float,
+    parser.add_argument("--cluttered_scene_object_init_min_x", default=-0.25, type=float,
                         help="The minimum initial x coordinate of the object in the cluttered scene")
-    parser.add_argument("--cluttered_scene_object_init_max_x", default=1.25, type=float,
+    parser.add_argument("--cluttered_scene_object_init_max_x", default=0.25, type=float,
                         help="The maximum initial x coordinate of the object in the cluttered scene")
     parser.add_argument("--cluttered_scene_object_init_min_y", default=-0.4, type=float,
                         help="The minimum initial y coordinate of the object in the cluttered scene")
@@ -202,13 +202,13 @@ def main(argv: list[str]) -> None:
                         help="The minimum light intensity of a sphere light")
     parser.add_argument("--sphere_max_intensity", default=5000, type=float,
                         help="The maximum light intensity of a sphere light")
-    parser.add_argument("--camera_pos_x", default=1, type=float,
+    parser.add_argument("--camera_pos_x", default=0, type=float,
                         help="The x coordinate of the camera in the scene")
     parser.add_argument("--camera_pos_y", default=0, type=float,
                         help="The y coordinate of the camera in the scene")
-    parser.add_argument("--camera_pos_z", default=4.0, type=float,  # TODO: calc
+    parser.add_argument("--camera_pos_z", default=3.5, type=float,
                         help="The z coordinate of the camera in the scene")
-    parser.add_argument("--camera_rot_x", default=-90, type=float,
+    parser.add_argument("--camera_rot_x", default=0, type=float,
                         help="The rotation of the camera around the x axis in degrees")
     parser.add_argument("--camera_rot_y", default=-90, type=float,
                         help="The rotation of the camera around the y axis in degrees")
