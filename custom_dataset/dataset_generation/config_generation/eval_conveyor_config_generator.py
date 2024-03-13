@@ -152,7 +152,7 @@ def main(argv: list[str]) -> None:
                         help="Number of frames to render before saving the frame to avoid artifacts after fast object movement")
     parser.add_argument("--num_frames_per_scene", default=default_num_frames_per_scene, type=int,
                         help="Number of frames to record per simulation run / simulation scene")
-    parser.add_argument("--num_objects_per_scene", default=20, type=int,
+    parser.add_argument("--num_objects_per_scene", default=100, type=int,
                         help="Specifies the number of objects in the scene")
     parser.add_argument("--num_objects_per_cluttered_scene", default=100, type=int,
                         help="Specifies the number of objects in the cluttered scene")
@@ -164,7 +164,7 @@ def main(argv: list[str]) -> None:
                         help="Specifies the number of sphere lights with random light color in the scene")
     parser.add_argument("--object_init_min_x", default=-2.0, type=float,
                         help="The minimum initial x coordinate of the object in the scene")
-    parser.add_argument("--object_init_max_x", default=0, type=float,
+    parser.add_argument("--object_init_max_x", default=2.0, type=float,
                         help="The maximum initial x coordinate of the object in the scene")
     parser.add_argument("--object_init_min_y", default=-0.4, type=float,
                         help="The minimum initial y coordinate of the object in the scene")
@@ -174,9 +174,9 @@ def main(argv: list[str]) -> None:
                         help="The minimum initial z coordinate of the object in the scene")
     parser.add_argument("--object_init_max_z", default=6, type=float,
                         help="The maximum initial z coordinate of the object in the scene")
-    parser.add_argument("--cluttered_scene_object_init_min_x", default=-0.5, type=float,
+    parser.add_argument("--cluttered_scene_object_init_min_x", default=0.75, type=float,
                         help="The minimum initial x coordinate of the object in the cluttered scene")
-    parser.add_argument("--cluttered_scene_object_init_max_x", default=0, type=float,
+    parser.add_argument("--cluttered_scene_object_init_max_x", default=1.25, type=float,
                         help="The maximum initial x coordinate of the object in the cluttered scene")
     parser.add_argument("--cluttered_scene_object_init_min_y", default=-0.4, type=float,
                         help="The minimum initial y coordinate of the object in the cluttered scene")
