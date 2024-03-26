@@ -68,6 +68,7 @@ source custom_dataset/dataset_conversion/venv/bin/activate
 for dir in "${config_dirs[@]}"; do
   dataset_type_dir="$CUSTOM_DATASET_DIR/replicator_dataset/$dir"
   for dataset_dir in "$dataset_type_dir"/*; do
+    echo "Converting $dataset_dir ..."
     python custom_dataset/dataset_conversion/dataset_converter.py \
       --obj_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ/" \
       --replicator_data_dir "$dataset_dir" \
