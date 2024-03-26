@@ -110,6 +110,7 @@ services:
     command: [ "--obj_dir", "/obj_models",
                "--replicator_data_dir", "/replicator_dataset/6_dof",
                "--replicator_data_dir", "/replicator_dataset/conveyor_belt",
-               "--output_dir", "/converted_datasets" ]
+               "--output_dir", "/converted_datasets"
+               "--converter", "ReplicatorToRoca"]
     profiles: [ "manual" ]  # Disable autostart with compose up
 

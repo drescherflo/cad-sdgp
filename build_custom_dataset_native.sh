@@ -70,6 +70,7 @@ python custom_dataset/dataset_conversion/dataset_converter.py \
   --obj_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ/" \
   --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" \
   --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/conveyor_belt/" \
-  --output_dir "$CUSTOM_DATASET_DIR/converted/"
+  --output_dir "$CUSTOM_DATASET_DIR/converted/" \
+  --converter ReplicatorToRoca
 deactivate
 
