@@ -100,8 +100,8 @@ class ReplicatorToRocaEval(ConverterInterface):
         scene_numbers = replicator.get_scene_nrs(replicator_data_dir)
 
         # Convert eval data
-        print("Generating the semantic class labels file...")
-        ReplicatorToRocaEval._generate_class_labels_file(obj_paths, output_dir)
+        #print("Generating the semantic class labels file...")
+        #ReplicatorToRocaEval._generate_class_labels_file(obj_paths, output_dir)
         print("Converting camera intrinsics...")
         ReplicatorToRocaEval._convert_intrinsics(replicator_data_dir, output_dir, scene_numbers)
         print("Converting images...")
