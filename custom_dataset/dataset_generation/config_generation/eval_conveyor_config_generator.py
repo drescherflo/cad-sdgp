@@ -348,13 +348,20 @@ def main(argv: list[str]) -> None:
             "is_glass": False,
             "color": [0, 0, 0],
             "surface_roughness": 0.5
-        },  # default material (default values from Isaac Sim OmniPBR)
+        },  # black material
         {
             "material_idx": 4,
             "is_conveyor": True
-        }
+        },  # conveyor belt material
+        {
+            "material_idx": 3,
+            "is_glass": False,
+            "color": [0, 1, 0],
+            "surface_roughness": 0.5
+        }   # green material
     ]
-    material_names = ["default", "metal", "glass", "black", "conveyor"]
+
+    material_names = ["default", "metal", "glass", "black", "conveyor", "green"]
 
     print("Generating uncluttered scenes...")
     uncluttered_out_dir = os.path.join(out_dir, "uncluttered")
