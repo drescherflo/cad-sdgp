@@ -1,6 +1,7 @@
 import numpy as np
 import quaternion
 import matplotlib.pyplot as plt
+import pandas as pd
 
 import os
 import glob
@@ -79,6 +80,9 @@ def main(eval_dataset_path: str):
             with open(neural_net_json, "r") as f:
                 neural_net_results = json.load(f)
 
+            # Create list to store data for pandas df for dataset
+            dataset_df_data = []
+
             # Calc per frame stats
             for frame_result in neural_net_results["per_frame_results"]:
                 # Load ground truth data
@@ -128,28 +132,34 @@ def main(eval_dataset_path: str):
                 # Distance
                 position_difference_per_axis = [calc_per_axis_position_difference(gt_obj, found_obj) for found_obj, gt_obj in found_to_gt_objects]
                 distance_errors = [calc_distance(gt_obj, found_obj) for found_obj, gt_obj in found_to_gt_objects]
-                #distance_error_mean = np.mean(distance_errors)
-                #distance_error_std = np.std(distance_errors)
+                distance_error_mean = np.mean(distance_errors)
+                distance_error_std = np.std(distance_errors)
+                distance_error_min = np.min(distance_errors)
+                distance_error_max = np.max(distance_errors)
 
                 # Rotation error
                 rotation_errors = [calc_rotation_distance(gt_obj, found_obj) for found_obj, gt_obj in found_to_gt_objects]
-                #distance_error_mean = np.mean(distance_errors)
-                #distance_error_std = np.std(distance_errors)
+                rotation_error_mean = np.mean(distance_errors)
+                rotation_error_std = np.std(distance_errors)
+                rotation_error_min = np.min(distance_errors)
+                rotation_error_max = np.max(distance_errors)
 
                 # Scale error
                 scale_difference_per_axis = [calc_per_axis_scale_difference(found_obj) for found_obj, _ in found_to_gt_objects]
                 scale_errors = [calc_scale_distance(found_obj) for found_obj, _ in found_to_gt_objects]
-                #mean
-                #std
+                scale_error_mean = np.mean(scale_errors)
+                scale_error_std = np.std(scale_errors)
+                scale_error_min = np.min(scale_errors)
+                scale_error_max = np.max(scale_errors)
 
-                # Occlusion ration of undetected objects
+                # Occlusion ratio of undetected objects
                 occlusion_ratio_non_detected_objects = [gt_obj["occlusion_ratio"] for gt_obj in ground_truth_visible_objects]
-                # mean
-                # std
-                # min
-                # max
+                undetected_occlusion_mean = np.mean(occlusion_ratio_non_detected_objects)
+                undetected_occlusion_std = np.std(occlusion_ratio_non_detected_objects)
+                undetected_occlusion_min = np.min(occlusion_ratio_non_detected_objects)
+                undetected_occlusion_max = np.max(occlusion_ratio_non_detected_objects)
 
-                # Objektklassifizierung / Objekttyp
+                # Prepare data for object classification / object type
                 label_to_predicted_label = {}
                 for found_obj, gt_obj in found_to_gt_objects:
                     correct_label = gt_obj["semantic_labels"]["class"]
@@ -158,6 +168,19 @@ def main(eval_dataset_path: str):
                         label_to_predicted_label[correct_label].append(predicated_label)
                     else:
                         label_to_predicted_label[correct_label] = [predicated_label]
+
+                # Calc correct and incorrect classifications
+                # Initialize variables to count correct and incorrect classifications
+                correct_classifications = 0
+                incorrect_classifications = 0
+                # Iterate through the dictionary to count correct and incorrect classifications
+                for key, predictions in label_to_predicted_label.items():
+                    for prediction in predictions:
+                        if prediction == key:
+                            correct_classifications += 1
+                        else:
+                            incorrect_classifications += 1
+
 
                 # Store per frame results
                 per_dataset_results[dataset_name][neural_net_name].append({
@@ -170,9 +193,27 @@ def main(eval_dataset_path: str):
                     "label_to_predicted_label": label_to_predicted_label
                 })
 
+                dataset_df_data.append([ground_truth_visible_objects_count, found_object_count, inference_time,
+                                                distance_error_mean, distance_error_std, distance_error_min, distance_error_max,
+                                                rotation_error_mean, rotation_error_std, rotation_error_min, rotation_error_max,
+                                                scale_error_mean, scale_error_std, scale_error_min, scale_error_max,
+                                                undetected_occlusion_mean, undetected_occlusion_std, undetected_occlusion_min, undetected_occlusion_max,
+                                                correct_classifications, incorrect_classifications])
+
+            # Store dataset data for this neural net model in csv
+            column_names = ["Object Count", "Predicted Object Count", "Inference Time (s)",
+                                               "Mean Distance Error (m)", "STD Distance Error (m)", "Min Distance Error (m)", "Max Distance Error (m)",
+                                               "Mean Rotation Error", "STD Rotation Error", "Min Rotation Error", "Max Rotation Error",
+                                               "Mean Scale Error (m)", "STD Scale Error (m)", "Min Scale Error (m)", "Max Scale Error (m)",
+                                               "Undetected Mean Occlusion Ratio", "Undetected STD Occlusion Ratio", "Undetected Min Occlusion Ratio", "Undetected Max Occlusion Ratio",
+                                               "Correct Classification Count", "Incorrect Classification Count"]
+            dataset_df = pd.DataFrame(dataset_df_data, columns=column_names)
+            breakpoint()
+
+
     # Create plots
     # num_found_objects_to_inference_time
-    plt.plot()
+    breakpoint()
 
     # Vergleich Netze zu verschiedenen Materialien
 
