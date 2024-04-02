@@ -228,7 +228,9 @@ def main(eval_dataset_path: str, output_dir: str):
                                                "Undetected Mean Occlusion Ratio", "Undetected STD Occlusion Ratio", "Undetected Min Occlusion Ratio", "Undetected Max Occlusion Ratio",
                                                "Correct Classification Count", "Incorrect Classification Count"]
             dataset_df = pd.DataFrame(dataset_df_data, columns=column_names)
-            csv_path = os.path.join(output_dir, dataset_type_name, f"{dataset_name}-{neural_net_name}.csv")
+            out_dir = os.path.join(output_dir, dataset_type_name, dataset_name, neural_net_name)
+            os.makedirs(out_dir, exist_ok=True)
+            csv_path = os.path.join(out_dir, f"{dataset_name}-{neural_net_name}.csv")
             dataset_df.to_csv(csv_path, index=False, sep=";")
 
             # Create per neural net plots
@@ -243,7 +245,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.grid(axis="y")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name, f"inference_time-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(out_dir, "inference_time.pdf")
             plt.savefig(plot_path)
             plt.show()
 
@@ -264,8 +266,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.grid(axis="y")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name,
-                                     f"detected_objects-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(out_dir, "detected_objects.pdf")
             plt.savefig(plot_path)
             plt.show()
 
@@ -289,8 +290,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.grid(axis="y")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name,
-                                     f"distance_error-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(out_dir, "distance_error.pdf")
             plt.savefig(plot_path)
             plt.show()
 
@@ -316,8 +316,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.grid(axis="y")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name,
-                                     f"rotation_error-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(out_dir, "rotation_error.pdf")
             plt.savefig(plot_path)
             plt.show()
 
@@ -343,8 +342,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.grid(axis="y")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name,
-                                     f"scale_error-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(out_dir, "scale_error.pdf")
             plt.savefig(plot_path)
             plt.show()
 
@@ -370,8 +368,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.grid(axis="y")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name,
-                                     f"occlusion-undetected-objects-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(out_dir, "occlusion-undetected-objects.pdf")
             plt.savefig(plot_path)
             plt.show()
 
@@ -399,8 +396,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.grid(axis="y")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name,
-                                     f"classification_counts-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(out_dir, "classification_counts.pdf")
             plt.savefig(plot_path)
             plt.show()
 
@@ -423,8 +419,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.grid(axis="y")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name,
-                                     f"classification_ratio-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(out_dir, "classification_ratio.pdf")
             plt.savefig(plot_path)
             plt.show()
 
