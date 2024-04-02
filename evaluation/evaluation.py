@@ -223,7 +223,7 @@ def main(eval_dataset_path: str, output_dir: str):
             column_names = ["Object Count", "Predicted Object Count", "Inference Time (s)",
                                                "Mean Distance Error (m)", "STD Distance Error (m)", "Min Distance Error (m)", "Max Distance Error (m)",
                                                "Mean Rotation Error", "STD Rotation Error", "Min Rotation Error", "Max Rotation Error",
-                                               "Mean Scale Error (m)", "STD Scale Error (m)", "Min Scale Error (m)", "Max Scale Error (m)",
+                                               "Mean Scale Error", "STD Scale Error", "Min Scale Error", "Max Scale Error",
                                                "Undetected Mean Occlusion Ratio", "Undetected STD Occlusion Ratio", "Undetected Min Occlusion Ratio", "Undetected Max Occlusion Ratio",
                                                "Correct Classification Count", "Incorrect Classification Count"]
             dataset_df = pd.DataFrame(dataset_df_data, columns=column_names)
@@ -246,6 +246,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.savefig(plot_path)
             plt.show()
 
+
             # Found Objects per Frame
             plt.figure(dpi=300)
             plt.title(f"Anzahl detektierte Objekte pro Frame\n"
@@ -266,6 +267,7 @@ def main(eval_dataset_path: str, output_dir: str):
                                      f"detected_objects-{dataset_name}-{neural_net_name}.pdf")
             plt.savefig(plot_path)
             plt.show()
+
 
             # Distance error
             distance_errors = dataset_df["Mean Distance Error (m)"]
@@ -291,6 +293,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.savefig(plot_path)
             plt.show()
 
+
             # Rotation error
             rotation_errors = dataset_df["Mean Rotation Error"]
             rotation_std = dataset_df["STD Rotation Error"]
@@ -312,6 +315,31 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(output_dir, dataset_type_name,
                                      f"rotation_error-{dataset_name}-{neural_net_name}.pdf")
+            plt.savefig(plot_path)
+            plt.show()
+
+
+            # Scale error
+            scale_errors = dataset_df["Mean Scale Error"]
+            scale_std = dataset_df["STD Scale Error"]
+            frames = range(len(neural_net_results["per_frame_results"]))
+            plt.figure(dpi=300)
+            plt.title(f"Skalierungsfehler pro Frame\n"
+                      f"Datensatz: {dataset_name}\n"
+                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+            plt.plot(frames, scale_errors, label="Mittlerer Skalierungsfehler")
+            plt.fill_between(frames, scale_errors - scale_std, scale_errors + scale_std, alpha=0.2)
+            plt.plot(frames, dataset_df["Max Scale Error"], label="Maximaler Skalierungsfehler")
+            plt.plot(frames, dataset_df["Min Scale Error"], label="Minimaler Skalierungsfehler")
+            plt.xlabel("Frame-Nummer")
+            plt.ylabel("Skalierungsfehler")
+            plt.legend()
+            # plt.ylim([0, ceil_to_pos(np.max(distance_errors), -1)])
+            plt.grid(axis="y")
+            plt.tight_layout()
+
+            plot_path = os.path.join(output_dir, dataset_type_name,
+                                     f"scale_error-{dataset_name}-{neural_net_name}.pdf")
             plt.savefig(plot_path)
             plt.show()
 
