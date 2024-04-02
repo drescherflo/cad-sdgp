@@ -61,10 +61,16 @@ def calc_rotation_distance(ground_truth_object, found_object):
     return 1 - abs(np.dot(gt_quat, found_quat))
 
 
-def main(eval_dataset_path: str):
+def main(eval_dataset_path: str, output_dir: str):
+    # Create output dir
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Create dict for num_objects to inference time
     num_found_objects_to_inference_time = {}
 
     # Cluttered
+    dataset_type_name = "cluttered"
+    os.makedirs(os.path.join(output_dir, dataset_type_name), exist_ok=True)
     cluttered_dataset_paths = glob.glob(os.path.join(eval_dataset_path, "converted", "cluttered", "*"))
     per_dataset_results = {}
     for cluttered_dataset_path in cluttered_dataset_paths:
@@ -208,7 +214,8 @@ def main(eval_dataset_path: str):
                                                "Undetected Mean Occlusion Ratio", "Undetected STD Occlusion Ratio", "Undetected Min Occlusion Ratio", "Undetected Max Occlusion Ratio",
                                                "Correct Classification Count", "Incorrect Classification Count"]
             dataset_df = pd.DataFrame(dataset_df_data, columns=column_names)
-            breakpoint()
+            csv_path = os.path.join(output_dir, dataset_type_name, f"{dataset_name}-{neural_net_name}.csv")
+            dataset_df.to_csv(csv_path, index=False, sep=";")
 
 
     # Create plots
@@ -219,5 +226,7 @@ def main(eval_dataset_path: str):
 
 
 if __name__ == '__main__':
-    eval_dataset_path = "/Users/flo/eval_dataset"
-    main(eval_dataset_path)
+    #eval_dataset_path = "/Users/flo/eval_dataset"
+    eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
+    output_dir = r".\\output"
+    main(eval_dataset_path, output_dir)
