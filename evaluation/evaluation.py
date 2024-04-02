@@ -59,7 +59,8 @@ def calc_rotation_distance(ground_truth_object, found_object):
                                found_object["rotation"][2],
                                found_object["rotation"][3])
 
-    return 1 - abs(np.dot(gt_quat, found_quat))
+    dot_product = np.abs(found_quat.w * gt_quat.w + found_quat.x * gt_quat.x + found_quat.y * gt_quat.y + found_quat.z * gt_quat.z)
+    return 1 - dot_product
 
 
 def ceil_to_pos(x, pos):
@@ -152,10 +153,10 @@ def main(eval_dataset_path: str, output_dir: str):
 
                 # Rotation error
                 rotation_errors = [calc_rotation_distance(gt_obj, found_obj) for found_obj, gt_obj in found_to_gt_objects]
-                rotation_error_mean = np.mean(distance_errors)
-                rotation_error_std = np.std(distance_errors)
-                rotation_error_min = np.min(distance_errors)
-                rotation_error_max = np.max(distance_errors)
+                rotation_error_mean = np.mean(rotation_errors)
+                rotation_error_std = np.std(rotation_errors)
+                rotation_error_min = np.min(rotation_errors)
+                rotation_error_max = np.max(rotation_errors)
 
                 # Scale error
                 scale_difference_per_axis = [calc_per_axis_scale_difference(found_obj) for found_obj, _ in found_to_gt_objects]
@@ -266,7 +267,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.savefig(plot_path)
             plt.show()
 
-            # Distance error per axis
+            # Distance error
             distance_errors = dataset_df["Mean Distance Error (m)"]
             distance_std = dataset_df["STD Distance Error (m)"]
             frames = range(len(neural_net_results["per_frame_results"]))
@@ -287,6 +288,30 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(output_dir, dataset_type_name,
                                      f"distance_error-{dataset_name}-{neural_net_name}.pdf")
+            plt.savefig(plot_path)
+            plt.show()
+
+            # Rotation error
+            rotation_errors = dataset_df["Mean Rotation Error"]
+            rotation_std = dataset_df["STD Rotation Error"]
+            frames = range(len(neural_net_results["per_frame_results"]))
+            plt.figure(dpi=300)
+            plt.title(f"Rotationsfehler pro Frame\n"
+                      f"Datensatz: {dataset_name}\n"
+                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+            plt.plot(frames, rotation_errors, label="Mittlerer Rotationsfehler")
+            plt.fill_between(frames, rotation_errors - rotation_std, rotation_errors + rotation_std, alpha=0.2)
+            plt.plot(frames, dataset_df["Max Rotation Error"], label="Maximaler Rotationsfehler")
+            plt.plot(frames, dataset_df["Min Rotation Error"], label="Minimaler Rotationsfehler")
+            plt.xlabel("Frame-Nummer")
+            plt.ylabel("Rotationsfehler")
+            plt.legend()
+            # plt.ylim([0, ceil_to_pos(np.max(distance_errors), -1)])
+            plt.grid(axis="y")
+            plt.tight_layout()
+
+            plot_path = os.path.join(output_dir, dataset_type_name,
+                                     f"rotation_error-{dataset_name}-{neural_net_name}.pdf")
             plt.savefig(plot_path)
             plt.show()
 
