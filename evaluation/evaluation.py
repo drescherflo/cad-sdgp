@@ -428,6 +428,25 @@ def main(eval_dataset_path: str, output_dir: str):
 
     # Create plots
     # num_found_objects_to_inference_time
+    x_num_objects = []
+    y_inference_time = []
+    for num_found_object, inference_times in num_found_objects_to_inference_time.items():
+        x_num_objects.extend(np.ones(len(inference_times)) * num_found_object)
+        y_inference_time.extend(inference_times)
+
+    # remove outlier (TODO: check if setup outlier ist only in first dataset processed by eval_raw_data generation)
+    x_num_objects = x_num_objects[1:]
+    y_inference_time = y_inference_time[1:]
+
+    # TODO: Korrelationskoeffizient
+    # Berechnung lineare Regression(en)
+    plt.figure(dpi=300)
+    plt.title("Anzahl gefundener Objekte zur Inferenz-Zeit")
+    plt.scatter(x_num_objects, y_inference_time)
+    plt.ylabel("Inferenz-Zeit")
+    plt.xlabel("Anzahl gefundener Objekte")
+    plt.show()
+
     breakpoint()
 
     # Vergleich Netze zu verschiedenen Materialien
