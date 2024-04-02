@@ -6,6 +6,7 @@ import pandas as pd
 import os
 import glob
 import json
+import math
 
 
 # Zuerst für cluttered
@@ -59,6 +60,11 @@ def calc_rotation_distance(ground_truth_object, found_object):
                                found_object["rotation"][3])
 
     return 1 - abs(np.dot(gt_quat, found_quat))
+
+
+def round_up_to_10(x):
+    return math.ceil(x / 10.0) * 10
+
 
 
 def main(eval_dataset_path: str, output_dir: str):
@@ -225,19 +231,41 @@ def main(eval_dataset_path: str, output_dir: str):
             # Create per neural net plots
             # Inference Time
             plt.figure(dpi=300)
-            plt.title(f"Per Frame Inference Time\nDatensatz: {dataset_name}\n"
+            plt.title(f"Inferenz-Zeit pro Frame\n"
+                      f"Datensatz: {dataset_name}\n"
                       f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
             plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_df["Inference Time (s)"])
-            plt.xlabel("Frame Number")
-            plt.ylabel("Inference Time [s]")
+            plt.xlabel("Frame-Nummer")
+            plt.ylabel("Inferenz-Zeit [s]")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name, f"inference_time-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(output_dir, dataset_type_name, f"detected_objects-{dataset_name}-{neural_net_name}.pdf")
             plt.savefig(plot_path)
             plt.show()
+
+            # Found Objects per Frame
+            plt.figure(dpi=300)
+            plt.title(f"Anzahl detektierte Objekte pro Frame\n"
+                      f"Datensatz: {dataset_name}\n"
+                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+            plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_df["Object Count"],
+                     label="Anzahl sichtbarer Objekte")
+            plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_df["Predicted Object Count"],
+                     label="Anzahl detektierter Objekte")
+            plt.xlabel("Frame-Nummer")
+            plt.ylabel("Anzahl Objekte")
+            plt.legend()
+            plt.ylim([0, round_up_to_10(np.max(dataset_df["Object Count"]))])
+            plt.grid(axis="y")
+            plt.tight_layout()
+
+            plot_path = os.path.join(output_dir, dataset_type_name,
+                                     f"detected_objects-{dataset_name}-{neural_net_name}.pdf")
+            plt.savefig(plot_path)
+            plt.show()
+
             breakpoint()
 
-            #
 
 
     # Create plots
