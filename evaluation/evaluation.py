@@ -233,9 +233,9 @@ def main(eval_dataset_path: str, output_dir: str):
             # Create per neural net plots
             # Inference Time
             plt.figure(dpi=300)
-            plt.title(f"Inferenz-Zeit pro Frame\n"
+            plt.title(f"Inferenz-Zeit pro Frame\n\n"
                       f"Datensatz: {dataset_name}\n"
-                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+                      f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
             plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_df["Inference Time (s)"])
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Inferenz-Zeit [s]")
@@ -249,9 +249,9 @@ def main(eval_dataset_path: str, output_dir: str):
 
             # Found Objects per Frame
             plt.figure(dpi=300)
-            plt.title(f"Anzahl detektierte Objekte pro Frame\n"
+            plt.title(f"Anzahl detektierte Objekte pro Frame\n\n"
                       f"Datensatz: {dataset_name}\n"
-                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+                      f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
             plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_df["Object Count"],
                      label="Anzahl sichtbarer Objekte")
             plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_df["Predicted Object Count"],
@@ -274,9 +274,9 @@ def main(eval_dataset_path: str, output_dir: str):
             distance_std = dataset_df["STD Distance Error (m)"]
             frames = range(len(neural_net_results["per_frame_results"]))
             plt.figure(dpi=300)
-            plt.title(f"Distanzfehler pro Frame\n"
+            plt.title(f"Distanzfehler pro Frame\n\n"
                       f"Datensatz: {dataset_name}\n"
-                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+                      f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
             plt.plot(frames, distance_errors, label="Mittlerer Distanzfehler")
             plt.fill_between(frames, distance_errors - distance_std, distance_errors + distance_std, alpha=0.2)
             plt.plot(frames, dataset_df["Max Distance Error (m)"], label="Maximaler Distanzfehler")
@@ -301,9 +301,9 @@ def main(eval_dataset_path: str, output_dir: str):
             rotation_std = dataset_df["STD Rotation Error"]
             frames = range(len(neural_net_results["per_frame_results"]))
             plt.figure(dpi=300)
-            plt.title(f"Rotationsfehler pro Frame\n"
+            plt.title(f"Rotationsfehler pro Frame\n\n"
                       f"Datensatz: {dataset_name}\n"
-                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+                      f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
             plt.plot(frames, rotation_errors, label="Mittlerer Rotationsfehler")
             plt.fill_between(frames, rotation_errors - rotation_std, rotation_errors + rotation_std, alpha=0.2)
             plt.plot(frames, dataset_df["Max Rotation Error"], label="Maximaler Rotationsfehler")
@@ -328,9 +328,9 @@ def main(eval_dataset_path: str, output_dir: str):
             scale_std = dataset_df["STD Scale Error"]
             frames = range(len(neural_net_results["per_frame_results"]))
             plt.figure(dpi=300)
-            plt.title(f"Skalierungsfehler pro Frame\n"
+            plt.title(f"Skalierungsfehler pro Frame\n\n"
                       f"Datensatz: {dataset_name}\n"
-                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+                      f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
             plt.plot(frames, scale_errors, label="Mittlerer Skalierungsfehler")
             plt.fill_between(frames, scale_errors - scale_std, scale_errors + scale_std, alpha=0.2)
             plt.plot(frames, dataset_df["Max Scale Error"], label="Maximaler Skalierungsfehler")
@@ -354,9 +354,9 @@ def main(eval_dataset_path: str, output_dir: str):
             occlusion_std = dataset_df["Undetected STD Occlusion Ratio"]
             frames = range(len(neural_net_results["per_frame_results"]))
             plt.figure(dpi=300)
-            plt.title(f"Verdeckungsfaktor pro Frame\n"
+            plt.title(f"Verdeckungsfaktor unentdeckter Objekte pro Frame\n\n"
                       f"Datensatz: {dataset_name}\n"
-                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+                      f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
             plt.plot(frames, occlusion_ratio, label="Mittlerer Verdeckungsfaktor")
             plt.fill_between(frames, occlusion_ratio - occlusion_std, occlusion_ratio + occlusion_std, alpha=0.2)
             plt.plot(frames, dataset_df["Undetected Max Occlusion Ratio"], label="Maximaler Verdeckungsfaktor")
@@ -387,7 +387,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
 
 if __name__ == '__main__':
-    #eval_dataset_path = "/Users/flo/eval_dataset"
-    eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
-    output_dir = r".\\output"
+    eval_dataset_path = "/Users/flo/eval_dataset"
+    output_dir = "output"
+    #eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
+    #output_dir = r".\\output"
     main(eval_dataset_path, output_dir)
