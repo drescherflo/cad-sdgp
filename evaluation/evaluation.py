@@ -243,7 +243,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.grid(axis="y")
             plt.tight_layout()
 
-            plot_path = os.path.join(output_dir, dataset_type_name, f"detected_objects-{dataset_name}-{neural_net_name}.pdf")
+            plot_path = os.path.join(output_dir, dataset_type_name, f"inference_time-{dataset_name}-{neural_net_name}.pdf")
             plt.savefig(plot_path)
             plt.show()
 
@@ -429,9 +429,6 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.show()
 
             del correct_classifications_per_frame, incorrect_classifications_per_frame
-
-            breakpoint()
-
 
 
     # Create plots
