@@ -1,6 +1,7 @@
 import numpy as np
 import quaternion
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
 import pandas as pd
 
 import os
@@ -349,6 +350,7 @@ def main(eval_dataset_path: str, output_dir: str):
 
             del scale_errors, scale_std
 
+
             # Occlusion of undetected objects
             occlusion_ratio = dataset_df["Undetected Mean Occlusion Ratio"]
             occlusion_std = dataset_df["Undetected STD Occlusion Ratio"]
@@ -369,11 +371,64 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.tight_layout()
 
             plot_path = os.path.join(output_dir, dataset_type_name,
-                                     f"scale_error-{dataset_name}-{neural_net_name}.pdf")
+                                     f"occlusion-undetected-objects-{dataset_name}-{neural_net_name}.pdf")
             plt.savefig(plot_path)
             plt.show()
 
             del occlusion_ratio, occlusion_std
+
+
+            # Correct and incorrect classifications count
+            correct_classifications_per_frame = dataset_df["Correct Classification Count"]
+            incorrect_classifications_per_frame = dataset_df["Incorrect Classification Count"]
+            frames = range(len(neural_net_results["per_frame_results"]))
+            plt.figure(dpi=300)
+            plt.title(f"Korrekte und inkorrekte Klassifikationen pro Frame\n\n"
+                      f"Datensatz: {dataset_name}\n"
+                      f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
+            plt.plot(frames, correct_classifications_per_frame, label="Korrekte Klassifizierungen")
+            plt.plot(frames, incorrect_classifications_per_frame, label="Inkorrekte Klassifizierungen")
+            #plt.fill_between(frames, 0, correct_classifications_per_frame, label="Korrekte Klassifizierungen")
+            #plt.fill_between(frames, correct_classifications_per_frame, correct_classifications_per_frame + incorrect_classifications_per_frame, label="Falsche Klassifizierungen")
+            #plt.plot(frames, dataset_df["Undetected Max Occlusion Ratio"], label="Maximaler Verdeckungsfaktor")
+            #plt.plot(frames, dataset_df["Undetected Min Occlusion Ratio"], label="Minimaler Verdeckungsfaktor")
+            plt.xlabel("Frame-Nummer")
+            plt.ylabel("Anzahl Klassifizierungen")
+            plt.legend()
+            plt.ylim([0, ceil_to_pos(np.max(correct_classifications_per_frame), 1)])
+            plt.grid(axis="y")
+            plt.tight_layout()
+
+            plot_path = os.path.join(output_dir, dataset_type_name,
+                                     f"classification_counts-{dataset_name}-{neural_net_name}.pdf")
+            plt.savefig(plot_path)
+            plt.show()
+
+
+            # Correct and incorrect classifications ratio
+            plt.figure(dpi=300)
+            plt.title(f"Anteil Korrekte und inkorrekte Klassifikationen pro Frame\n\n"
+                      f"Datensatz: {dataset_name}\n"
+                      f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
+            correct_classification_ratio = correct_classifications_per_frame / (correct_classifications_per_frame + incorrect_classifications_per_frame)
+            incorrect_classification_ratio = 1 - correct_classification_ratio
+            plt.fill_between(frames, 0, correct_classification_ratio, label="Korrekte Klassifizierungen")
+            #plt.fill_between(frames, correct_classification_ratio, 1, label="Inkorrekte Klassifizierungen")
+            plt.fill_between(frames, 0, incorrect_classification_ratio, label="Inkorrekte Klassifizierungen")
+            plt.xlabel("Frame-Nummer")
+            plt.ylabel("Anteil Klassifizierungen")
+            plt.legend()
+            plt.ylim([0, 1.05])
+            plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
+            plt.grid(axis="y")
+            plt.tight_layout()
+
+            plot_path = os.path.join(output_dir, dataset_type_name,
+                                     f"classification_ratio-{dataset_name}-{neural_net_name}.pdf")
+            plt.savefig(plot_path)
+            plt.show()
+
+            del correct_classifications_per_frame, incorrect_classifications_per_frame
 
             breakpoint()
 
