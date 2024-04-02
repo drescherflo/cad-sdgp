@@ -293,6 +293,8 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.savefig(plot_path)
             plt.show()
 
+            del distance_errors, distance_std
+
 
             # Rotation error
             rotation_errors = dataset_df["Mean Rotation Error"]
@@ -318,6 +320,8 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.savefig(plot_path)
             plt.show()
 
+            del rotation_errors, rotation_std
+
 
             # Scale error
             scale_errors = dataset_df["Mean Scale Error"]
@@ -342,6 +346,34 @@ def main(eval_dataset_path: str, output_dir: str):
                                      f"scale_error-{dataset_name}-{neural_net_name}.pdf")
             plt.savefig(plot_path)
             plt.show()
+
+            del scale_errors, scale_std
+
+            # Occlusion of undetected objects
+            occlusion_ratio = dataset_df["Undetected Mean Occlusion Ratio"]
+            occlusion_std = dataset_df["Undetected STD Occlusion Ratio"]
+            frames = range(len(neural_net_results["per_frame_results"]))
+            plt.figure(dpi=300)
+            plt.title(f"Verdeckungsfaktor pro Frame\n"
+                      f"Datensatz: {dataset_name}\n"
+                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+            plt.plot(frames, occlusion_ratio, label="Mittlerer Verdeckungsfaktor")
+            plt.fill_between(frames, occlusion_ratio - occlusion_std, occlusion_ratio + occlusion_std, alpha=0.2)
+            plt.plot(frames, dataset_df["Undetected Max Occlusion Ratio"], label="Maximaler Verdeckungsfaktor")
+            plt.plot(frames, dataset_df["Undetected Min Occlusion Ratio"], label="Minimaler Verdeckungsfaktor")
+            plt.xlabel("Frame-Nummer")
+            plt.ylabel("Verdeckungsfaktor")
+            plt.legend()
+            # plt.ylim([0, ceil_to_pos(np.max(distance_errors), -1)])
+            plt.grid(axis="y")
+            plt.tight_layout()
+
+            plot_path = os.path.join(output_dir, dataset_type_name,
+                                     f"scale_error-{dataset_name}-{neural_net_name}.pdf")
+            plt.savefig(plot_path)
+            plt.show()
+
+            del occlusion_ratio, occlusion_std
 
             breakpoint()
 
