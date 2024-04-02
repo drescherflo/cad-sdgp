@@ -190,13 +190,18 @@ def main(eval_dataset_path: str, output_dir: str):
 
                 # Store per frame results
                 per_dataset_results[dataset_name][neural_net_name].append({
+                    "ground_truth_object_count": ground_truth_visible_objects,
+                    "found_object_count": found_object_count,
+                    "inference_time": inference_time,
                     "position_difference_per_axis": position_difference_per_axis,
                     "distance_errors": distance_errors,
                     "rotation_errors": rotation_errors,
                     "scale_difference_per_axis": scale_difference_per_axis,
                     "scale_errors": scale_errors,
                     "occlusion_of_non_detected_objects": occlusion_ratio_non_detected_objects,
-                    "label_to_predicted_label": label_to_predicted_label
+                    "label_to_predicted_label": label_to_predicted_label,
+                    "correct_classifications": correct_classifications,
+                    "incorrect_classifications": incorrect_classifications
                 })
 
                 dataset_df_data.append([ground_truth_visible_objects_count, found_object_count, inference_time,
@@ -216,6 +221,23 @@ def main(eval_dataset_path: str, output_dir: str):
             dataset_df = pd.DataFrame(dataset_df_data, columns=column_names)
             csv_path = os.path.join(output_dir, dataset_type_name, f"{dataset_name}-{neural_net_name}.csv")
             dataset_df.to_csv(csv_path, index=False, sep=";")
+
+            # Create per neural net plots
+            # Inference Time
+            plt.figure(dpi=300)
+            plt.title(f"Per Frame Inference Time\nDatensatz: {dataset_name}\n"
+                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+            plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_df["Inference Time (s)"])
+            plt.xlabel("Frame Number")
+            plt.ylabel("Inference Time [s]")
+            plt.tight_layout()
+
+            plot_path = os.path.join(output_dir, dataset_type_name, f"inference_time-{dataset_name}-{neural_net_name}.pdf")
+            plt.savefig(plot_path)
+            plt.show()
+            breakpoint()
+
+            #
 
 
     # Create plots
