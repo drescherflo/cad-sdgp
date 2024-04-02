@@ -62,8 +62,9 @@ def calc_rotation_distance(ground_truth_object, found_object):
     return 1 - abs(np.dot(gt_quat, found_quat))
 
 
-def round_up_to_10(x):
-    return math.ceil(x / 10.0) * 10
+def ceil_to_pos(x, pos):
+    ceil_pot = 10.0 * pos
+    return math.ceil(x / ceil_pot) * ceil_pot
 
 
 
@@ -237,6 +238,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_df["Inference Time (s)"])
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Inferenz-Zeit [s]")
+            plt.grid(axis="y")
             plt.tight_layout()
 
             plot_path = os.path.join(output_dir, dataset_type_name, f"detected_objects-{dataset_name}-{neural_net_name}.pdf")
@@ -255,12 +257,36 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Anzahl Objekte")
             plt.legend()
-            plt.ylim([0, round_up_to_10(np.max(dataset_df["Object Count"]))])
+            plt.ylim([0, ceil_to_pos(np.max(dataset_df["Object Count"]), 1)])
             plt.grid(axis="y")
             plt.tight_layout()
 
             plot_path = os.path.join(output_dir, dataset_type_name,
                                      f"detected_objects-{dataset_name}-{neural_net_name}.pdf")
+            plt.savefig(plot_path)
+            plt.show()
+
+            # Distance error per axis
+            distance_errors = dataset_df["Mean Distance Error (m)"]
+            distance_std = dataset_df["STD Distance Error (m)"]
+            frames = range(len(neural_net_results["per_frame_results"]))
+            plt.figure(dpi=300)
+            plt.title(f"Distanzfehler pro Frame\n"
+                      f"Datensatz: {dataset_name}\n"
+                      f"Neuronales Netz: {neural_net_name.removesuffix("_Augmentation")}")
+            plt.plot(frames, distance_errors, label="Mittlerer Distanzfehler")
+            plt.fill_between(frames, distance_errors - distance_std, distance_errors + distance_std, alpha=0.2)
+            plt.plot(frames, dataset_df["Max Distance Error (m)"], label="Maximaler Distanzfehler")
+            plt.plot(frames, dataset_df["Min Distance Error (m)"], label="Minimaler Distanzfehler")
+            plt.xlabel("Frame-Nummer")
+            plt.ylabel("Distanzfehler [m]")
+            plt.legend()
+            #plt.ylim([0, ceil_to_pos(np.max(distance_errors), -1)])
+            plt.grid(axis="y")
+            plt.tight_layout()
+
+            plot_path = os.path.join(output_dir, dataset_type_name,
+                                     f"distance_error-{dataset_name}-{neural_net_name}.pdf")
             plt.savefig(plot_path)
             plt.show()
 
