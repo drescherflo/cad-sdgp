@@ -557,6 +557,32 @@ def main(eval_dataset_path: str, output_dir: str):
 
         del rotation_errors, rotation_std
 
+        # Scale error
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Skalierungsfehler pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            scale_errors = dataset_neural_net_df["Mean Scale Error"]
+            scale_std = dataset_neural_net_df["STD Scale Error"]
+            plt.plot(frames, scale_errors, label=f"Mittlerer Skalierungsfehler ({neural_net_name})")
+            plt.fill_between(frames, scale_errors - scale_std, scale_errors + scale_std, alpha=0.2)
+            #plt.plot(frames, dataset_neural_net_df["Max Scale Error"], label="Maximaler Skalierungsfehler")
+            #plt.plot(frames, dataset_neural_net_df["Min Scale Error"], label="Minimaler Skalierungsfehler")
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Skalierungsfehler")
+        plt.legend()
+        # plt.ylim([0, ceil_to_pos(np.max(distance_errors), -1)])
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "scale_error.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        del scale_errors, scale_std
+
         breakpoint()
 
 
