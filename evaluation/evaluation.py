@@ -583,6 +583,57 @@ def main(eval_dataset_path: str, output_dir: str):
 
         del scale_errors, scale_std
 
+        # Correct and incorrect classifications count
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Korrekte und inkorrekte Klassifikationen pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        all_correct_classifications = []
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            correct_classifications_per_frame = dataset_neural_net_df["Correct Classification Count"]
+            incorrect_classifications_per_frame = dataset_neural_net_df["Incorrect Classification Count"]
+            plt.plot(frames, correct_classifications_per_frame, label=f"Korrekte Klassifizierungen ({neural_net_name})")
+            plt.plot(frames, incorrect_classifications_per_frame, label=f"Inkorrekte Klassifizierungen ({neural_net_name})")
+            all_correct_classifications.extend(correct_classifications_per_frame)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Anzahl Klassifizierungen")
+        plt.legend()
+        plt.ylim([0, ceil_to_pos(np.max(all_correct_classifications), 1)])
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "classification_counts.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        # Correct and incorrect classifications ratio
+        plt.figure(dpi=300)
+        plt.title(f"Anteil Korrekte und inkorrekte Klassifikationen pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            correct_classifications_per_frame = dataset_neural_net_df["Correct Classification Count"]
+            incorrect_classifications_per_frame = dataset_neural_net_df["Incorrect Classification Count"]
+            correct_classification_ratio = correct_classifications_per_frame / (
+                        correct_classifications_per_frame + incorrect_classifications_per_frame)
+            incorrect_classification_ratio = 1 - correct_classification_ratio
+            plt.plot(frames,correct_classification_ratio, label=f"Korrekte Klassifizierungen ({neural_net_name})")
+            plt.plot(frames, incorrect_classification_ratio, label=f"Inkorrekte Klassifizierungen ({neural_net_name})")
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Anteil Klassifizierungen")
+        plt.legend()
+        plt.ylim([0, 1.05])
+        plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "classification_ratio.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        del correct_classifications_per_frame, incorrect_classifications_per_frame
+
         breakpoint()
 
 
