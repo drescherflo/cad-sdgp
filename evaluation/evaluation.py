@@ -3,6 +3,7 @@ import quaternion
 import matplotlib.pyplot as plt
 import matplotlib.ticker as mtick
 import pandas as pd
+import scipy.stats as stats
 
 import os
 import glob
@@ -434,17 +435,29 @@ def main(eval_dataset_path: str, output_dir: str):
         x_num_objects.extend(np.ones(len(inference_times)) * num_found_object)
         y_inference_time.extend(inference_times)
 
-    # remove outlier (TODO: check if setup outlier ist only in first dataset processed by eval_raw_data generation)
+    ## remove outlier (TODO: check if setup outlier ist only in first dataset processed by eval_raw_data generation)
     x_num_objects = x_num_objects[1:]
     y_inference_time = y_inference_time[1:]
 
-    # TODO: Korrelationskoeffizient
-    # Berechnung lineare Regression(en)
+    # calc correlation coefficient and linear regression
+    corr_coef = stats.pearsonr(x_num_objects, y_inference_time).correlation
+    linregress = stats.linregress(x_num_objects, y_inference_time)
+    linregress_x = np.linspace(np.min(x_num_objects), np.max(x_num_objects))
+    linregress_y = linregress.slope * linregress_x + linregress.intercept
+
+    ## build plot
     plt.figure(dpi=300)
-    plt.title("Anzahl gefundener Objekte zur Inferenz-Zeit")
+    plt.title("Anzahl gefundener Objekte zur Inferenz-Zeit\n\n"
+              f"Korrelationskoeffizient: {np.round(corr_coef, 5)}")
     plt.scatter(x_num_objects, y_inference_time)
-    plt.ylabel("Inferenz-Zeit")
+    plt.plot(linregress_x, linregress_y, "r", label=fr"Lineare Regression: $f(x) = {np.round(linregress.slope, 5)} \cdot x + {np.round(linregress.intercept, 5)}$")
+    plt.ylabel("Inferenz-Zeit [s]")
     plt.xlabel("Anzahl gefundener Objekte")
+    plt.legend()
+    plt.tight_layout()
+
+    plot_path = os.path.join(output_dir, "found_objects_to_inference_time.pdf")
+    plt.savefig(plot_path)
     plt.show()
 
     breakpoint()
@@ -453,8 +466,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
 
 if __name__ == '__main__':
-    eval_dataset_path = "/Users/flo/eval_dataset"
-    output_dir = "output"
-    #eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
-    #output_dir = r".\\output"
+    #eval_dataset_path = "/Users/flo/eval_dataset"
+    #output_dir = "output"
+    eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
+    output_dir = r".\\output"
     main(eval_dataset_path, output_dir)

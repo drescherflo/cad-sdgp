@@ -2,3 +2,4 @@ numpy~=1.26.3
 matplotlib~=3.8.3
 numpy-quaternion~=2023.0.3
 pandas~=2.2.1
+scipy~=1.13.0
