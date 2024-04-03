@@ -66,9 +66,8 @@ def calc_rotation_distance(ground_truth_object, found_object):
 
 
 def ceil_to_pos(x, pos):
-    ceil_pot = 10.0 * pos
+    ceil_pot = 10.0 ** pos
     return math.ceil(x / ceil_pot) * ceil_pot
-
 
 
 def main(eval_dataset_path: str, output_dir: str):
@@ -388,10 +387,10 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.title(f"Korrekte und inkorrekte Klassifikationen pro Frame\n\n"
                       f"Datensatz: {dataset_name}\n"
                       f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
-            plt.plot(frames, correct_classifications_per_frame, label="Korrekte Klassifizierungen")
-            plt.plot(frames, incorrect_classifications_per_frame, label="Inkorrekte Klassifizierungen")
+            plt.plot(frames, correct_classifications_per_frame, label="Korrekte Klassifikationen")
+            plt.plot(frames, incorrect_classifications_per_frame, label="Inkorrekte Klassifikationen")
             plt.xlabel("Frame-Nummer")
-            plt.ylabel("Anzahl Klassifizierungen")
+            plt.ylabel("Anzahl Klassifikationen")
             plt.legend()
             plt.ylim([0, ceil_to_pos(np.max(correct_classifications_per_frame), 1)])
             plt.grid(axis="y")
@@ -409,11 +408,11 @@ def main(eval_dataset_path: str, output_dir: str):
                       f"Neuronales Netz: {neural_net_name.removesuffix('_Augmentation')}")
             correct_classification_ratio = correct_classifications_per_frame / (correct_classifications_per_frame + incorrect_classifications_per_frame)
             incorrect_classification_ratio = 1 - correct_classification_ratio
-            plt.fill_between(frames, 0, correct_classification_ratio, label="Korrekte Klassifizierungen")
-            #plt.fill_between(frames, correct_classification_ratio, 1, label="Inkorrekte Klassifizierungen")
-            plt.fill_between(frames, 0, incorrect_classification_ratio, label="Inkorrekte Klassifizierungen")
+            plt.fill_between(frames, 0, correct_classification_ratio, label="Korrekte Klassifikationen")
+            #plt.fill_between(frames, correct_classification_ratio, 1, label="Inkorrekte Klassifikationen")
+            plt.fill_between(frames, 0, incorrect_classification_ratio, label="Inkorrekte Klassifikationen")
             plt.xlabel("Frame-Nummer")
-            plt.ylabel("Anteil Klassifizierungen")
+            plt.ylabel("Anteil Klassifikationen")
             plt.legend()
             plt.ylim([0, 1.05])
             plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -447,7 +446,7 @@ def main(eval_dataset_path: str, output_dir: str):
 
     ## build plot
     plt.figure(dpi=300)
-    plt.title("Anzahl gefundener Objekte zur Inferenz-Zeit\n\n"
+    plt.title("Anzahl gefundener Objekte in Relation zur Inferenz-Zeit\n\n"
               f"Korrelationskoeffizient: {np.round(corr_coef, 5)}")
     plt.scatter(x_num_objects, y_inference_time)
     plt.plot(linregress_x, linregress_y, "r", label=fr"Lineare Regression: $f(x) = {np.round(linregress.slope, 5)} \cdot x + {np.round(linregress.intercept, 5)}$")
@@ -508,50 +507,125 @@ def main(eval_dataset_path: str, output_dir: str):
         # Distance error
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
-        plt.title(f"Distanzfehler pro Frame\n\n"
+        plt.title(f"Maximaler Distanzfehler pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        all_max_distance_errors = []
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            max_distance_errors = dataset_neural_net_df["Max Distance Error (m)"]
+            all_max_distance_errors.extend(max_distance_errors)
+            plt.plot(frames, max_distance_errors, label=neural_net_name)
+        distance_plots_y_lim_upper = ceil_to_pos(np.max(all_max_distance_errors), 0)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Distanzfehler [m]")
+        plt.legend()
+        plt.ylim([0, distance_plots_y_lim_upper])
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "distance_error_max.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Minimaler Distanzfehler pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            min_distance_errors = dataset_neural_net_df["Min Distance Error (m)"]
+            plt.plot(frames, min_distance_errors, label=neural_net_name)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Distanzfehler [m]")
+        plt.legend()
+        plt.ylim([0, distance_plots_y_lim_upper])
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "distance_error_min.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Mittlerer Distanzfehler pro Frame\n\n"
                   f"Datensatz: {dataset_name}")
         for neural_net_name, neural_net_result in dataset_result.items():
             dataset_neural_net_df = neural_net_result["dataframe"]
             distance_errors = dataset_neural_net_df["Mean Distance Error (m)"]
             distance_std = dataset_neural_net_df["STD Distance Error (m)"]
-            plt.plot(frames, distance_errors, label=f"Mittlerer Distanzfehler ({neural_net_name})")
+            plt.plot(frames, distance_errors, label=f"{neural_net_name}")
             plt.fill_between(frames, distance_errors - distance_std, distance_errors + distance_std, alpha=0.2)
-            #plt.plot(frames, dataset_neural_net_df["Max Distance Error (m)"], label="Maximaler Distanzfehler")  TODO test reenable with more neural nets
-            #plt.plot(frames, dataset_neural_net_df["Min Distance Error (m)"], label="Minimaler Distanzfehler")  TODO test reenable with more neural nets
         plt.xlabel("Frame-Nummer")
         plt.ylabel("Distanzfehler [m]")
         plt.legend()
-        # plt.ylim([0, ceil_to_pos(np.max(distance_errors), -1)])
+        plt.ylim([0, distance_plots_y_lim_upper])
         plt.grid(axis="y")
         plt.tight_layout()
 
-        plot_path = os.path.join(out_dir, "distance_error.pdf")
+        plot_path = os.path.join(out_dir, "distance_error_mean.pdf")
         plt.savefig(plot_path)
         plt.show()
 
-        del distance_errors, distance_std
+        # TODO: wenn STD sich nicht sinnvoll darstellen lässt, tabelle erzeugen mit Zeile von STD für jedes Netz und diese abspeichern
+
+        del distance_errors, distance_std, all_max_distance_errors, distance_plots_y_lim_upper
 
         # Rotation error
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
-        plt.title(f"Rotationsfehler pro Frame\n\n"
+        plt.title(f"Mittlerer Rotationsfehler pro Frame\n\n"
                   f"Datensatz: {dataset_name}")
         for neural_net_name, neural_net_result in dataset_result.items():
             dataset_neural_net_df = neural_net_result["dataframe"]
             rotation_errors = dataset_neural_net_df["Mean Rotation Error"]
             rotation_std = dataset_neural_net_df["STD Rotation Error"]
-            plt.plot(frames, rotation_errors, label=f"Mittlerer Rotationsfehler ({neural_net_name})")
+            plt.plot(frames, rotation_errors, label=f"{neural_net_name}")
             plt.fill_between(frames, rotation_errors - rotation_std, rotation_errors + rotation_std, alpha=0.2)
-            #plt.plot(frames, dataset_neural_net_df["Max Rotation Error"], label="Maximaler Rotationsfehler") TODO test reenable with more neural nets
-            #plt.plot(frames, dataset_neural_net_df["Min Rotation Error"], label="Minimaler Rotationsfehler") TODO test reenable with more neural nets
         plt.xlabel("Frame-Nummer")
         plt.ylabel("Rotationsfehler")
         plt.legend()
-        # plt.ylim([0, ceil_to_pos(np.max(distance_errors), -1)])  TODO: 0 to 1
+        plt.ylim([0, 1.05])
         plt.grid(axis="y")
         plt.tight_layout()
 
-        plot_path = os.path.join(out_dir, "rotation_error.pdf")
+        plot_path = os.path.join(out_dir, "rotation_error_mean.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Minimaler Rotationsfehler pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            plt.plot(frames, dataset_neural_net_df["Min Rotation Error"], label=neural_net_name)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Rotationsfehler")
+        plt.legend()
+        plt.ylim([0, 1.05])
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "rotation_error_min.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Maximaler Rotationsfehler pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            plt.plot(frames, dataset_neural_net_df["Max Rotation Error"], label=neural_net_name)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Rotationsfehler")
+        plt.legend()
+        plt.ylim([0, 1.05])
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "rotation_error_max.pdf")
         plt.savefig(plot_path)
         plt.show()
 
@@ -560,28 +634,66 @@ def main(eval_dataset_path: str, output_dir: str):
         # Scale error
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
-        plt.title(f"Skalierungsfehler pro Frame\n\n"
+        plt.title(f"Maximaler Skalierungsfehler pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        all_max_scale_errors = []
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            max_scale_errors = dataset_neural_net_df["Max Scale Error"]
+            all_max_scale_errors.extend(max_scale_errors)
+            plt.plot(frames, max_scale_errors, label=neural_net_name)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Skalierungsfehler")
+        plt.legend()
+        scale_plots_y_lim_upper = ceil_to_pos(np.max(all_max_scale_errors), -3)
+        plt.ylim([0, scale_plots_y_lim_upper])
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "scale_error_max.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Minimaler Skalierungsfehler pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            plt.plot(frames, dataset_neural_net_df["Min Scale Error"], label=neural_net_name)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Skalierungsfehler")
+        plt.legend()
+        plt.ylim([0, scale_plots_y_lim_upper])
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "scale_error_min.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Mittlerer Skalierungsfehler pro Frame\n\n"
                   f"Datensatz: {dataset_name}")
         for neural_net_name, neural_net_result in dataset_result.items():
             dataset_neural_net_df = neural_net_result["dataframe"]
             scale_errors = dataset_neural_net_df["Mean Scale Error"]
             scale_std = dataset_neural_net_df["STD Scale Error"]
-            plt.plot(frames, scale_errors, label=f"Mittlerer Skalierungsfehler ({neural_net_name})")
+            plt.plot(frames, scale_errors, label=f"{neural_net_name}")
             plt.fill_between(frames, scale_errors - scale_std, scale_errors + scale_std, alpha=0.2)
-            #plt.plot(frames, dataset_neural_net_df["Max Scale Error"], label="Maximaler Skalierungsfehler")
-            #plt.plot(frames, dataset_neural_net_df["Min Scale Error"], label="Minimaler Skalierungsfehler")
         plt.xlabel("Frame-Nummer")
         plt.ylabel("Skalierungsfehler")
         plt.legend()
-        # plt.ylim([0, ceil_to_pos(np.max(distance_errors), -1)])
+        plt.ylim([0, scale_plots_y_lim_upper])
         plt.grid(axis="y")
         plt.tight_layout()
 
-        plot_path = os.path.join(out_dir, "scale_error.pdf")
+        plot_path = os.path.join(out_dir, "scale_error_mean.pdf")
         plt.savefig(plot_path)
         plt.show()
 
-        del scale_errors, scale_std
+        del scale_errors, scale_std, all_max_scale_errors, scale_plots_y_lim_upper
 
         # # Correct and incorrect classifications count (disabled because each net may detect a different number of objects. therefore these absolute data are not comparable)
         # frames = range(len(neural_net_results["per_frame_results"]))
@@ -593,11 +705,11 @@ def main(eval_dataset_path: str, output_dir: str):
         #     dataset_neural_net_df = neural_net_result["dataframe"]
         #     correct_classifications_per_frame = dataset_neural_net_df["Correct Classification Count"]
         #     incorrect_classifications_per_frame = dataset_neural_net_df["Incorrect Classification Count"]
-        #     plt.plot(frames, correct_classifications_per_frame, label=f"Korrekte Klassifizierungen ({neural_net_name})")
-        #     plt.plot(frames, incorrect_classifications_per_frame, label=f"Inkorrekte Klassifizierungen ({neural_net_name})")
+        #     plt.plot(frames, correct_classifications_per_frame, label=f"Korrekte Klassifikationen ({neural_net_name})")
+        #     plt.plot(frames, incorrect_classifications_per_frame, label=f"Inkorrekte Klassifikationen ({neural_net_name})")
         #     all_correct_classifications.extend(correct_classifications_per_frame)
         # plt.xlabel("Frame-Nummer")
-        # plt.ylabel("Anzahl Klassifizierungen")
+        # plt.ylabel("Anzahl Klassifikationen")
         # plt.legend()
         # plt.ylim([0, ceil_to_pos(np.max(all_correct_classifications), 1)])
         # plt.grid(axis="y")
@@ -609,7 +721,7 @@ def main(eval_dataset_path: str, output_dir: str):
 
         # Correct and incorrect classifications ratio
         plt.figure(dpi=300)
-        plt.title(f"Anteil korrekte und inkorrekte Klassifikationen pro Frame\n\n"
+        plt.title(f"Anteil korrekter Klassifikationen pro Frame\n\n"
                   f"Datensatz: {dataset_name}")
         for neural_net_name, neural_net_result in dataset_result.items():
             dataset_neural_net_df = neural_net_result["dataframe"]
@@ -617,11 +729,9 @@ def main(eval_dataset_path: str, output_dir: str):
             incorrect_classifications_per_frame = dataset_neural_net_df["Incorrect Classification Count"]
             correct_classification_ratio = correct_classifications_per_frame / (
                         correct_classifications_per_frame + incorrect_classifications_per_frame)
-            incorrect_classification_ratio = 1 - correct_classification_ratio
-            plt.plot(frames,correct_classification_ratio, label=f"Korrekte Klassifizierungen ({neural_net_name})")
-            plt.plot(frames, incorrect_classification_ratio, label=f"Inkorrekte Klassifizierungen ({neural_net_name})")
+            plt.plot(frames, correct_classification_ratio, label=f"{neural_net_name}")
         plt.xlabel("Frame-Nummer")
-        plt.ylabel("Anteil Klassifizierungen")
+        plt.ylabel("Anteil Klassifikationen")
         plt.legend()
         plt.ylim([0, 1.05])
         plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -632,7 +742,32 @@ def main(eval_dataset_path: str, output_dir: str):
         plt.savefig(plot_path)
         plt.show()
 
+        plt.figure(dpi=300)
+        plt.title(f"Anteil inkorrekter Klassifikationen pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            correct_classifications_per_frame = dataset_neural_net_df["Correct Classification Count"]
+            incorrect_classifications_per_frame = dataset_neural_net_df["Incorrect Classification Count"]
+            correct_classification_ratio = correct_classifications_per_frame / (
+                    correct_classifications_per_frame + incorrect_classifications_per_frame)
+            incorrect_classification_ratio = 1 - correct_classification_ratio
+            plt.plot(frames, incorrect_classification_ratio, label=f"{neural_net_name}")
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Anteil Klassifikationen")
+        plt.legend()
+        plt.ylim([0, 1.05])
+        plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        plt.grid(axis="y")
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "classification_ratio_incorrect.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
         del correct_classifications_per_frame, incorrect_classifications_per_frame
+
+        # TODO: Verdeckungsfaktor
 
         breakpoint()
 
