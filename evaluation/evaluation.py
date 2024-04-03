@@ -636,8 +636,6 @@ def main(eval_dataset_path: str, output_dir: str):
 
         breakpoint()
 
-
-
     # Vergleich Netze zu verschiedenen Materialien
 
 
