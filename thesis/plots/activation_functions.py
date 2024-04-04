@@ -32,7 +32,7 @@ def leaky_relu(x, alpha=0.1):
 x = np.linspace(-10, 10, 1000)
 
 # Erstellen von Plot-Figuren für jede Aktivierungsfunktion
-fig, axs = plt.subplots(2, 2)#, dpi=300, figsize=(8, 5))
+fig, axs = plt.subplots(2, 2, dpi=300, figsize=(13, 6))
 fig.suptitle("Aktivierungsfunktionen")
 
 # Identitätsfunktion
@@ -92,6 +92,6 @@ plt.tight_layout()
 
 # Speichern der Figur als PDF
 plt.savefig("02_Aktivierungsfunktionen.pdf")
-plt.savefig("02_Aktivierungsfunktionen.pgf")
+#plt.savefig("02_Aktivierungsfunktionen.pgf")
 
 plt.show()
