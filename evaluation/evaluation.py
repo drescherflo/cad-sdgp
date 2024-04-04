@@ -368,8 +368,9 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Verdeckungsfaktor")
             plt.legend()
-            # plt.ylim([0, ceil_to_pos(np.max(distance_errors), -1)])
+            plt.ylim([-0.05, 1.05])
             plt.grid(axis="y")
+            plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
             plt.tight_layout()
 
             plot_path = os.path.join(out_dir, "occlusion-undetected-objects.pdf")
@@ -414,7 +415,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Anteil Klassifikationen")
             plt.legend()
-            plt.ylim([0, 1.05])
+            plt.ylim([-0.05, 1.05])
             plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
             plt.grid(axis="y")
             plt.tight_layout()
@@ -585,7 +586,7 @@ def main(eval_dataset_path: str, output_dir: str):
         plt.xlabel("Frame-Nummer")
         plt.ylabel("Rotationsfehler")
         plt.legend()
-        plt.ylim([0, 1.05])
+        plt.ylim([-0.05, 1.05])
         plt.grid(axis="y")
         plt.tight_layout()
 
@@ -603,7 +604,7 @@ def main(eval_dataset_path: str, output_dir: str):
         plt.xlabel("Frame-Nummer")
         plt.ylabel("Rotationsfehler")
         plt.legend()
-        plt.ylim([0, 1.05])
+        plt.ylim([-0.05, 1.05])
         plt.grid(axis="y")
         plt.tight_layout()
 
@@ -621,7 +622,7 @@ def main(eval_dataset_path: str, output_dir: str):
         plt.xlabel("Frame-Nummer")
         plt.ylabel("Rotationsfehler")
         plt.legend()
-        plt.ylim([0, 1.05])
+        plt.ylim([-0.05, 1.05])
         plt.grid(axis="y")
         plt.tight_layout()
 
@@ -733,7 +734,7 @@ def main(eval_dataset_path: str, output_dir: str):
         plt.xlabel("Frame-Nummer")
         plt.ylabel("Anteil Klassifikationen")
         plt.legend()
-        plt.ylim([0, 1.05])
+        plt.ylim([-0.05, 1.05])
         plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
         plt.grid(axis="y")
         plt.tight_layout()
@@ -756,7 +757,7 @@ def main(eval_dataset_path: str, output_dir: str):
         plt.xlabel("Frame-Nummer")
         plt.ylabel("Anteil Klassifikationen")
         plt.legend()
-        plt.ylim([0, 1.05])
+        plt.ylim([-0.05, 1.05])
         plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
         plt.grid(axis="y")
         plt.tight_layout()
@@ -767,7 +768,68 @@ def main(eval_dataset_path: str, output_dir: str):
 
         del correct_classifications_per_frame, incorrect_classifications_per_frame
 
-        # TODO: Verdeckungsfaktor
+        # Occlusion ration of undetected objects
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Maximaler Verdeckungsfaktor unentdeckter Objekte pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            plt.plot(frames, dataset_neural_net_df["Undetected Max Occlusion Ratio"], label=neural_net_name)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Verdeckungsfaktor")
+        plt.legend()
+        plt.ylim([-0.05, 1.05])
+        plt.grid(axis="y")
+        plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "occlusion-undetected-objects_max.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Minimaler Verdeckungsfaktor unentdeckter Objekte pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            plt.plot(frames, dataset_neural_net_df["Undetected Min Occlusion Ratio"], label=neural_net_name)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Verdeckungsfaktor")
+        plt.legend()
+        plt.ylim([-0.05, 1.05])
+        plt.grid(axis="y")
+        plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "occlusion-undetected-objects_min.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        frames = range(len(neural_net_results["per_frame_results"]))
+        plt.figure(dpi=300)
+        plt.title(f"Mittlerer Verdeckungsfaktor unentdeckter Objekte pro Frame\n\n"
+                  f"Datensatz: {dataset_name}")
+        for neural_net_name, neural_net_result in dataset_result.items():
+            dataset_neural_net_df = neural_net_result["dataframe"]
+            occlusion_ratio = dataset_neural_net_df["Undetected Mean Occlusion Ratio"]
+            occlusion_std = dataset_neural_net_df["Undetected STD Occlusion Ratio"]
+            plt.plot(frames, occlusion_ratio, label=neural_net_name)
+            plt.fill_between(frames, occlusion_ratio - occlusion_std, occlusion_ratio + occlusion_std, alpha=0.2)
+        plt.xlabel("Frame-Nummer")
+        plt.ylabel("Verdeckungsfaktor")
+        plt.legend()
+        plt.ylim([-0.05, 1.05])
+        plt.grid(axis="y")
+        plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        plt.tight_layout()
+
+        plot_path = os.path.join(out_dir, "occlusion-undetected-objects_mean.pdf")
+        plt.savefig(plot_path)
+        plt.show()
+
+        del occlusion_ratio, occlusion_std
 
         breakpoint()
 
@@ -781,8 +843,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
 
 if __name__ == '__main__':
-    eval_dataset_path = "/Users/flo/eval_dataset"
-    output_dir = "output"
-    #eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
-    #output_dir = r".\\output"
+    #eval_dataset_path = "/Users/flo/eval_dataset"
+    #output_dir = "output"
+    eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
+    output_dir = r".\\output"
     main(eval_dataset_path, output_dir)
