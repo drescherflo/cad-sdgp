@@ -463,7 +463,7 @@ def main(eval_dataset_path: str, output_dir: str):
     del corr_coef, linregress, linregress_x, linregress_y
 
 
-    # Per dataset plots
+    # Per dataset / per object type plots
     for dataset_name, dataset_result in per_dataset_results.items():
         out_dir = os.path.join(output_dir, dataset_type_name, dataset_name)
         # Inference Time
@@ -831,14 +831,59 @@ def main(eval_dataset_path: str, output_dir: str):
 
         del occlusion_ratio, occlusion_std
 
-        breakpoint()
-
     # Per Material
+    materials = list(set([dataset_name.split("_")[-1] for dataset_name in per_dataset_results.keys()])) # get unique material names
+    per_material_results = {}
+    for material in materials:
+        material_dataset_keys = [dataset_name for dataset_name in per_dataset_results.keys() if dataset_name.endswith(material)]
+        # Aquire raw data for all neural nets in all matching datasets
+        per_material_results[material] = {}
+        for material_dataset_name in material_dataset_keys:
+            dataset_results = per_dataset_results[material_dataset_name]
+            for neural_net_name, neural_net_result in dataset_results.items():
+                if neural_net_name not in per_material_results[material]:
+                    per_material_results[material][neural_net_name] = {
+                        "found_objects_ratio": [],
+                        "distance_errors": [],
+                        "rotation_errors": [],
+                        "scale_errors": [],
+                        "occlusion_ratio_undetected_objects": [],
+                        "correct_classifications_ratio": [],
+                    }
+                dataset_neural_net_df = neural_net_result["dataframe"]
 
-    # All datasets
+                # ratio of found objects
+                per_frame_found_ratio = dataset_neural_net_df["Predicted Object Count"] / dataset_neural_net_df["Object Count"]
+                per_material_results[material][neural_net_name]["found_objects_ratio"].extend(per_frame_found_ratio)
 
+                # distance error
+                distance_errors = neural_net_result["per_frame_results"]["distance_errors"]
+                per_material_results[material][neural_net_name]["distance_errors"].extend(distance_errors)
 
-    # Vergleich Netze zu verschiedenen Materialien
+                # rotation error
+                rotation_errors = neural_net_result["per_frame_results"]["rotation_errors"]
+                per_material_results[material][neural_net_name]["rotation_errors"].extend(rotation_errors)
+
+                # scale_error
+                scale_errors = neural_net_result["per_frame_results"]["rotation_errors"]
+                per_material_results[material][neural_net_name]["scale_errors"].extend(scale_errors)
+
+                # occlusion of undetected objects
+                occlusion_ratio_non_detected_objects = neural_net_result["per_frame_results"]["occlusion_ratio_non_detected_objects"]
+                per_material_results[material][neural_net_name]["occlusion_ratio_undetected_objects"] = occlusion_ratio_non_detected_objects
+
+                # correct_classifications_ratio
+                correct_classifications_per_frame = dataset_neural_net_df["Correct Classification Count"]
+                incorrect_classifications_per_frame = dataset_neural_net_df["Incorrect Classification Count"]
+                correct_classifications_ratio = correct_classifications_per_frame / (correct_classifications_per_frame + incorrect_classifications_per_frame)
+                per_material_results[material][neural_net_name]["correct_classifications_ratio"] = correct_classifications_ratio
+
+    # Create per material plots
+
+    # Nur gleiche Objekte
+
+    # Gleiche Objekte zusammenfassen und dann noch mal pro Material (Pro-Material-Analyse, aber Objekttyp ist "übergeordnete Gruppe")
+
 
 
 
