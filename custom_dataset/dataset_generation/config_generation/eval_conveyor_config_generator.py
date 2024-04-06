@@ -93,11 +93,11 @@ def generate_scenes(
                     object_conf["semantic_class_label"] = usd_model_to_semantic_class_label(usd_model)
 
                 # Create missing config and replace materials with current material
-                materials = [material for _ in range(len(materials))]
+                config_materials = [material for _ in range(len(materials))]
                 scene_config = {
                     "camera_frame_config": {"frame_height": frame_height, "frame_width": frame_width},
                     "sub_frames_per_frame": sub_frames_per_frame,
-                    "materials": materials,
+                    "materials": config_materials,
                     "scenes": [modified_scene],
                     "conveyor_belt_speed": conveyor_belt_speed,
                     "min_x_pos_for_record_start": min_x_pos_for_record_start,
@@ -184,7 +184,7 @@ def main(argv: list[str]) -> None:
                         help="The maximum initial y coordinate of the object in the cluttered scene")
     parser.add_argument("--cluttered_scene_object_init_min_z", default=3, type=float,
                         help="The minimum initial z coordinate of the object in the cluttered scene")
-    parser.add_argument("--cluttered_scene_object_init_max_z", default=6, type=float,
+    parser.add_argument("--cluttered_scene_object_init_max_z", default=20, type=float,
                         help="The maximum initial z coordinate of the object in the cluttered scene")
     parser.add_argument("--sphere_min_x", default=-2.5, type=float,
                         help="The minimum x coordinate of light spheres in the scene")
@@ -340,28 +340,34 @@ def main(argv: list[str]) -> None:
         },  # metallic, high reflective
         {
             "material_idx": 2,
+            "is_glass": False,
+            "color": [0.2, 0.2, 0.2],
+            "surface_roughness": 1
+        },  # metallic, rough
+        {
+            "material_idx": 3,
             "is_glass": True,
             "color": [1, 1, 1]
         },  # default white glass / plastic (default values from Isaac Sim OmniGlass)
         {
-            "material_idx": 3,
+            "material_idx": 4,
             "is_glass": False,
             "color": [0, 0, 0],
             "surface_roughness": 0.5
         },  # black material
         {
-            "material_idx": 4,
+            "material_idx": 5,
             "is_conveyor": True
         },  # conveyor belt material
         {
-            "material_idx": 3,
+            "material_idx": 6,
             "is_glass": False,
             "color": [0, 1, 0],
             "surface_roughness": 0.5
-        }   # green material
+        },   # green material
     ]
 
-    material_names = ["default", "metal", "glass", "black", "conveyor", "green"]
+    material_names = ["default", "metal-reflective", "metal-rough", "glass", "black", "conveyor", "green"]
 
     print("Generating uncluttered scenes...")
     uncluttered_out_dir = os.path.join(out_dir, "uncluttered")
