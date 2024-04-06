@@ -11,17 +11,6 @@ from .dataset_helper import replicator, roca
 
 class ReplicatorToRocaEval(ConverterInterface):
     @staticmethod
-    def _generate_class_labels_file(obj_paths: list[str], output_dir: str):
-        # Generate semantic class labels
-        # Sort is required, because this is how the order in scan2cad_alignment_classes.json is created
-        # We need match this file because the index of the class in scan2cad_alignment_classes.json is used as the category_id during training
-        semantic_class_labels = sorted([roca.obj_path_to_semantic_label(obj_path) for obj_path in obj_paths])
-
-        # Write class labels to file
-        with open(os.path.join(output_dir, "semantic_class_labels.json"), "w") as f:
-            json.dump(semantic_class_labels, f, indent=4)
-
-    @staticmethod
     def _convert_intrinsics(rep_data_path: str, output_dir: str, scene_numbers: list[str]):
         # Iterate through all scene_numbers
         for nr in scene_numbers:
@@ -79,6 +68,16 @@ class ReplicatorToRocaEval(ConverterInterface):
             shutil.copy(world_pose_file_path, new_path)
 
     @staticmethod
+    def _copy_camera_params(rep_data_path: str, output_dir: str):
+        # Load all camera param files
+        camera_param_file_paths = glob.glob(os.path.join(rep_data_path, "camera_params_*.json"))
+        for world_pose_file_path in camera_param_file_paths:
+            # Create new file path and copy
+            filename = os.path.basename(world_pose_file_path)
+            new_path = os.path.join(output_dir, filename)
+            shutil.copy(world_pose_file_path, new_path)
+
+    @staticmethod
     def convert(replicator_data_dir: str, obj_files_dir: str, output_dir: str) -> None:
         """
         Converts data from NVIDIA Replicator to the format of the ROCA evaluator.
@@ -92,21 +91,15 @@ class ReplicatorToRocaEval(ConverterInterface):
         """
 
         print("Converting the generated evaluation data to the format required by the ROCA evaluator...")
-
-        # Load obj paths
-        obj_paths = glob.glob(os.path.join(obj_files_dir, "*.obj"))
-
         # Load scene numbers
         scene_numbers = replicator.get_scene_nrs(replicator_data_dir)
 
         # Convert eval data
-        #print("Generating the semantic class labels file...")
-        #ReplicatorToRocaEval._generate_class_labels_file(obj_paths, output_dir)
         print("Converting camera intrinsics...")
         ReplicatorToRocaEval._convert_intrinsics(replicator_data_dir, output_dir, scene_numbers)
         print("Converting images...")
         ReplicatorToRocaEval._convert_images(replicator_data_dir, output_dir, scene_numbers)
         print("Copying world pose data...")
         ReplicatorToRocaEval._copy_world_pose_data(replicator_data_dir, output_dir)
-
-
+        print("Copying camera parameter data...")
+        ReplicatorToRocaEval._copy_camera_params(replicator_data_dir, output_dir)
