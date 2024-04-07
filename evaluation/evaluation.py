@@ -251,7 +251,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(out_dir, "inference_time.pdf")
             plt.savefig(plot_path)
-            plt.show()
+            #plt.show()
+            plt.close()
 
 
             # Found Objects per Frame
@@ -272,7 +273,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(out_dir, "detected_objects.pdf")
             plt.savefig(plot_path)
-            plt.show()
+            #plt.show()
+            plt.close()
 
 
             # Distance error
@@ -296,7 +298,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(out_dir, "distance_error.pdf")
             plt.savefig(plot_path)
-            plt.show()
+            #plt.show()
+            plt.close()
 
             del distance_errors, distance_std
 
@@ -322,7 +325,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(out_dir, "rotation_error.pdf")
             plt.savefig(plot_path)
-            plt.show()
+            #plt.show()
+            plt.close()
 
             del rotation_errors, rotation_std
 
@@ -348,7 +352,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(out_dir, "scale_error.pdf")
             plt.savefig(plot_path)
-            plt.show()
+            #plt.show()
+            plt.close()
 
             del scale_errors, scale_std
 
@@ -375,7 +380,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(out_dir, "occlusion-undetected-objects.pdf")
             plt.savefig(plot_path)
-            plt.show()
+            #plt.show()
+            plt.close()
 
             del occlusion_ratio, occlusion_std
 
@@ -399,7 +405,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(out_dir, "classification_counts.pdf")
             plt.savefig(plot_path)
-            plt.show()
+            #plt.show()
+            plt.close()
 
 
             # Correct and incorrect classifications ratio
@@ -422,7 +429,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
             plot_path = os.path.join(out_dir, "classification_ratio.pdf")
             plt.savefig(plot_path)
-            plt.show()
+            #plt.show()
+            plt.close()
 
             del correct_classifications_per_frame, incorrect_classifications_per_frame
 
@@ -458,7 +466,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
     plot_path = os.path.join(output_dir, "found_objects_to_inference_time.pdf")
     plt.savefig(plot_path)
-    plt.show()
+    #plt.show()
+    plt.close()
 
     del corr_coef, linregress, linregress_x, linregress_y
 
@@ -481,7 +490,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "inference_time.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         # Found Objects per Frame
         plt.figure(dpi=300)
@@ -503,7 +513,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "detected_objects.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         # Distance error
         frames = range(len(neural_net_results["per_frame_results"]))
@@ -526,7 +537,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "distance_error_max.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
@@ -545,7 +557,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "distance_error_min.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
@@ -566,7 +579,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "distance_error_mean.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         # TODO: wenn STD sich nicht sinnvoll darstellen lässt, tabelle erzeugen mit Zeile von STD für jedes Netz und diese abspeichern
 
@@ -592,7 +606,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "rotation_error_mean.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
@@ -610,7 +625,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "rotation_error_min.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
@@ -628,7 +644,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "rotation_error_max.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         del rotation_errors, rotation_std
 
@@ -653,7 +670,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "scale_error_max.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
@@ -671,7 +689,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "scale_error_min.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
@@ -692,7 +711,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "scale_error_mean.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         del scale_errors, scale_std, all_max_scale_errors, scale_plots_y_lim_upper
 
@@ -718,7 +738,8 @@ def main(eval_dataset_path: str, output_dir: str):
         #
         # plot_path = os.path.join(out_dir, "classification_counts.pdf")
         # plt.savefig(plot_path)
-        # plt.show()
+        # #plt.show()
+        # plt.close()
 
         # Correct and incorrect classifications ratio
         plt.figure(dpi=300)
@@ -741,7 +762,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "classification_ratio_correct.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         plt.figure(dpi=300)
         plt.title(f"Anteil inkorrekter Klassifikationen pro Frame\n\n"
@@ -764,7 +786,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "classification_ratio_incorrect.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         del correct_classifications_per_frame, incorrect_classifications_per_frame
 
@@ -786,7 +809,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "occlusion-undetected-objects_max.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
@@ -805,7 +829,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "occlusion-undetected-objects_min.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         frames = range(len(neural_net_results["per_frame_results"]))
         plt.figure(dpi=300)
@@ -827,12 +852,14 @@ def main(eval_dataset_path: str, output_dir: str):
 
         plot_path = os.path.join(out_dir, "occlusion-undetected-objects_mean.pdf")
         plt.savefig(plot_path)
-        plt.show()
+        #plt.show()
+        plt.close()
 
         del occlusion_ratio, occlusion_std
 
     # Per Material
     materials = list(set([dataset_name.split("_")[-1] for dataset_name in per_dataset_results.keys()])) # get unique material names
+    neural_net_names = []
     per_material_results = {}
     for material in materials:
         material_dataset_keys = [dataset_name for dataset_name in per_dataset_results.keys() if dataset_name.endswith(material)]
@@ -841,6 +868,8 @@ def main(eval_dataset_path: str, output_dir: str):
         for material_dataset_name in material_dataset_keys:
             dataset_results = per_dataset_results[material_dataset_name]
             for neural_net_name, neural_net_result in dataset_results.items():
+                if neural_net_name not in neural_net_names:
+                    neural_net_names.append(neural_net_name)
                 if neural_net_name not in per_material_results[material]:
                     per_material_results[material][neural_net_name] = {
                         "found_objects_ratio": [],
@@ -856,21 +885,21 @@ def main(eval_dataset_path: str, output_dir: str):
                 per_frame_found_ratio = dataset_neural_net_df["Predicted Object Count"] / dataset_neural_net_df["Object Count"]
                 per_material_results[material][neural_net_name]["found_objects_ratio"].extend(per_frame_found_ratio)
 
-                # distance error
-                distance_errors = neural_net_result["per_frame_results"]["distance_errors"]
+                # distance error, rotation error, scale error, occlusion of undetected objects
+                distance_errors = []
+                rotation_errors = []
+                scale_errors = []
+                occlusion_ratio_undetected_objects = []
+
+                for frame_result in neural_net_result["per_frame_results"]:
+                    distance_errors.extend(frame_result["distance_errors"])
+                    rotation_errors.extend(frame_result["rotation_errors"])
+                    scale_errors.extend(frame_result["scale_errors"])
+                    occlusion_ratio_undetected_objects.extend(frame_result["occlusion_of_non_detected_objects"])
                 per_material_results[material][neural_net_name]["distance_errors"].extend(distance_errors)
-
-                # rotation error
-                rotation_errors = neural_net_result["per_frame_results"]["rotation_errors"]
                 per_material_results[material][neural_net_name]["rotation_errors"].extend(rotation_errors)
-
-                # scale_error
-                scale_errors = neural_net_result["per_frame_results"]["rotation_errors"]
                 per_material_results[material][neural_net_name]["scale_errors"].extend(scale_errors)
-
-                # occlusion of undetected objects
-                occlusion_ratio_non_detected_objects = neural_net_result["per_frame_results"]["occlusion_ratio_non_detected_objects"]
-                per_material_results[material][neural_net_name]["occlusion_ratio_undetected_objects"] = occlusion_ratio_non_detected_objects
+                per_material_results[material][neural_net_name]["occlusion_ratio_undetected_objects"] = occlusion_ratio_undetected_objects
 
                 # correct_classifications_ratio
                 correct_classifications_per_frame = dataset_neural_net_df["Correct Classification Count"]
@@ -879,17 +908,80 @@ def main(eval_dataset_path: str, output_dir: str):
                 per_material_results[material][neural_net_name]["correct_classifications_ratio"] = correct_classifications_ratio
 
     # Create per material plots
+    out_dir = os.path.join(output_dir, dataset_type_name)
+    x_labels = materials
+    x = np.arange(len(x_labels))  # label locations
+    num_bars_per_group = len(neural_net_names)
+    bar_width = 0.9 / num_bars_per_group
+
+    # Create plot data
+    neural_net_found_object_means_grouped_by_neural_net_name = {}
+    neural_net_found_object_std_grouped_by_neural_net_name = {}
+    for material in materials:
+        for neural_net_name in neural_net_names:
+            if neural_net_name not in neural_net_found_object_means_grouped_by_neural_net_name:
+                neural_net_found_object_means_grouped_by_neural_net_name[neural_net_name] = []
+                neural_net_found_object_std_grouped_by_neural_net_name[neural_net_name] = []
+            neural_net_detected_object_share = per_material_results[material][neural_net_name]["found_objects_ratio"]
+            neural_net_found_object_means_grouped_by_neural_net_name[neural_net_name].append(np.mean(neural_net_detected_object_share))
+            neural_net_found_object_std_grouped_by_neural_net_name[neural_net_name].append(np.std(neural_net_detected_object_share))
+
+    # Create plots
+    ## Ratio of found objects
+    fig, ax = plt.subplots() # figsize=(12.0, 4.8), dpi=300)
+    for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
+        rects = ax.bar(x + i * bar_width, neural_net_found_object_means_grouped_by_neural_net_name[neural_net_name], bar_width, label=neural_net_name, yerr=neural_net_found_object_std_grouped_by_neural_net_name[neural_net_name],
+                       error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+        # ax.bar_label(rects, padding=3)
+        autolabel_percent(rects, ax)
+    ax.set_ylabel("Anteil gefundener Objekte")
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+    ax.set_title("Mittlerer Anteil gefundener Objekte nach Objektmaterial")
+    x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
+    ax.set_xticks(x_ticks)
+    ax.set_xticklabels(x_labels)
+    ax.set_ylim([0, 1.05])
+    ax.legend()
+    fig.tight_layout()
+
+    plot_path = os.path.join(out_dir, "detected-objects-per-material.pdf")
+    plt.savefig(plot_path)
+    plt.show()
+    plt.close()
 
     # Nur gleiche Objekte
 
     # Gleiche Objekte zusammenfassen und dann noch mal pro Material (Pro-Material-Analyse, aber Objekttyp ist "übergeordnete Gruppe")
 
 
+# https://matplotlib.org/3.1.1/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py (23.10.22)
+def autolabel(rects, ax):
+    """Attach a text label above each bar in *rects*, displaying its height."""
+    for rect in rects:
+        height = rect.get_height()
+        ax.annotate('{}'.format(np.round(height), 2),
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom',
+                    rotation=90, color="red")
+
+
+def autolabel_percent(rects, ax):
+    """Attach a text label above each bar in *rects*, displaying its height."""
+    for rect in rects:
+        height = rect.get_height()
+        ax.annotate('{}%'.format(np.round(height * 100, 2)),
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom',
+                    rotation=90, color="red")
 
 
 if __name__ == '__main__':
-    #eval_dataset_path = "/Users/flo/eval_dataset"
-    #output_dir = "output"
-    eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
-    output_dir = r".\\output"
+    eval_dataset_path = "/Users/flo/eval_dataset"
+    output_dir = "output"
+    #eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
+    #output_dir = r".\\output"
     main(eval_dataset_path, output_dir)
