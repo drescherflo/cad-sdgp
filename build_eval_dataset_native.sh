@@ -33,6 +33,7 @@ python custom_dataset/dataset_generation/config_generation/eval_conveyor_config_
 deactivate
 
 ## Generate eval datasets
+set +e # don't exit on exit code != 0 (this prevents aborting the script when isaac sim segfaults on exit for unknown reasons)
 echo "Generating the evaluation datasets"
 replicator_dataset_base="$CUSTOM_DATASET_DIR/replicator_dataset/"
 config_dirs=("cluttered" "uncluttered")
@@ -61,6 +62,7 @@ for dir in "${config_dirs[@]}"; do
       --writer WorldPoseWriter
   done
 done
+set -e  # Re-enable exit on exit code != 0
 
 ## Convert datasets
 echo "Converting the generated datasets"
