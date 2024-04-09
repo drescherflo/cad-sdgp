@@ -9,6 +9,7 @@ import sys
 import json
 import os
 import argparse
+import json5
 
 from utils import io, config
 from utils.conveyor_config import generate_multiple_object_scenes
@@ -124,6 +125,19 @@ def generate_scenes(
                     json.dump(scene_config, f, indent=4)
 
 
+def material_config_to_materials(material_config: list[dict], conveyor_belt_color_r, conveyor_belt_color_g, conveyor_belt_color_b) -> list[dict]:
+    for idx, material in enumerate(material_config):
+        material["material_idx"] = idx
+        if "is_conveyor" in material.keys() and material["is_conveyor"]:
+            # Create same config, that the conveyor belt gets during simulation
+            material["is_glass"] = False
+            material["color"] = [conveyor_belt_color_r, conveyor_belt_color_g, conveyor_belt_color_b]
+            material["surface_roughness"] = 0.5  # default value is 0.5 for OmniPBR
+            del material["is_conveyor"]
+
+    return material_config
+
+
 def main(argv: list[str]) -> None:
     """
     Main function to handle command-line arguments and execute the configuration generation process.
@@ -146,6 +160,7 @@ def main(argv: list[str]) -> None:
     parser = argparse.ArgumentParser(description="Generates a configuration for the training data generation script")
     parser.add_argument("--usd_dir", help="Directory containing the converted CAD models as USD files", required=True)
     parser.add_argument("--out_dir", default="configs", help="Output directory for the generated configurations")
+    parser.add_argument("--object_material_config_file", help="Object material config file", required=True)
     parser.add_argument("--frame_width", default=480, type=int, help="Width of the generated frames")
     parser.add_argument("--frame_height", default=360, type=int, help="Width of the generated frames")
     parser.add_argument("--sub_frames_per_frame", default=32, type=int,
@@ -225,7 +240,7 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--distant_light_color_g", default=1, type=float,
                         help="The direct light light color in rgb (g value, value should be between 0 and 1)")
     parser.add_argument("--distant_light_color_b", default=1, type=float,
-                        help="The direct light light color in rgb (b value, value should be between 0 and 1))")
+                        help="The direct light light color in rgb (b value, value should be between 0 and 1)")
     parser.add_argument("--distant_light_intensity", default=1000, type=float,
                         help="The minimum light intensity of the direct light")
     parser.add_argument("--conveyor_belt_speed", default=default_conveyor_belt_speed, type=float,
@@ -241,7 +256,19 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--ground_plane_color_g", default=1, type=float,
                         help="The ground plane color in rgb (g value, value should be between 0 and 1)")
     parser.add_argument("--ground_plane_color_b", default=1, type=float,
-                        help="The ground plane color in rgb (b value, value should be between 0 and 1))")
+                        help="The ground plane color in rgb (b value, value should be between 0 and 1)")
+    parser.add_argument("--conveyor_frame_color_r", default=1, type=float,
+                        help="The conveyor frame color in rgb (r value, value should be between 0 and 1)")
+    parser.add_argument("--conveyor_frame_color_g", default=1, type=float,
+                        help="The conveyor frame color in rgb (g value, value should be between 0 and 1)")
+    parser.add_argument("--conveyor_frame_color_b", default=1, type=float,
+                        help="The conveyor frame color in rgb (b value, value should be between 0 and 1)")
+    parser.add_argument("--conveyor_belt_color_r", default=1, type=float,
+                        help="The conveyor belt color in rgb (r value, value should be between 0 and 1)")
+    parser.add_argument("--conveyor_belt_color_g", default=1, type=float,
+                        help="The conveyor belt color in rgb (g value, value should be between 0 and 1)")
+    parser.add_argument("--conveyor_belt_color_b", default=1, type=float,
+                        help="The conveyor belt color in rgb (b value, value should be between 0 and 1)")
 
     # Parse args
     args = parser.parse_args(argv)
@@ -249,6 +276,7 @@ def main(argv: list[str]) -> None:
     # Assign variables
     usd_dir = args.usd_dir
     out_dir = args.out_dir
+    object_material_config_path = args.object_material_config_file
     frame_width = args.frame_width
     frame_height = args.frame_height
     sub_frames_per_frame = args.sub_frames_per_frame
@@ -298,6 +326,12 @@ def main(argv: list[str]) -> None:
     ground_plane_color_r = args.ground_plane_color_r
     ground_plane_color_g = args.ground_plane_color_g
     ground_plane_color_b = args.ground_plane_color_b
+    conveyor_frame_color_r = args.conveyor_frame_color_r
+    conveyor_frame_color_g = args.conveyor_frame_color_g
+    conveyor_frame_color_b = args.conveyor_frame_color_b
+    conveyor_belt_color_r = args.conveyor_frame_color_r
+    conveyor_belt_color_g = args.conveyor_frame_color_g
+    conveyor_belt_color_b = args.conveyor_frame_color_b
 
     # Check range args for plausibility
     config.check_range_plausibility(object_init_min_x, object_init_max_x)
@@ -311,6 +345,11 @@ def main(argv: list[str]) -> None:
     # Check for existing config at out_path
     if os.path.exists(out_dir):
         print(f"Output directory at '{out_dir}' already exists. Exiting...")
+        # exit(-1) TODO: uncomment
+
+    # Check for existing material config
+    if not os.path.exists(object_material_config_path):
+        print(f"Object material config file at '{object_material_config_path}' does not exist. Exiting...")
         exit(-1)
 
     # Test usd_dir
@@ -324,50 +363,56 @@ def main(argv: list[str]) -> None:
 
     usd_models = io.get_usd_models(usd_dir)
 
-    # Create eval materials config
-    materials = [
-        {
-            "material_idx": 0,
-            "is_glass": False,
-            "color": [0.2, 0.2, 0.2],
-            "surface_roughness": 0.5
-        },  # default material (default values from Isaac Sim OmniPBR)
-        {
-            "material_idx": 1,
-            "is_glass": False,
-            "color": [0.2, 0.2, 0.2],
-            "surface_roughness": 0
-        },  # metallic, high reflective
-        {
-            "material_idx": 2,
-            "is_glass": False,
-            "color": [0.2, 0.2, 0.2],
-            "surface_roughness": 1
-        },  # metallic, rough
-        {
-            "material_idx": 3,
-            "is_glass": True,
-            "color": [1, 1, 1]
-        },  # default white glass / plastic (default values from Isaac Sim OmniGlass)
-        {
-            "material_idx": 4,
-            "is_glass": False,
-            "color": [0, 0, 0],
-            "surface_roughness": 0.5
-        },  # black material
-        {
-            "material_idx": 5,
-            "is_conveyor": True
-        },  # conveyor belt material
-        {
-            "material_idx": 6,
-            "is_glass": False,
-            "color": [0, 1, 0],
-            "surface_roughness": 0.5
-        },   # green material
-    ]
+    # Load materials config file
+    with open(object_material_config_path, "r") as f:
+        material_config = json5.load(f)
 
-    material_names = ["default", "metal-reflective", "metal-rough", "glass", "black", "conveyor", "green"]
+    # Create eval materials config
+    materials = material_config_to_materials(material_config, conveyor_belt_color_r, conveyor_belt_color_g, conveyor_belt_color_b)
+    material_names = [material["name"] for material in materials]
+    # materials = [
+    #     {
+    #         "material_idx": 0,
+    #         "is_glass": False,
+    #         "color": [0.2, 0.2, 0.2],
+    #         "surface_roughness": 0.5
+    #     },  # default material (default values from Isaac Sim OmniPBR)
+    #     {
+    #         "material_idx": 1,
+    #         "is_glass": False,
+    #         "color": [0.2, 0.2, 0.2],
+    #         "surface_roughness": 0
+    #     },  # metallic, high reflective
+    #     {
+    #         "material_idx": 2,
+    #         "is_glass": False,
+    #         "color": [0.2, 0.2, 0.2],
+    #         "surface_roughness": 1
+    #     },  # metallic, rough
+    #     {
+    #         "material_idx": 3,
+    #         "is_glass": True,
+    #         "color": [1, 1, 1]
+    #     },  # default white glass / plastic (default values from Isaac Sim OmniGlass)
+    #     {
+    #         "material_idx": 4,
+    #         "is_glass": False,
+    #         "color": [0, 0, 0],
+    #         "surface_roughness": 0.5
+    #     },  # black material
+    #     {
+    #         "material_idx": 5,
+    #         "is_conveyor": True
+    #     },  # conveyor belt material
+    #     {
+    #         "material_idx": 6,
+    #         "is_glass": False,
+    #         "color": [0, 1, 0],
+    #         "surface_roughness": 0.5
+    #     },   # green material
+    # ]
+    #
+    # material_names = ["default", "metal-reflective", "metal-rough", "glass", "black", "conveyor", "green"]
 
     print("Generating uncluttered scenes...")
     uncluttered_out_dir = os.path.join(out_dir, "uncluttered")

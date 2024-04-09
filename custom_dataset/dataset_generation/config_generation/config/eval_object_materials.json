@@ -1,0 +1,72 @@
+[
+  {
+    // default material (default values from Isaac Sim OmniPBR)
+    "name": "default",
+    "is_glass": false,
+    "color": [
+      0.2,
+      0.2,
+      0.2
+    ],
+    "surface_roughness": 0.5
+  },
+  {
+    // metallic, high reflective
+    "name": "metal-reflective",
+    "is_glass": false,
+    "color": [
+      0.2,
+      0.2,
+      0.2
+    ],
+    "surface_roughness": 0
+  },
+  {
+    // metallic, rough
+    "name": "metal-rough",
+    "is_glass": false,
+    "color": [
+      0.2,
+      0.2,
+      0.2
+    ],
+    "surface_roughness": 1
+  },
+  {
+    // default white glass / plastic (default values from Isaac Sim OmniGlass)
+    "name": "glass",
+    "is_glass": true,
+    "color": [
+      1,
+      1,
+      1
+    ]
+  },
+  {
+    // black material
+    "name": "black",
+    "is_glass": false,
+    "color": [
+      0,
+      0,
+      0
+    ],
+    "surface_roughness": 0.5
+  },
+  {
+    // conveyor belt material
+    "name": "conveyor",
+    "is_conveyor": true
+  },
+  {
+    // green material
+    "name": "green",
+    "is_glass": false,
+    "color": [
+      0,
+      1,
+      0
+    ],
+    "surface_roughness": 0.5
+  }
+]
