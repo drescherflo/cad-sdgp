@@ -39,6 +39,7 @@ def generate_scenes(
                     sphere_min_x: float, sphere_max_x: float,
                     sphere_min_y: float, sphere_max_y: float,
                     sphere_min_z: float, sphere_max_z: float,
+                    sphere_light_color_r: float, sphere_light_color_g: float, sphere_light_color_b: float,
                     object_init_min_x: float, object_init_max_x: float,
                     object_init_min_y: float, object_init_max_y: float,
                     object_init_min_z: float, object_init_max_z: float,
@@ -72,9 +73,13 @@ def generate_scenes(
         camera_rot_z, camera_rot_z,
         distant_light_intensity, distant_light_intensity)[0] for _ in range(num_scenes)]
     for scene in base_scenes:
-        # Replace distant light configs
+        # Replace distant light color
         for distant_light_config in scene["per_frame_config"]["distant_light_configs"]:
             distant_light_config["color"] = [distant_light_color_r, distant_light_color_g, distant_light_color_b]
+
+        # Replace sphere light color
+        for sphere_light_config in scene["per_frame_config"]["sphere_light_configs"]:
+            sphere_light_config[0]["color"] = [sphere_light_color_r, sphere_light_color_g, sphere_light_color_b]
 
         # Replace ground plane color
         scene["per_frame_config"]["ground_plane_colors"] = [
@@ -138,7 +143,7 @@ def material_config_to_materials(material_config: list[dict], conveyor_belt_colo
             # Create same config, that the conveyor belt gets during simulation
             material["is_glass"] = False
             material["color"] = [conveyor_belt_color_r, conveyor_belt_color_g, conveyor_belt_color_b]
-            material["surface_roughness"] = 0.5  # default value is 0.5 for OmniPBR
+            material["surface_roughness"] = 1.0  # Surface roughness is 1.0 in conveyor_belt_dataset_generator.py
             del material["is_conveyor"]
 
     return material_config
@@ -181,8 +186,6 @@ def main(argv: list[str]) -> None:
                         help="Specifies the number of uncluttered scenes to generate")
     parser.add_argument("--num_cluttered_scenes", default=5, type=int,
                         help="Specifies the number of cluttered scenes to generate")
-    parser.add_argument("--num_sphere_lights", default=1, type=int,
-                        help="Specifies the number of sphere lights with random light color in the scene")
     parser.add_argument("--object_init_min_x", default=-2.0, type=float,
                         help="The minimum initial x coordinate of the object in the scene")
     parser.add_argument("--object_init_max_x", default=2.0, type=float,
@@ -207,22 +210,22 @@ def main(argv: list[str]) -> None:
                         help="The minimum initial z coordinate of the object in the cluttered scene")
     parser.add_argument("--cluttered_scene_object_init_max_z", default=20, type=float,
                         help="The maximum initial z coordinate of the object in the cluttered scene")
-    parser.add_argument("--sphere_min_x", default=0, type=float,
-                        help="The minimum x coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_x", default=0, type=float,
-                        help="The maximum x coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_y", default=1, type=float,
-                        help="The minimum y coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_y", default=1, type=float,
-                        help="The maximum y coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_z", default=2.5, type=float,
-                        help="The minimum z coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_z", default=2.5, type=float,
-                        help="The maximum z coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_intensity", default=30000, type=float,
+    parser.add_argument("--disable_sphere_light", action="store_true",
+                        help="Disable sphere the sphere light in the scene")
+    parser.add_argument("--sphere_light_x", default=0, type=float,
+                        help="The x coordinate of the sphere in the scene")
+    parser.add_argument("--sphere_light_y", default=1, type=float,
+                        help="The y coordinate of the sphere in the scene")
+    parser.add_argument("--sphere_light_z", default=2, type=float,
+                        help="The z coordinate of the sphere in the scene")
+    parser.add_argument("--sphere_light_intensity", default=5000, type=float,
                         help="The minimum light intensity of a sphere light")
-    parser.add_argument("--sphere_max_intensity", default=30000, type=float,
-                        help="The maximum light intensity of a sphere light")
+    parser.add_argument("--sphere_light_color_r", default=1, type=float,
+                        help="The sphere light color in rgb (r value, value should be between 0 and 1)")
+    parser.add_argument("--sphere_light_color_g", default=1, type=float,
+                        help="The sphere light color in rgb (g value, value should be between 0 and 1)")
+    parser.add_argument("--sphere_light_color_b", default=1, type=float,
+                        help="The sphere light color in rgb (b value, value should be between 0 and 1)")
     parser.add_argument("--camera_pos_x", default=0, type=float,
                         help="The x coordinate of the camera in the scene")
     parser.add_argument("--camera_pos_y", default=0, type=float,
@@ -248,7 +251,7 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--distant_light_color_b", default=1, type=float,
                         help="The direct light light color in rgb (b value, value should be between 0 and 1)")
     parser.add_argument("--distant_light_intensity", default=1000, type=float,
-                        help="The minimum light intensity of the direct light")
+                        help="The light intensity of the distant light")
     parser.add_argument("--conveyor_belt_speed", default=default_conveyor_belt_speed, type=float,
                         help="The speed of the conveyor belt in the simulation")
     parser.add_argument("--min_x_pos_for_record_start", default=default_min_x_pos_for_record_start, type=float,
@@ -291,7 +294,6 @@ def main(argv: list[str]) -> None:
     num_objects_per_cluttered_scene = args.num_objects_per_cluttered_scene
     num_scenes = args.num_scenes
     num_cluttered_scenes = args.num_cluttered_scenes
-    num_sphere_lights = args.num_sphere_lights
     object_init_min_x = args.object_init_min_x
     object_init_max_x = args.object_init_max_x
     object_init_min_y = args.object_init_min_y
@@ -304,14 +306,14 @@ def main(argv: list[str]) -> None:
     cluttered_scene_object_init_max_y = args.cluttered_scene_object_init_max_y
     cluttered_scene_object_init_min_z = args.cluttered_scene_object_init_min_z
     cluttered_scene_object_init_max_z = args.cluttered_scene_object_init_max_z
-    sphere_min_x = args.sphere_min_x
-    sphere_max_x = args.sphere_max_x
-    sphere_min_y = args.sphere_min_y
-    sphere_max_y = args.sphere_max_y
-    sphere_min_z = args.sphere_min_z
-    sphere_max_z = args.sphere_max_z
-    sphere_min_intensity = args.sphere_min_intensity
-    sphere_max_intensity = args.sphere_max_intensity
+    num_sphere_lights = 0 if args.disable_sphere_light else 1
+    sphere_light_x = args.sphere_light_x
+    sphere_light_y = args.sphere_light_y
+    sphere_light_z = args.sphere_light_z
+    sphere_light_intensity = args.sphere_light_intensity
+    sphere_light_color_r = args.sphere_light_color_r
+    sphere_light_color_g = args.sphere_light_color_g
+    sphere_light_color_b = args.sphere_light_color_b
     camera_pos_x = args.camera_pos_x
     camera_pos_y = args.camera_pos_y
     camera_pos_z = args.camera_pos_z
@@ -335,18 +337,14 @@ def main(argv: list[str]) -> None:
     conveyor_frame_color_r = args.conveyor_frame_color_r
     conveyor_frame_color_g = args.conveyor_frame_color_g
     conveyor_frame_color_b = args.conveyor_frame_color_b
-    conveyor_belt_color_r = args.conveyor_frame_color_r
-    conveyor_belt_color_g = args.conveyor_frame_color_g
-    conveyor_belt_color_b = args.conveyor_frame_color_b
+    conveyor_belt_color_r = args.conveyor_belt_color_r
+    conveyor_belt_color_g = args.conveyor_belt_color_g
+    conveyor_belt_color_b = args.conveyor_belt_color_b
 
     # Check range args for plausibility
     config.check_range_plausibility(object_init_min_x, object_init_max_x)
     config.check_range_plausibility(object_init_min_y, object_init_max_y)
     config.check_range_plausibility(object_init_min_z, object_init_max_z)
-    config.check_range_plausibility(sphere_min_x, sphere_max_x)
-    config.check_range_plausibility(sphere_min_y, sphere_max_y)
-    config.check_range_plausibility(sphere_min_z, sphere_max_z)
-    config.check_range_plausibility(sphere_min_intensity, sphere_max_intensity)
 
     # Check for existing config at out_path
     if os.path.exists(out_dir):
@@ -397,10 +395,11 @@ def main(argv: list[str]) -> None:
                     num_objects_per_scene,
                     num_scenes,
                     num_sphere_lights,
-                    sphere_min_intensity, sphere_max_intensity,
-                    sphere_min_x, sphere_max_x,
-                    sphere_min_y, sphere_max_y,
-                    sphere_min_z, sphere_max_z,
+                    sphere_light_intensity, sphere_light_intensity,
+                    sphere_light_x, sphere_light_x,
+                    sphere_light_y, sphere_light_y,
+                    sphere_light_z, sphere_light_z,
+                    sphere_light_color_r, sphere_light_color_g, sphere_light_color_b,
                     object_init_min_x, object_init_max_x,
                     object_init_min_y, object_init_max_y,
                     object_init_min_z, object_init_max_z,
@@ -429,10 +428,11 @@ def main(argv: list[str]) -> None:
                     num_objects_per_cluttered_scene,
                     num_cluttered_scenes,
                     num_sphere_lights,
-                    sphere_min_intensity, sphere_max_intensity,
-                    sphere_min_x, sphere_max_x,
-                    sphere_min_y, sphere_max_y,
-                    sphere_min_z, sphere_max_z,
+                    sphere_light_intensity, sphere_light_intensity,
+                    sphere_light_x, sphere_light_x,
+                    sphere_light_y, sphere_light_y,
+                    sphere_light_z, sphere_light_z,
+                    sphere_light_color_r, sphere_light_color_g, sphere_light_color_b,
                     cluttered_scene_object_init_min_x, cluttered_scene_object_init_max_x,
                     cluttered_scene_object_init_min_y, cluttered_scene_object_init_max_y,
                     cluttered_scene_object_init_min_z, cluttered_scene_object_init_max_z,

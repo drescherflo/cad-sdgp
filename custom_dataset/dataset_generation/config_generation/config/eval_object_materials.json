@@ -59,14 +59,14 @@
     "is_conveyor": true
   },
   {
-    // pink material
-    "name": "pink",
+    // complementary to default conveyor belt color
+    "name": "belt-complementary",
     "is_glass": false,
     "color": [
-      1.0,
-      0.75294118,
-      0.79607843
+      0.49019608,
+      0.34901961,
+      0.38039216
     ],
-    "surface_roughness": 0.5
+    "surface_roughness": 1
   }
 ]
