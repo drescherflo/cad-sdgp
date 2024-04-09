@@ -28,8 +28,7 @@ source custom_dataset/dataset_generation/config_generation/venv/bin/activate
 python custom_dataset/dataset_generation/config_generation/eval_conveyor_config_generator.py \
    --usd_dir "$usd_dir" \
    --out_dir "$config_base" \
-   --num_scenes 5 \
-   --num_cluttered_scenes 5
+   --object_material_config_file "custom_dataset/dataset_generation/config_generation/config/eval_object_materials.json"
 deactivate
 
 ## Generate eval datasets

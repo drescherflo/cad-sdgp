@@ -59,13 +59,13 @@
     "is_conveyor": true
   },
   {
-    // green material
-    "name": "green",
+    // pink material
+    "name": "pink",
     "is_glass": false,
     "color": [
-      0,
-      1,
-      0
+      1.0,
+      0.75294118,
+      0.79607843
     ],
     "surface_roughness": 0.5
   }

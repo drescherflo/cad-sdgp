@@ -139,30 +139,29 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         with plane:
             rep.modify.material(plane_material)
 
-        if not eval_dataset:
-            # Add material for custom colors of conveyor belt belts
-            # Use isaac API for assigning materials, because replicator does not apply changes for unknown reasons
-            conveyor_belt_material_path = "/materials/conveyor_belt"
-            conveyor_belt_material = OmniPBR(conveyor_belt_material_path)
-            conveyor_belt_material.set_reflection_roughness(1.0)
-            conveyor_belt_prim_paths = prim_utils.find_matching_prim_paths(
-                "/World/ConveyorTrack(.)*/Belt/SM_ConveyorBelt_A09_Belt_02")
-            for conveyor_belt_prim_path in conveyor_belt_prim_paths:
-                xform_conveyor_belt_prim = XFormPrim(conveyor_belt_prim_path)
-                xform_conveyor_belt_prim.apply_visual_material(conveyor_belt_material)
-            rep_conveyor_belt_material = rep.get.material(conveyor_belt_material_path)
+        # Add material for custom colors of conveyor belt belts
+        # Use isaac API for assigning materials, because replicator does not apply changes for unknown reasons
+        conveyor_belt_material_path = "/materials/conveyor_belt"
+        conveyor_belt_material = OmniPBR(conveyor_belt_material_path)
+        conveyor_belt_material.set_reflection_roughness(1.0)
+        conveyor_belt_prim_paths = prim_utils.find_matching_prim_paths(
+            "/World/ConveyorTrack(.)*/Belt/SM_ConveyorBelt_A09_Belt_02")
+        for conveyor_belt_prim_path in conveyor_belt_prim_paths:
+            xform_conveyor_belt_prim = XFormPrim(conveyor_belt_prim_path)
+            xform_conveyor_belt_prim.apply_visual_material(conveyor_belt_material)
+        rep_conveyor_belt_material = rep.get.material(conveyor_belt_material_path)
 
-            # Add material for custom color of conveyor belt frame
-            # Use isaac API for assigning materials, because replicator does not apply changes for unknown reasons
-            conveyor_frame_material_path = "/materials/conveyor_frame"
-            conveyor_frame_material = OmniPBR(conveyor_frame_material_path)
-            conveyor_frame_material.set_reflection_roughness(1.0)
-            conveyor_frame_prim_paths = prim_utils.find_matching_prim_paths(
-                "/World/ConveyorTrack(.)*/SM_ConveyorBelt_A09_02")
-            for conveyor_frame_prim_path in conveyor_frame_prim_paths:
-                xform_conveyor_frame_prim = XFormPrim(conveyor_frame_prim_path)
-                xform_conveyor_frame_prim.apply_visual_material(conveyor_frame_material)
-            rep_conveyor_frame_material = rep.get.material(conveyor_frame_material_path)
+        # Add material for custom color of conveyor belt frame
+        # Use isaac API for assigning materials, because replicator does not apply changes for unknown reasons
+        conveyor_frame_material_path = "/materials/conveyor_frame"
+        conveyor_frame_material = OmniPBR(conveyor_frame_material_path)
+        conveyor_frame_material.set_reflection_roughness(1.0)
+        conveyor_frame_prim_paths = prim_utils.find_matching_prim_paths(
+            "/World/ConveyorTrack(.)*/SM_ConveyorBelt_A09_02")
+        for conveyor_frame_prim_path in conveyor_frame_prim_paths:
+            xform_conveyor_frame_prim = XFormPrim(conveyor_frame_prim_path)
+            xform_conveyor_frame_prim.apply_visual_material(conveyor_frame_material)
+        rep_conveyor_frame_material = rep.get.material(conveyor_frame_material_path)
 
         # Add distant light
         distant_light = rep.create.light(light_type="distant")
@@ -303,14 +302,13 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             for i in range(len(sphere_lights)):
                 rep.randomizer.randomize_sphere_light(sphere_lights, i, sphere_light_configs)
 
-            if not eval_dataset:
-                # Change conveyor belt color
-                with rep_conveyor_belt_material:
-                    rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_belt_colors))
+            # Change conveyor belt color
+            with rep_conveyor_belt_material:
+                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_belt_colors))
 
-                # Change conveyor frame color
-                with rep_conveyor_frame_material:
-                    rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))
+            # Change conveyor frame color
+            with rep_conveyor_frame_material:
+                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))
 
         # Initialize writers
         writers = []

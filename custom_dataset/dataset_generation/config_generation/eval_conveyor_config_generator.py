@@ -22,6 +22,8 @@ def generate_scenes(
                     camera_pos_x: float, camera_pos_y: float, camera_pos_z: float,
                     camera_rot_x: float, camera_rot_y: float, camera_rot_z: float,
                     conveyor_belt_speed: float,
+                    conveyor_belt_color_r: float, conveyor_belt_color_g: float, conveyor_belt_color_b: float,
+                    conveyor_frame_color_r: float, conveyor_frame_color_g: float, conveyor_frame_color_b: float,
                     distant_light_color_r: float, distant_light_color_g: float, distant_light_color_b: float,
                     distant_light_intensity: float,
                     distant_light_rot_x: float, distant_light_rot_y: float, distant_light_rot_z: float,
@@ -79,9 +81,13 @@ def generate_scenes(
             [ground_plane_color_r, ground_plane_color_g, ground_plane_color_b] for _ in
             range(len(scene["per_frame_config"]["ground_plane_colors"]))]
 
-        # Remove conveyor belt colors and conveyor frame colors
-        scene["per_frame_config"]["conveyor_belt_colors"] = []
-        scene["per_frame_config"]["conveyor_frame_colors"] = []
+        # Replace conveyor belt colors and conveyor frame colors
+        scene["per_frame_config"]["conveyor_belt_colors"] = [
+            [conveyor_belt_color_r, conveyor_belt_color_g, conveyor_belt_color_b] for _ in
+            range(len(scene["per_frame_config"]["conveyor_belt_colors"]))]
+        scene["per_frame_config"]["conveyor_frame_colors"] = [
+            [conveyor_frame_color_r, conveyor_frame_color_g, conveyor_frame_color_b] for _ in
+            range(len(scene["per_frame_config"]["conveyor_frame_colors"]))]
 
     for scene_idx, scene in enumerate(base_scenes):
         print("Generating scene {} of {}".format(scene_idx + 1, num_scenes))
@@ -175,7 +181,7 @@ def main(argv: list[str]) -> None:
                         help="Specifies the number of uncluttered scenes to generate")
     parser.add_argument("--num_cluttered_scenes", default=5, type=int,
                         help="Specifies the number of cluttered scenes to generate")
-    parser.add_argument("--num_sphere_lights", default=0, type=int,
+    parser.add_argument("--num_sphere_lights", default=1, type=int,
                         help="Specifies the number of sphere lights with random light color in the scene")
     parser.add_argument("--object_init_min_x", default=-2.0, type=float,
                         help="The minimum initial x coordinate of the object in the scene")
@@ -201,21 +207,21 @@ def main(argv: list[str]) -> None:
                         help="The minimum initial z coordinate of the object in the cluttered scene")
     parser.add_argument("--cluttered_scene_object_init_max_z", default=20, type=float,
                         help="The maximum initial z coordinate of the object in the cluttered scene")
-    parser.add_argument("--sphere_min_x", default=-2.5, type=float,
+    parser.add_argument("--sphere_min_x", default=0, type=float,
                         help="The minimum x coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_x", default=2.5, type=float,
+    parser.add_argument("--sphere_max_x", default=0, type=float,
                         help="The maximum x coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_y", default=-0.5, type=float,
+    parser.add_argument("--sphere_min_y", default=1, type=float,
                         help="The minimum y coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_y", default=0.5, type=float,
+    parser.add_argument("--sphere_max_y", default=1, type=float,
                         help="The maximum y coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_z", default=2.3, type=float,
+    parser.add_argument("--sphere_min_z", default=2.5, type=float,
                         help="The minimum z coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_max_z", default=2.7, type=float,
+    parser.add_argument("--sphere_max_z", default=2.5, type=float,
                         help="The maximum z coordinate of light spheres in the scene")
-    parser.add_argument("--sphere_min_intensity", default=1000, type=float,
+    parser.add_argument("--sphere_min_intensity", default=30000, type=float,
                         help="The minimum light intensity of a sphere light")
-    parser.add_argument("--sphere_max_intensity", default=5000, type=float,
+    parser.add_argument("--sphere_max_intensity", default=30000, type=float,
                         help="The maximum light intensity of a sphere light")
     parser.add_argument("--camera_pos_x", default=0, type=float,
                         help="The x coordinate of the camera in the scene")
@@ -257,17 +263,17 @@ def main(argv: list[str]) -> None:
                         help="The ground plane color in rgb (g value, value should be between 0 and 1)")
     parser.add_argument("--ground_plane_color_b", default=1, type=float,
                         help="The ground plane color in rgb (b value, value should be between 0 and 1)")
-    parser.add_argument("--conveyor_frame_color_r", default=1, type=float,
+    parser.add_argument("--conveyor_frame_color_r", default=0.07704, type=float,
                         help="The conveyor frame color in rgb (r value, value should be between 0 and 1)")
-    parser.add_argument("--conveyor_frame_color_g", default=1, type=float,
+    parser.add_argument("--conveyor_frame_color_g", default=0.020303, type=float,
                         help="The conveyor frame color in rgb (g value, value should be between 0 and 1)")
-    parser.add_argument("--conveyor_frame_color_b", default=1, type=float,
+    parser.add_argument("--conveyor_frame_color_b", default=0.58687, type=float,
                         help="The conveyor frame color in rgb (b value, value should be between 0 and 1)")
-    parser.add_argument("--conveyor_belt_color_r", default=1, type=float,
+    parser.add_argument("--conveyor_belt_color_r", default=0.34901961, type=float,
                         help="The conveyor belt color in rgb (r value, value should be between 0 and 1)")
-    parser.add_argument("--conveyor_belt_color_g", default=1, type=float,
+    parser.add_argument("--conveyor_belt_color_g", default=0.49019608, type=float,
                         help="The conveyor belt color in rgb (g value, value should be between 0 and 1)")
-    parser.add_argument("--conveyor_belt_color_b", default=1, type=float,
+    parser.add_argument("--conveyor_belt_color_b", default=0.45882353, type=float,
                         help="The conveyor belt color in rgb (b value, value should be between 0 and 1)")
 
     # Parse args
@@ -345,7 +351,7 @@ def main(argv: list[str]) -> None:
     # Check for existing config at out_path
     if os.path.exists(out_dir):
         print(f"Output directory at '{out_dir}' already exists. Exiting...")
-        # exit(-1) TODO: uncomment
+        exit(-1)
 
     # Check for existing material config
     if not os.path.exists(object_material_config_path):
@@ -370,49 +376,6 @@ def main(argv: list[str]) -> None:
     # Create eval materials config
     materials = material_config_to_materials(material_config, conveyor_belt_color_r, conveyor_belt_color_g, conveyor_belt_color_b)
     material_names = [material["name"] for material in materials]
-    # materials = [
-    #     {
-    #         "material_idx": 0,
-    #         "is_glass": False,
-    #         "color": [0.2, 0.2, 0.2],
-    #         "surface_roughness": 0.5
-    #     },  # default material (default values from Isaac Sim OmniPBR)
-    #     {
-    #         "material_idx": 1,
-    #         "is_glass": False,
-    #         "color": [0.2, 0.2, 0.2],
-    #         "surface_roughness": 0
-    #     },  # metallic, high reflective
-    #     {
-    #         "material_idx": 2,
-    #         "is_glass": False,
-    #         "color": [0.2, 0.2, 0.2],
-    #         "surface_roughness": 1
-    #     },  # metallic, rough
-    #     {
-    #         "material_idx": 3,
-    #         "is_glass": True,
-    #         "color": [1, 1, 1]
-    #     },  # default white glass / plastic (default values from Isaac Sim OmniGlass)
-    #     {
-    #         "material_idx": 4,
-    #         "is_glass": False,
-    #         "color": [0, 0, 0],
-    #         "surface_roughness": 0.5
-    #     },  # black material
-    #     {
-    #         "material_idx": 5,
-    #         "is_conveyor": True
-    #     },  # conveyor belt material
-    #     {
-    #         "material_idx": 6,
-    #         "is_glass": False,
-    #         "color": [0, 1, 0],
-    #         "surface_roughness": 0.5
-    #     },   # green material
-    # ]
-    #
-    # material_names = ["default", "metal-reflective", "metal-rough", "glass", "black", "conveyor", "green"]
 
     print("Generating uncluttered scenes...")
     uncluttered_out_dir = os.path.join(out_dir, "uncluttered")
@@ -421,6 +384,8 @@ def main(argv: list[str]) -> None:
                     camera_pos_x, camera_pos_y, camera_pos_z,
                     camera_rot_x, camera_rot_y, camera_rot_z,
                     conveyor_belt_speed,
+                    conveyor_belt_color_r, conveyor_belt_color_g, conveyor_belt_color_b,
+                    conveyor_frame_color_r, conveyor_frame_color_g, conveyor_frame_color_b,
                     distant_light_color_r, distant_light_color_g, distant_light_color_b,
                     distant_light_intensity,
                     distant_light_rot_x, distant_light_rot_y, distant_light_rot_z,
@@ -451,6 +416,8 @@ def main(argv: list[str]) -> None:
                     camera_pos_x, camera_pos_y, camera_pos_z,
                     camera_rot_x, camera_rot_y, camera_rot_z,
                     conveyor_belt_speed,
+                    conveyor_belt_color_r, conveyor_belt_color_g, conveyor_belt_color_b,
+                    conveyor_frame_color_r, conveyor_frame_color_g, conveyor_frame_color_b,
                     distant_light_color_r, distant_light_color_g, distant_light_color_b,
                     distant_light_intensity,
                     distant_light_rot_x, distant_light_rot_y, distant_light_rot_z,
