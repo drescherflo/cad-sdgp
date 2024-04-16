@@ -1,3 +1,5 @@
+# Code wurde mit Unterstützung von ChatGPT erzeugt
+
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
