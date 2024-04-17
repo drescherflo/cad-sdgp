@@ -93,7 +93,7 @@ axs[1, 1].legend()
 plt.tight_layout()
 
 # Speichern der Figur als PDF
-plt.savefig("02_Aktivierungsfunktionen.pdf")
+plt.savefig("out/02_Aktivierungsfunktionen.pdf")
 #plt.savefig("02_Aktivierungsfunktionen.pgf")
 
 plt.show()
