@@ -142,9 +142,9 @@ Hinweise:
 - ROCA/metadata/scannetv2_val.txt
 - ROCA/metadata/scannetv2_train.txt
 
-Zusätzlich benötigt die Trainingspipeline von ROCA noch folgende Dateien, wenn nur mit einem CAD-Modell trainiert werden soll:
-- ROCA/metadata/points_val.pkl
-- ROCA/metadata/points_train.pkl
+Zusätzlich benötigt die Trainingspipeline von ROCA noch folgende Dateien, wenn ohne dem Retrieval-Modul trainiert werden soll:
+- ROCA/assets/points_val.pkl
+- ROCA/assets/points_train.pkl
 
 # Verwendete Koordinatensysteme in den Datensätzen
 - World Space
