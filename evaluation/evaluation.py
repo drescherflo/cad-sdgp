@@ -112,16 +112,16 @@ def main(eval_dataset_path: str, output_dir: str):
     num_found_objects_to_inference_time = {}
     all_dataset_results = {}
 
-
     for dataset_type_name in ["cluttered", "uncluttered"]:
         os.makedirs(os.path.join(output_dir, dataset_type_name), exist_ok=True)
-        dataset_type_dataset_paths = glob.glob(os.path.join(eval_dataset_path, "converted", dataset_type_name, "*"))
+        dataset_type_dataset_paths = sorted(glob.glob(os.path.join(eval_dataset_path, "converted", dataset_type_name, "*")))
         per_dataset_results = {}
         for dataset_type_dataset_path in dataset_type_dataset_paths:
             dataset_name = os.path.basename(dataset_type_dataset_path)
             per_dataset_results[dataset_name] = {}
-            neural_net_paths = glob.glob(os.path.join(dataset_type_dataset_path, "ReplicatorToRocaEval", "eval_raw_data", "*"))
+            neural_net_paths = sorted(glob.glob(os.path.join(dataset_type_dataset_path, "ReplicatorToRocaEval", "eval_raw_data", "*")))
             for neural_net_path in neural_net_paths:
+                print("Processing", neural_net_path)
                 neural_net_name = os.path.basename(neural_net_path)
                 per_dataset_results[dataset_name][neural_net_name] = {}
                 per_dataset_results[dataset_name][neural_net_name]["per_frame_results"] = []
@@ -491,10 +491,11 @@ def main(eval_dataset_path: str, output_dir: str):
 
                 del correct_classifications_per_frame, incorrect_classifications_per_frame
 
-
         # Create plots
         # Per dataset / per object type plots
+        print("Creating per dataset plots...")
         for dataset_name, dataset_result in per_dataset_results.items():
+            print("Dataset:", dataset_name)
             out_dir = os.path.join(output_dir, dataset_type_name, dataset_name)
             # Inference Time
             plt.figure(dpi=300)
@@ -879,6 +880,7 @@ def main(eval_dataset_path: str, output_dir: str):
             del occlusion_ratio, occlusion_std
 
         # Per Material
+        print("Creating per material plots")
         materials = list(set([dataset_name.split("_")[-1] for dataset_name in per_dataset_results.keys()])) # get unique material names
         neural_net_names = []
         per_material_results = {}
@@ -930,6 +932,7 @@ def main(eval_dataset_path: str, output_dir: str):
 
         # Create per material plots
         out_dir = os.path.join(output_dir, dataset_type_name)
+        materials = sorted(materials)
         x_labels = materials
         x = np.arange(len(x_labels))  # label locations
         num_bars_per_group = len(neural_net_names)
@@ -1141,7 +1144,7 @@ def main(eval_dataset_path: str, output_dir: str):
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_correct_classifications_ratio_means_grouped_by_neural_net_name[neural_net_name],
                            bar_width, label=neural_net_name,
-                           yerr=neural_net_correct_classifications_ratio_means_grouped_by_neural_net_name[neural_net_name],
+                           yerr=neural_net_correct_classifications_ratio_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
             autolabel_percent(rects, ax)
@@ -1165,6 +1168,7 @@ def main(eval_dataset_path: str, output_dir: str):
         plt.close()
 
         # Per Object Type
+        print("Creating per object type plots")
         object_types = list(
             set(["_".join(dataset_name.split("_")[:-2]) for dataset_name in per_dataset_results.keys()]))  # get unique object type names
         neural_net_names = []
@@ -1222,6 +1226,7 @@ def main(eval_dataset_path: str, output_dir: str):
 
         # Create per object type plots
         out_dir = os.path.join(output_dir, dataset_type_name)
+        object_types = sorted(object_types)
         x_labels = object_types
         x = np.arange(len(x_labels))  # label locations
         num_bars_per_group = len(neural_net_names)
@@ -1301,6 +1306,7 @@ def main(eval_dataset_path: str, output_dir: str):
                     np.std(neural_net_correct_classifications_ratios))
 
         # Create plots
+        print("Creating per dataset type plots")
         ## Ratio of found objects
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
@@ -1441,7 +1447,7 @@ def main(eval_dataset_path: str, output_dir: str):
             rects = ax.bar(x + i * bar_width,
                            neural_net_correct_classifications_ratio_means_grouped_by_neural_net_name[neural_net_name],
                            bar_width, label=neural_net_name,
-                           yerr=neural_net_correct_classifications_ratio_means_grouped_by_neural_net_name[neural_net_name],
+                           yerr=neural_net_correct_classifications_ratio_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
             autolabel_percent(rects, ax)
@@ -1535,7 +1541,7 @@ def main(eval_dataset_path: str, output_dir: str):
 
         # Create per dataset type plots
         out_dir = os.path.join(output_dir, dataset_type_name)
-        x_labels = neural_net_names
+        neural_net_names = sorted(neural_net_names)
         #x = np.arange(len(x_labels))  # label locations
         #num_bars_per_group = len(neural_net_names)
         #bar_width = 0.9 / num_bars_per_group
@@ -1771,7 +1777,9 @@ def main(eval_dataset_path: str, output_dir: str):
         plt.close()
 
     # Create all dataset plots
+    print("Creating global plots")
     out_dir = os.path.join(output_dir)
+    neural_net_names = sorted(neural_net_names)
     x_labels = neural_net_names
     # x = np.arange(len(x_labels))  # label locations
     # num_bars_per_group = len(neural_net_names)
