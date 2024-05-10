@@ -76,6 +76,8 @@ def main(eval_dataset_path: str, output_dir: str):
 
     # Create dict for num_objects to inference time
     num_found_objects_to_inference_time = {}
+    all_dataset_results = {}
+
 
     for dataset_type_name in ["cluttered", "uncluttered"]:
         os.makedirs(os.path.join(output_dir, dataset_type_name), exist_ok=True)
@@ -439,42 +441,6 @@ def main(eval_dataset_path: str, output_dir: str):
 
 
         # Create plots
-        # num_found_objects_to_inference_time
-        x_num_objects = []
-        y_inference_time = []
-        for num_found_object, inference_times in num_found_objects_to_inference_time.items():
-            x_num_objects.extend(np.ones(len(inference_times)) * num_found_object)
-            y_inference_time.extend(inference_times)
-
-        ## remove outlier (TODO: check if setup outlier ist only in first dataset processed by eval_raw_data generation)
-        # x_num_objects = x_num_objects[1:]
-        # y_inference_time = y_inference_time[1:]
-
-        # calc correlation coefficient and linear regression
-        corr_coef = stats.pearsonr(x_num_objects, y_inference_time).correlation
-        linregress = stats.linregress(x_num_objects, y_inference_time)
-        linregress_x = np.linspace(np.min(x_num_objects), np.max(x_num_objects))
-        linregress_y = linregress.slope * linregress_x + linregress.intercept
-
-        ## build plot
-        plt.figure(dpi=300)
-        plt.title("Anzahl gefundener Objekte in Relation zur Inferenz-Zeit\n\n"
-                  f"Korrelationskoeffizient: {np.round(corr_coef, 5)}")
-        plt.scatter(x_num_objects, y_inference_time)
-        plt.plot(linregress_x, linregress_y, "r", label=fr"Lineare Regression: $f(x) = {np.round(linregress.slope, 5)} \cdot x + {np.round(linregress.intercept, 5)}$")
-        plt.ylabel("Inferenz-Zeit [s]")
-        plt.xlabel("Anzahl gefundener Objekte")
-        plt.legend()
-        plt.tight_layout()
-
-        plot_path = os.path.join(output_dir, "found_objects_to_inference_time.pdf")
-        plt.savefig(plot_path)
-        #plt.show()
-        plt.close()
-
-        del corr_coef, linregress, linregress_x, linregress_y
-
-
         # Per dataset / per object type plots
         for dataset_name, dataset_result in per_dataset_results.items():
             out_dir = os.path.join(output_dir, dataset_type_name, dataset_name)
@@ -1429,12 +1395,23 @@ def main(eval_dataset_path: str, output_dir: str):
                         "occlusion_ratio_undetected_objects": [],
                         "correct_classifications_ratio": [],
                     }
+                if neural_net_name not in all_dataset_results:
+                    all_dataset_results[neural_net_name] = {
+                        "found_objects_ratio": [],
+                        "distance_errors": [],
+                        "rotation_errors": [],
+                        "scale_errors": [],
+                        "occlusion_ratio_undetected_objects": [],
+                        "correct_classifications_ratio": [],
+                    }
                 dataset_neural_net_df = neural_net_result["dataframe"]
 
                 # ratio of found objects
                 per_frame_found_ratio = dataset_neural_net_df["Predicted Object Count"] / dataset_neural_net_df[
                     "Object Count"]
                 dataset_type_results[neural_net_name]["found_objects_ratio"].extend(
+                    per_frame_found_ratio)
+                all_dataset_results[neural_net_name]["found_objects_ratio"].extend(
                     per_frame_found_ratio)
 
                 # distance error, rotation error, scale error, occlusion of undetected objects
@@ -1453,6 +1430,11 @@ def main(eval_dataset_path: str, output_dir: str):
                 dataset_type_results[neural_net_name]["scale_errors"].extend(scale_errors)
                 dataset_type_results[neural_net_name][
                     "occlusion_ratio_undetected_objects"] = occlusion_ratio_undetected_objects
+                all_dataset_results[neural_net_name]["distance_errors"].extend(distance_errors)
+                all_dataset_results[neural_net_name]["rotation_errors"].extend(rotation_errors)
+                all_dataset_results[neural_net_name]["scale_errors"].extend(scale_errors)
+                all_dataset_results[neural_net_name][
+                    "occlusion_ratio_undetected_objects"] = occlusion_ratio_undetected_objects
 
                 # correct_classifications_ratio
                 correct_classifications_per_frame = dataset_neural_net_df["Correct Classification Count"]
@@ -1460,6 +1442,8 @@ def main(eval_dataset_path: str, output_dir: str):
                 correct_classifications_ratio = correct_classifications_per_frame / (
                         correct_classifications_per_frame + incorrect_classifications_per_frame)
                 dataset_type_results[neural_net_name][
+                    "correct_classifications_ratio"] = correct_classifications_ratio
+                all_dataset_results[neural_net_name][
                     "correct_classifications_ratio"] = correct_classifications_ratio
 
         # Create per dataset type plots
@@ -1630,7 +1614,7 @@ def main(eval_dataset_path: str, output_dir: str):
         #ax.legend()
         fig.tight_layout()
 
-        plot_path = os.path.join(out_dir, "scale-errors-per-object-type.pdf")
+        plot_path = os.path.join(out_dir, "scale-errors.pdf")
         plt.savefig(plot_path)
         plt.show()
         plt.close()
@@ -1680,6 +1664,268 @@ def main(eval_dataset_path: str, output_dir: str):
         plt.savefig(plot_path)
         plt.show()
         plt.close()
+
+    # Create all dataset plots
+    out_dir = os.path.join(output_dir)
+    x_labels = neural_net_names
+    # x = np.arange(len(x_labels))  # label locations
+    # num_bars_per_group = len(neural_net_names)
+    # bar_width = 0.9 / num_bars_per_group
+
+    # Create plot data
+    neural_net_found_object_means = {}
+    neural_net_found_object_std = {}
+    neural_net_distance_error_means = {}
+    neural_net_distance_error_std = {}
+    neural_net_rotation_error_means = {}
+    neural_net_rotation_error_std = {}
+    neural_net_scale_error_means = {}
+    neural_net_scale_error_std = {}
+    neural_net_occlusion_ratio_means = {}
+    neural_net_occlusion_ratio_std = {}
+    neural_net_correct_classifications_ratio_means = {}
+    neural_net_correct_classifications_ratio_std = {}
+    for neural_net_name in neural_net_names:
+        if neural_net_name not in neural_net_found_object_means:
+            neural_net_found_object_means[neural_net_name] = []
+            neural_net_found_object_std[neural_net_name] = []
+            neural_net_distance_error_means[neural_net_name] = []
+            neural_net_distance_error_std[neural_net_name] = []
+            neural_net_rotation_error_means[neural_net_name] = []
+            neural_net_rotation_error_std[neural_net_name] = []
+            neural_net_scale_error_means[neural_net_name] = []
+            neural_net_scale_error_std[neural_net_name] = []
+            neural_net_occlusion_ratio_means[neural_net_name] = []
+            neural_net_occlusion_ratio_std[neural_net_name] = []
+            neural_net_correct_classifications_ratio_means[neural_net_name] = []
+            neural_net_correct_classifications_ratio_std[neural_net_name] = []
+
+        # Found objects ratio
+        neural_net_detected_object_share = all_dataset_results[neural_net_name][
+            "found_objects_ratio"]
+        neural_net_found_object_means[neural_net_name].append(
+            np.mean(neural_net_detected_object_share))
+        neural_net_found_object_std[neural_net_name].append(
+            np.std(neural_net_detected_object_share))
+
+        # Distance error
+        neural_net_distance_errors = all_dataset_results[neural_net_name]["distance_errors"]
+        neural_net_distance_error_means[neural_net_name].append(
+            np.mean(neural_net_distance_errors))
+        neural_net_distance_error_std[neural_net_name].append(
+            np.std(neural_net_distance_errors))
+
+        # Rotation error
+        neural_net_rotation_errors = all_dataset_results[neural_net_name]["rotation_errors"]
+        neural_net_rotation_error_means[neural_net_name].append(
+            np.mean(neural_net_rotation_errors))
+        neural_net_rotation_error_std[neural_net_name].append(
+            np.std(neural_net_rotation_errors))
+
+        # Scale error
+        neural_net_scale_errors = all_dataset_results[neural_net_name]["scale_errors"]
+        neural_net_scale_error_means[neural_net_name].append(
+            np.mean(neural_net_scale_errors))
+        neural_net_scale_error_std[neural_net_name].append(
+            np.std(neural_net_scale_errors))
+
+        # occlusion of undetected objects
+        neural_net_occlusion_ratios = all_dataset_results[neural_net_name][
+            "occlusion_ratio_undetected_objects"]
+        neural_net_occlusion_ratio_means[neural_net_name].append(
+            np.mean(neural_net_occlusion_ratios))
+        neural_net_occlusion_ratio_std[neural_net_name].append(
+            np.std(neural_net_occlusion_ratios))
+
+        # correct classification ratio
+        neural_net_correct_classifications_ratios = all_dataset_results[neural_net_name][
+            "correct_classifications_ratio"]
+        neural_net_correct_classifications_ratio_means[neural_net_name].append(
+            np.mean(neural_net_correct_classifications_ratios))
+        neural_net_correct_classifications_ratio_std[neural_net_name].append(
+            np.std(neural_net_correct_classifications_ratios))
+
+    # Create plots
+    ## Ratio of found objects
+    fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+    results = [neural_net_found_object_means[neural_net_name] for neural_net_name in neural_net_names]
+    results = [val for sublist in results for val in sublist]  # flatten results
+    stds = [neural_net_found_object_std[neural_net_name] for neural_net_name in neural_net_names]
+    stds = [val for sublist in stds for val in sublist]  # flatten stds
+    rects = ax.bar(neural_net_names, results, yerr=stds,
+                   error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+    autolabel_percent(rects, ax)
+    ax.set_ylabel("Anteil gefundener Objekte")
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+    ax.set_title("Mittlerer Anteil gefundener Objekte")
+    # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
+    # ax.set_xticks(x_ticks)
+    # ax.set_xticklabels(x_labels)
+    ax.set_ylim([0, 1.05])
+    # ax.legend()
+    fig.tight_layout()
+
+    plot_path = os.path.join(out_dir, "detected-objects.pdf")
+    plt.savefig(plot_path)
+    plt.show()
+    plt.close()
+
+    ## Distance error
+    fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+    results = [neural_net_distance_error_means[neural_net_name] for neural_net_name in neural_net_names]
+    results = [val for sublist in results for val in sublist]  # flatten results
+    stds = [neural_net_distance_error_std[neural_net_name] for neural_net_name in neural_net_names]
+    stds = [val for sublist in stds for val in sublist]  # flatten stds
+    rects = ax.bar(neural_net_names, results, yerr=stds,
+                   error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+    autolabel(rects, ax)
+    ax.set_ylabel("Distanzfehler [m]")
+    # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+    ax.set_title("Mittlerer Distanzfehler")
+    # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
+    # ax.set_xticks(x_ticks)
+    # ax.set_xticklabels(x_labels)
+    # ax.set_ylim([0, 1.05])
+    # ax.legend()
+    fig.tight_layout()
+
+    plot_path = os.path.join(out_dir, "distance-errors.pdf")
+    plt.savefig(plot_path)
+    plt.show()
+    plt.close()
+
+    ## Rotation error
+    fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+    results = [neural_net_rotation_error_means[neural_net_name] for neural_net_name in neural_net_names]
+    results = [val for sublist in results for val in sublist]  # flatten results
+    stds = [neural_net_rotation_error_std[neural_net_name] for neural_net_name in neural_net_names]
+    stds = [val for sublist in stds for val in sublist]  # flatten stds
+    rects = ax.bar(neural_net_names, results, yerr=stds,
+                   error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+    autolabel(rects, ax)
+    ax.set_ylabel("Rotationsfehler")
+    # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+    ax.set_title("Mittlerer Rotationsfehler")
+    # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
+    # ax.set_xticks(x_ticks)
+    # ax.set_xticklabels(x_labels)
+    ax.set_ylim([0, 1.05])
+    # ax.legend()
+    fig.tight_layout()
+
+    plot_path = os.path.join(out_dir, "rotation-errors.pdf")
+    plt.savefig(plot_path)
+    plt.show()
+    plt.close()
+
+    ## Scale error
+    fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+    results = [neural_net_scale_error_means[neural_net_name] for neural_net_name in neural_net_names]
+    results = [val for sublist in results for val in sublist]  # flatten results
+    stds = [neural_net_scale_error_std[neural_net_name] for neural_net_name in neural_net_names]
+    stds = [val for sublist in stds for val in sublist]  # flatten stds
+    rects = ax.bar(neural_net_names, results, yerr=stds,
+                   error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+    autolabel(rects, ax, round_decimals=4)
+    ax.set_ylabel("Skalierungsfehler")
+    # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+    ax.set_title("Mittlerer Skalierungsfehler")
+    # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
+    # ax.set_xticks(x_ticks)
+    # ax.set_xticklabels(x_labels)
+    # ax.set_ylim([0, 1.05])
+    # ax.legend()
+    fig.tight_layout()
+
+    plot_path = os.path.join(out_dir, "scale-errors.pdf")
+    plt.savefig(plot_path)
+    plt.show()
+    plt.close()
+
+    ## Occlusion of undetected objects
+    fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+    results = [neural_net_occlusion_ratio_means[neural_net_name] for neural_net_name in neural_net_names]
+    results = [val for sublist in results for val in sublist]  # flatten results
+    stds = [neural_net_occlusion_ratio_std[neural_net_name] for neural_net_name in neural_net_names]
+    stds = [val for sublist in stds for val in sublist]  # flatten stds
+    rects = ax.bar(neural_net_names, results, yerr=stds,
+                   error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+    autolabel_percent(rects, ax)
+    ax.set_ylabel("Verdeckungsgrad")
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+    ax.set_title("Mittlerer Verdeckungsgrad")
+    # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
+    # ax.set_xticks(x_ticks)
+    # ax.set_xticklabels(x_labels)
+    ax.set_ylim([0, 1.05])
+    # ax.legend()
+    fig.tight_layout()
+
+    plot_path = os.path.join(out_dir, "occlusion-undetected.pdf")
+    plt.savefig(plot_path)
+    plt.show()
+    plt.close()
+
+    ## Correct classifications ratio
+    fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+    results = [neural_net_correct_classifications_ratio_means[neural_net_name] for neural_net_name in
+               neural_net_names]
+    results = [val for sublist in results for val in sublist]  # flatten results
+    stds = [neural_net_correct_classifications_ratio_std[neural_net_name] for neural_net_name in neural_net_names]
+    stds = [val for sublist in stds for val in sublist]  # flatten stds
+    rects = ax.bar(neural_net_names, results, yerr=stds,
+                   error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+    autolabel_percent(rects, ax)
+    ax.set_ylabel("Anteil korrekter Klassifizierungen")
+    ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+    ax.set_title("Mittlerer Anteil korrekter Klassifizierungen")
+    # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
+    # ax.set_xticks(x_ticks)
+    # ax.set_xticklabels(x_labels)
+    ax.set_ylim([0, 1.05])
+    # ax.legend()
+    fig.tight_layout()
+
+    plot_path = os.path.join(out_dir, "correct-classifications.pdf")
+    plt.savefig(plot_path)
+    plt.show()
+    plt.close()
+
+    # num_found_objects_to_inference_time
+    x_num_objects = []
+    y_inference_time = []
+    for num_found_object, inference_times in num_found_objects_to_inference_time.items():
+        x_num_objects.extend(np.ones(len(inference_times)) * num_found_object)
+        y_inference_time.extend(inference_times)
+
+    ## remove outlier (TODO: check if setup outlier ist only in first dataset processed by eval_raw_data generation)
+    # x_num_objects = x_num_objects[1:]
+    # y_inference_time = y_inference_time[1:]
+
+    # calc correlation coefficient and linear regression
+    corr_coef = stats.pearsonr(x_num_objects, y_inference_time).correlation
+    linregress = stats.linregress(x_num_objects, y_inference_time)
+    linregress_x = np.linspace(np.min(x_num_objects), np.max(x_num_objects))
+    linregress_y = linregress.slope * linregress_x + linregress.intercept
+
+    ## build plot
+    plt.figure(dpi=300)
+    plt.title("Anzahl gefundener Objekte in Relation zur Inferenz-Zeit\n\n"
+              f"Korrelationskoeffizient: {np.round(corr_coef, 5)}")
+    plt.scatter(x_num_objects, y_inference_time)
+    plt.plot(linregress_x, linregress_y, "r",
+             label=fr"Lineare Regression: $f(x) = {np.round(linregress.slope, 5)} \cdot x + {np.round(linregress.intercept, 5)}$")
+    plt.ylabel("Inferenz-Zeit [s]")
+    plt.xlabel("Anzahl gefundener Objekte")
+    plt.legend()
+    plt.tight_layout()
+
+    plot_path = os.path.join(output_dir, "found_objects_to_inference_time.pdf")
+    plt.savefig(plot_path)
+    # plt.show()
+    plt.close()
+
+    del corr_coef, linregress, linregress_x, linregress_y
 
 
 # https://matplotlib.org/3.1.1/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py (23.10.22)
