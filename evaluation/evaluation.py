@@ -1018,7 +1018,10 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         ax.legend()
         fig.tight_layout()
 
@@ -1042,6 +1045,7 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=45)
         #ax.set_ylim([0, 1.05])
         ax.legend()
         fig.tight_layout()
@@ -1066,7 +1070,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         ax.legend()
         fig.tight_layout()
 
@@ -1090,6 +1098,7 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=45)
         # ax.set_ylim([0, 1.05])
         ax.legend()
         fig.tight_layout()
@@ -1114,7 +1123,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         ax.legend()
         fig.tight_layout()
 
@@ -1138,7 +1151,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         ax.legend()
         fig.tight_layout()
 
@@ -1299,7 +1316,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         ax.legend()
         fig.tight_layout()
 
@@ -1323,6 +1344,7 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=45)
         # ax.set_ylim([0, 1.05])
         ax.legend()
         fig.tight_layout()
@@ -1347,7 +1369,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         ax.legend()
         fig.tight_layout()
 
@@ -1371,6 +1397,7 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=45)
         # ax.set_ylim([0, 1.05])
         ax.legend()
         fig.tight_layout()
@@ -1395,7 +1422,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         ax.legend()
         fig.tight_layout()
 
@@ -1420,7 +1451,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         ax.legend()
         fig.tight_layout()
 
@@ -1593,7 +1628,11 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         #ax.legend()
         fig.tight_layout()
 
@@ -1616,6 +1655,7 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=45)
         # ax.set_ylim([0, 1.05])
         #ax.legend()
         fig.tight_layout()
@@ -1639,7 +1679,11 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         #ax.legend()
         fig.tight_layout()
 
@@ -1662,6 +1706,7 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=45)
         # ax.set_ylim([0, 1.05])
         #ax.legend()
         fig.tight_layout()
@@ -1685,7 +1730,11 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         #ax.legend()
         fig.tight_layout()
 
@@ -1708,7 +1757,11 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=45)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1:
+            plt.ylim(top=1.05)
         #ax.legend()
         fig.tight_layout()
 
@@ -1813,7 +1866,11 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.set_ylim([0, 1.05])
+    ax.tick_params(axis='x', labelrotation=45)
+    plt.ylim(bottom=0)
+    current_max = plt.ylim()[1]
+    if current_max < 1:
+        plt.ylim(top=1.05)
     # ax.legend()
     fig.tight_layout()
 
@@ -1837,6 +1894,7 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
+    ax.tick_params(axis='x', labelrotation=45)
     # ax.set_ylim([0, 1.05])
     # ax.legend()
     fig.tight_layout()
@@ -1861,7 +1919,11 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.set_ylim([0, 1.05])
+    ax.tick_params(axis='x', labelrotation=45)
+    plt.ylim(bottom=0)
+    current_max = plt.ylim()[1]
+    if current_max < 1:
+        plt.ylim(top=1.05)
     # ax.legend()
     fig.tight_layout()
 
@@ -1885,6 +1947,7 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
+    ax.tick_params(axis='x', labelrotation=45)
     # ax.set_ylim([0, 1.05])
     # ax.legend()
     fig.tight_layout()
@@ -1909,7 +1972,11 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.set_ylim([0, 1.05])
+    ax.tick_params(axis='x', labelrotation=45)
+    plt.ylim(bottom=0)
+    current_max = plt.ylim()[1]
+    if current_max < 1:
+        plt.ylim(top=1.05)
     # ax.legend()
     fig.tight_layout()
 
@@ -1934,7 +2001,11 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.set_ylim([0, 1.05])
+    ax.tick_params(axis='x', labelrotation=45)
+    plt.ylim(bottom=0)
+    current_max = plt.ylim()[1]
+    if current_max < 1:
+        plt.ylim(top=1.05)
     # ax.legend()
     fig.tight_layout()
 
