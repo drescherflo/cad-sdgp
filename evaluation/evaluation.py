@@ -78,6 +78,32 @@ def ceil_to_pos(x, pos):
     return math.ceil(x / ceil_pot) * ceil_pot
 
 
+def get_world_to_camera_transform(image_number, dataset_path):
+    json_file_path = os.path.join(dataset_path, f"camera_params_{image_number}.json")
+    # Read the JSON file
+    with open(json_file_path, 'r') as file:
+        data = json.load(file)
+
+    # Build T^R_W = T^R_I * T^I_W
+    # Extract the world to isaac camera view transform matrix  (T^I_W)
+    isaac_camera_view_to_world = np.array(data["cameraViewTransform"]).reshape([4, 4]).transpose()
+
+    # Create isaac camera view to ros camera view transformation (T^R_I)
+    ros_camera_view_to_isaac_camera_view = np.array([
+        [1, 0, 0, 0],
+        [0, -1, 0, 0],
+        [0, 0, -1, 0],
+        [0, 0, 0, 1],
+    ])
+
+    # Calculate ros camera view to world camera view transformation (T^R_W)
+    ros_camera_view_to_world = ros_camera_view_to_isaac_camera_view @ isaac_camera_view_to_world
+
+    # According to ROCA code in render.py, T^W_R needs to be saved
+    world_to_ros_camera_view = np.linalg.inv(ros_camera_view_to_world)
+    return world_to_ros_camera_view
+
+
 def main(eval_dataset_path: str, output_dir: str):
     # Create output dir
     os.makedirs(output_dir, exist_ok=True)
@@ -131,7 +157,25 @@ def main(eval_dataset_path: str, output_dir: str):
                     else:
                         num_found_objects_to_inference_time[found_object_count] = [inference_time]
 
-                    # TODO transform found objects to world frame
+                    # transform found objects form camera to world frame
+                    world_to_camera_transform = get_world_to_camera_transform(image_number, os.path.join(dataset_type_dataset_path, "ReplicatorToRocaEval"))
+                    for found_object in frame_result["instances"]:
+                        # transform object origin
+                        detected_object_origin_camera = np.array([found_object["translation"][0], found_object["translation"][1], found_object["translation"][2], 1])
+                        detected_object_origin_world = world_to_camera_transform @ detected_object_origin_camera
+                        detected_object_origin_camera /= detected_object_origin_world[3]
+                        found_object["translation"] = detected_object_origin_world[:3]
+
+                        # transform object rotation
+                        world_to_camera_rotation = world_to_camera_transform[:3, :3]
+                        camera_to_obj_quat = np.quaternion(found_object["rotation"][0],
+                                                   found_object["rotation"][1],
+                                                   found_object["rotation"][2],
+                                                   found_object["rotation"][3])
+                        camera_to_obj_rotation = quaternion.as_rotation_matrix(camera_to_obj_quat)
+                        world_to_obj_rotation = world_to_camera_rotation @ camera_to_obj_rotation
+                        world_to_obj_quat = quaternion.from_rotation_matrix(world_to_obj_rotation)
+                        found_object["rotation"] = [world_to_obj_quat.w, world_to_obj_quat.x, world_to_obj_quat.y, world_to_obj_quat.z]
 
                     # Find closest objects with ground_truth_objects as reference
                     # TODO threshold?
@@ -2076,7 +2120,8 @@ def radar_factory(num_vars, frame='circle'):
 
 
 if __name__ == '__main__':
-    eval_dataset_path = "/Users/flo/eval_dataset"
+    #eval_dataset_path = "/Users/flo/eval_dataset"
+    eval_dataset_path = "/home/flo/eval_dataset"
     output_dir = "output"
     #eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
     #output_dir = r".\\output"
