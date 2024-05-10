@@ -115,6 +115,7 @@ def main(eval_dataset_path: str, output_dir: str):
     for dataset_type_name in ["cluttered", "uncluttered"]:
         os.makedirs(os.path.join(output_dir, dataset_type_name), exist_ok=True)
         dataset_type_dataset_paths = sorted(glob.glob(os.path.join(eval_dataset_path, "converted", dataset_type_name, "*")))
+        dataset_type_dataset_paths = [dataset_type_dataset_path for dataset_type_dataset_path in dataset_type_dataset_paths if not dataset_type_dataset_path.endswith("glass")]
         per_dataset_results = {}
         for dataset_type_dataset_path in dataset_type_dataset_paths:
             dataset_name = os.path.basename(dataset_type_dataset_path)
