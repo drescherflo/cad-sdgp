@@ -74,6 +74,8 @@ def calc_rotation_distance(ground_truth_object, found_object):
 
 
 def ceil_to_pos(x, pos):
+    if math.isnan(x):
+        return 1
     ceil_pot = 10.0 ** pos
     return math.ceil(x / ceil_pot) * ceil_pot
 
@@ -115,7 +117,7 @@ def main(eval_dataset_path: str, output_dir: str):
     for dataset_type_name in ["cluttered", "uncluttered"]:
         os.makedirs(os.path.join(output_dir, dataset_type_name), exist_ok=True)
         dataset_type_dataset_paths = sorted(glob.glob(os.path.join(eval_dataset_path, "converted", dataset_type_name, "*")))
-        dataset_type_dataset_paths = [dataset_type_dataset_path for dataset_type_dataset_path in dataset_type_dataset_paths if not dataset_type_dataset_path.endswith("glass")]
+        dataset_type_dataset_paths = [dataset_type_dataset_path for dataset_type_dataset_path in dataset_type_dataset_paths if not dataset_type_dataset_path.endswith("glass") and not "4" in os.path.basename(dataset_type_dataset_path) and not "5" in os.path.basename(dataset_type_dataset_path) and "ma_small_object_2_conveyor" in os.path.basename(dataset_type_dataset_path)]
         per_dataset_results = {}
         for dataset_type_dataset_path in dataset_type_dataset_paths:
             dataset_name = os.path.basename(dataset_type_dataset_path)
@@ -206,25 +208,25 @@ def main(eval_dataset_path: str, output_dir: str):
                     # Distance
                     position_difference_per_axis = [calc_per_axis_position_difference(gt_obj, found_obj) for found_obj, gt_obj in found_to_gt_objects]
                     distance_errors = [calc_distance(gt_obj, found_obj) for found_obj, gt_obj in found_to_gt_objects]
-                    distance_error_mean = np.mean(distance_errors)
-                    distance_error_std = np.std(distance_errors)
-                    distance_error_min = np.min(distance_errors)
-                    distance_error_max = np.max(distance_errors)
+                    distance_error_mean = np.mean(distance_errors) if len(found_to_gt_objects) > 0 else None
+                    distance_error_std = np.std(distance_errors) if len(found_to_gt_objects) > 0 else None
+                    distance_error_min = np.min(distance_errors) if len(found_to_gt_objects) > 0 else None
+                    distance_error_max = np.max(distance_errors) if len(found_to_gt_objects) > 0 else None
 
                     # Rotation error
                     rotation_errors = [calc_rotation_distance(gt_obj, found_obj) for found_obj, gt_obj in found_to_gt_objects]
-                    rotation_error_mean = np.mean(rotation_errors)
-                    rotation_error_std = np.std(rotation_errors)
-                    rotation_error_min = np.min(rotation_errors)
-                    rotation_error_max = np.max(rotation_errors)
+                    rotation_error_mean = np.mean(rotation_errors) if len(found_to_gt_objects) > 0 else None
+                    rotation_error_std = np.std(rotation_errors) if len(found_to_gt_objects) > 0 else None
+                    rotation_error_min = np.min(rotation_errors) if len(found_to_gt_objects) > 0 else None
+                    rotation_error_max = np.max(rotation_errors) if len(found_to_gt_objects) > 0 else None
 
                     # Scale error
                     scale_difference_per_axis = [calc_per_axis_scale_difference(found_obj) for found_obj, _ in found_to_gt_objects]
                     scale_errors = [calc_scale_distance(found_obj) for found_obj, _ in found_to_gt_objects]
-                    scale_error_mean = np.mean(scale_errors)
-                    scale_error_std = np.std(scale_errors)
-                    scale_error_min = np.min(scale_errors)
-                    scale_error_max = np.max(scale_errors)
+                    scale_error_mean = np.mean(scale_errors) if len(found_to_gt_objects) > 0 else None
+                    scale_error_std = np.std(scale_errors) if len(found_to_gt_objects) > 0 else None
+                    scale_error_min = np.min(scale_errors) if len(found_to_gt_objects) > 0 else None
+                    scale_error_max = np.max(scale_errors) if len(found_to_gt_objects) > 0 else None
 
                     # Occlusion ratio of undetected objects
                     occlusion_ratio_non_detected_objects = [gt_obj["occlusion_ratio"] for gt_obj in ground_truth_visible_objects]
@@ -431,7 +433,7 @@ def main(eval_dataset_path: str, output_dir: str):
                 plt.xlabel("Frame-Nummer")
                 plt.ylabel("Verdeckungsgrad")
                 plt.legend()
-                plt.ylim([-0.05, 1.05])
+                plt.ylim([-0.05, 1.2])
                 plt.grid(axis="y")
                 plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
                 plt.tight_layout()
@@ -480,7 +482,7 @@ def main(eval_dataset_path: str, output_dir: str):
                 plt.xlabel("Frame-Nummer")
                 plt.ylabel("Anteil Klassifikationen")
                 plt.legend()
-                plt.ylim([-0.05, 1.05])
+                plt.ylim([-0.05, 1.2])
                 plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
                 plt.grid(axis="y")
                 plt.tight_layout()
@@ -623,7 +625,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Rotationsfehler")
             plt.legend()
-            plt.ylim([-0.05, 1.05])
+            plt.ylim([-0.05, 1.2])
             plt.grid(axis="y")
             plt.tight_layout()
 
@@ -642,7 +644,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Rotationsfehler")
             plt.legend()
-            plt.ylim([-0.05, 1.05])
+            plt.ylim([-0.05, 1.2])
             plt.grid(axis="y")
             plt.tight_layout()
 
@@ -661,7 +663,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Rotationsfehler")
             plt.legend()
-            plt.ylim([-0.05, 1.05])
+            plt.ylim([-0.05, 1.2])
             plt.grid(axis="y")
             plt.tight_layout()
 
@@ -778,7 +780,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Anteil Klassifikationen")
             plt.legend()
-            plt.ylim([-0.05, 1.05])
+            plt.ylim([-0.05, 1.2])
             plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
             plt.grid(axis="y")
             plt.tight_layout()
@@ -802,7 +804,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Anteil Klassifikationen")
             plt.legend()
-            plt.ylim([-0.05, 1.05])
+            plt.ylim([-0.05, 1.2])
             plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
             plt.grid(axis="y")
             plt.tight_layout()
@@ -825,7 +827,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Verdeckungsgrad")
             plt.legend()
-            plt.ylim([-0.05, 1.05])
+            plt.ylim([-0.05, 1.2])
             plt.grid(axis="y")
             plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
             plt.tight_layout()
@@ -845,7 +847,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Verdeckungsgrad")
             plt.legend()
-            plt.ylim([-0.05, 1.05])
+            plt.ylim([-0.05, 1.2])
             plt.grid(axis="y")
             plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
             plt.tight_layout()
@@ -868,7 +870,7 @@ def main(eval_dataset_path: str, output_dir: str):
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Verdeckungsgrad")
             plt.legend()
-            plt.ylim([-0.05, 1.05])
+            plt.ylim([-0.05, 1.2])
             plt.grid(axis="y")
             plt.gca().yaxis.set_major_formatter(mtick.PercentFormatter(1))
             plt.tight_layout()
@@ -1024,8 +1026,8 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.set_xticklabels(x_labels)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         ax.legend()
         fig.tight_layout()
 
@@ -1049,8 +1051,8 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
-        #ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=90)
+        #ax.set_ylim([0, 1.2])
         ax.legend()
         fig.tight_layout()
 
@@ -1074,11 +1076,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         ax.legend()
         fig.tight_layout()
 
@@ -1102,8 +1104,8 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
-        # ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=90)
+        # ax.set_ylim([0, 1.2])
         ax.legend()
         fig.tight_layout()
 
@@ -1127,11 +1129,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         ax.legend()
         fig.tight_layout()
 
@@ -1155,11 +1157,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         ax.legend()
         fig.tight_layout()
 
@@ -1323,11 +1325,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         ax.legend()
         fig.tight_layout()
 
@@ -1351,8 +1353,8 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
-        # ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=90)
+        # ax.set_ylim([0, 1.2])
         ax.legend()
         fig.tight_layout()
 
@@ -1376,11 +1378,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         ax.legend()
         fig.tight_layout()
 
@@ -1404,8 +1406,8 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
-        # ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=90)
+        # ax.set_ylim([0, 1.2])
         ax.legend()
         fig.tight_layout()
 
@@ -1429,11 +1431,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         ax.legend()
         fig.tight_layout()
 
@@ -1458,11 +1460,11 @@ def main(eval_dataset_path: str, output_dir: str):
         x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         ax.set_xticks(x_ticks)
         ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         ax.legend()
         fig.tight_layout()
 
@@ -1627,7 +1629,7 @@ def main(eval_dataset_path: str, output_dir: str):
         results = [val for sublist in results for val in sublist]  # flatten results
         stds = [neural_net_found_object_std[neural_net_name] for neural_net_name in neural_net_names]
         stds = [val for sublist in stds for val in sublist]  # flatten stds
-        rects = ax.bar(neural_net_names, results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+        rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
         autolabel_percent(rects, ax)
         ax.set_ylabel("Anteil gefundener Objekte")
         ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -1635,11 +1637,11 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         #ax.legend()
         fig.tight_layout()
 
@@ -1654,7 +1656,7 @@ def main(eval_dataset_path: str, output_dir: str):
         results = [val for sublist in results for val in sublist]  # flatten results
         stds = [neural_net_distance_error_std[neural_net_name] for neural_net_name in neural_net_names]
         stds = [val for sublist in stds for val in sublist]  # flatten stds
-        rects = ax.bar(neural_net_names, results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+        rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
         autolabel(rects, ax)
         ax.set_ylabel("Distanzfehler [m]")
         # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -1662,8 +1664,8 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
-        # ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=90)
+        # ax.set_ylim([0, 1.2])
         #ax.legend()
         fig.tight_layout()
 
@@ -1678,7 +1680,7 @@ def main(eval_dataset_path: str, output_dir: str):
         results = [val for sublist in results for val in sublist]  # flatten results
         stds = [neural_net_rotation_error_std[neural_net_name] for neural_net_name in neural_net_names]
         stds = [val for sublist in stds for val in sublist]  # flatten stds
-        rects = ax.bar(neural_net_names, results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+        rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
         autolabel(rects, ax)
         ax.set_ylabel("Rotationsfehler")
         # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -1686,11 +1688,11 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         #ax.legend()
         fig.tight_layout()
 
@@ -1705,7 +1707,7 @@ def main(eval_dataset_path: str, output_dir: str):
         results = [val for sublist in results for val in sublist]  # flatten results
         stds = [neural_net_scale_error_std[neural_net_name] for neural_net_name in neural_net_names]
         stds = [val for sublist in stds for val in sublist]  # flatten stds
-        rects = ax.bar(neural_net_names, results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+        rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
         autolabel(rects, ax, round_decimals=4)
         ax.set_ylabel("Skalierungsfehler")
         # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -1713,8 +1715,8 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
-        # ax.set_ylim([0, 1.05])
+        ax.tick_params(axis='x', labelrotation=90)
+        # ax.set_ylim([0, 1.2])
         #ax.legend()
         fig.tight_layout()
 
@@ -1729,7 +1731,7 @@ def main(eval_dataset_path: str, output_dir: str):
         results = [val for sublist in results for val in sublist]  # flatten results
         stds = [neural_net_occlusion_ratio_std[neural_net_name] for neural_net_name in neural_net_names]
         stds = [val for sublist in stds for val in sublist]  # flatten stds
-        rects = ax.bar(neural_net_names, results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+        rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
         autolabel_percent(rects, ax)
         ax.set_ylabel("Verdeckungsgrad")
         ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -1737,11 +1739,11 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         #ax.legend()
         fig.tight_layout()
 
@@ -1756,7 +1758,7 @@ def main(eval_dataset_path: str, output_dir: str):
         results = [val for sublist in results for val in sublist]  # flatten results
         stds = [neural_net_correct_classifications_ratio_std[neural_net_name] for neural_net_name in neural_net_names]
         stds = [val for sublist in stds for val in sublist]  # flatten stds
-        rects = ax.bar(neural_net_names, results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+        rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds, error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
         autolabel_percent(rects, ax)
         ax.set_ylabel("Anteil korrekter Klassifizierungen")
         ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
@@ -1764,11 +1766,11 @@ def main(eval_dataset_path: str, output_dir: str):
         #x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
         #ax.set_xticks(x_ticks)
         #ax.set_xticklabels(x_labels)
-        ax.tick_params(axis='x', labelrotation=45)
+        ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1:
-            plt.ylim(top=1.05)
+        if current_max < 1.3:
+            plt.ylim(top=1.3)
         #ax.legend()
         fig.tight_layout()
 
@@ -1866,7 +1868,7 @@ def main(eval_dataset_path: str, output_dir: str):
     results = [val for sublist in results for val in sublist]  # flatten results
     stds = [neural_net_found_object_std[neural_net_name] for neural_net_name in neural_net_names]
     stds = [val for sublist in stds for val in sublist]  # flatten stds
-    rects = ax.bar(neural_net_names, results, yerr=stds,
+    rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds,
                    error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
     autolabel_percent(rects, ax)
     ax.set_ylabel("Anteil gefundener Objekte")
@@ -1875,11 +1877,11 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.tick_params(axis='x', labelrotation=45)
+    ax.tick_params(axis='x', labelrotation=90)
     plt.ylim(bottom=0)
     current_max = plt.ylim()[1]
-    if current_max < 1:
-        plt.ylim(top=1.05)
+    if current_max < 1.3:
+        plt.ylim(top=1.3)
     # ax.legend()
     fig.tight_layout()
 
@@ -1894,7 +1896,7 @@ def main(eval_dataset_path: str, output_dir: str):
     results = [val for sublist in results for val in sublist]  # flatten results
     stds = [neural_net_distance_error_std[neural_net_name] for neural_net_name in neural_net_names]
     stds = [val for sublist in stds for val in sublist]  # flatten stds
-    rects = ax.bar(neural_net_names, results, yerr=stds,
+    rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds,
                    error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
     autolabel(rects, ax)
     ax.set_ylabel("Distanzfehler [m]")
@@ -1903,8 +1905,8 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.tick_params(axis='x', labelrotation=45)
-    # ax.set_ylim([0, 1.05])
+    ax.tick_params(axis='x', labelrotation=90)
+    # ax.set_ylim([0, 1.2])
     # ax.legend()
     fig.tight_layout()
 
@@ -1919,7 +1921,7 @@ def main(eval_dataset_path: str, output_dir: str):
     results = [val for sublist in results for val in sublist]  # flatten results
     stds = [neural_net_rotation_error_std[neural_net_name] for neural_net_name in neural_net_names]
     stds = [val for sublist in stds for val in sublist]  # flatten stds
-    rects = ax.bar(neural_net_names, results, yerr=stds,
+    rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds,
                    error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
     autolabel(rects, ax)
     ax.set_ylabel("Rotationsfehler")
@@ -1928,11 +1930,11 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.tick_params(axis='x', labelrotation=45)
+    ax.tick_params(axis='x', labelrotation=90)
     plt.ylim(bottom=0)
     current_max = plt.ylim()[1]
-    if current_max < 1:
-        plt.ylim(top=1.05)
+    if current_max < 1.3:
+        plt.ylim(top=1.3)
     # ax.legend()
     fig.tight_layout()
 
@@ -1947,7 +1949,7 @@ def main(eval_dataset_path: str, output_dir: str):
     results = [val for sublist in results for val in sublist]  # flatten results
     stds = [neural_net_scale_error_std[neural_net_name] for neural_net_name in neural_net_names]
     stds = [val for sublist in stds for val in sublist]  # flatten stds
-    rects = ax.bar(neural_net_names, results, yerr=stds,
+    rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds,
                    error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
     autolabel(rects, ax, round_decimals=4)
     ax.set_ylabel("Skalierungsfehler")
@@ -1956,8 +1958,8 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.tick_params(axis='x', labelrotation=45)
-    # ax.set_ylim([0, 1.05])
+    ax.tick_params(axis='x', labelrotation=90)
+    # ax.set_ylim([0, 1.2])
     # ax.legend()
     fig.tight_layout()
 
@@ -1972,7 +1974,7 @@ def main(eval_dataset_path: str, output_dir: str):
     results = [val for sublist in results for val in sublist]  # flatten results
     stds = [neural_net_occlusion_ratio_std[neural_net_name] for neural_net_name in neural_net_names]
     stds = [val for sublist in stds for val in sublist]  # flatten stds
-    rects = ax.bar(neural_net_names, results, yerr=stds,
+    rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds,
                    error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
     autolabel_percent(rects, ax)
     ax.set_ylabel("Verdeckungsgrad")
@@ -1981,11 +1983,11 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.tick_params(axis='x', labelrotation=45)
+    ax.tick_params(axis='x', labelrotation=90)
     plt.ylim(bottom=0)
     current_max = plt.ylim()[1]
-    if current_max < 1:
-        plt.ylim(top=1.05)
+    if current_max < 1.3:
+        plt.ylim(top=1.3)
     # ax.legend()
     fig.tight_layout()
 
@@ -2001,7 +2003,7 @@ def main(eval_dataset_path: str, output_dir: str):
     results = [val for sublist in results for val in sublist]  # flatten results
     stds = [neural_net_correct_classifications_ratio_std[neural_net_name] for neural_net_name in neural_net_names]
     stds = [val for sublist in stds for val in sublist]  # flatten stds
-    rects = ax.bar(neural_net_names, results, yerr=stds,
+    rects = ax.bar([neural_net_name.removesuffix("_Augmentation") for neural_net_name in neural_net_names], results, yerr=stds,
                    error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
     autolabel_percent(rects, ax)
     ax.set_ylabel("Anteil korrekter Klassifizierungen")
@@ -2010,11 +2012,11 @@ def main(eval_dataset_path: str, output_dir: str):
     # x_ticks = x + bar_width * (num_bars_per_group - 1) / 2
     # ax.set_xticks(x_ticks)
     # ax.set_xticklabels(x_labels)
-    ax.tick_params(axis='x', labelrotation=45)
+    ax.tick_params(axis='x', labelrotation=90)
     plt.ylim(bottom=0)
     current_max = plt.ylim()[1]
-    if current_max < 1:
-        plt.ylim(top=1.05)
+    if current_max < 1.3:
+        plt.ylim(top=1.3)
     # ax.legend()
     fig.tight_layout()
 
@@ -2201,7 +2203,8 @@ def radar_factory(num_vars, frame='circle'):
 
 if __name__ == '__main__':
     #eval_dataset_path = "/Users/flo/eval_dataset"
-    eval_dataset_path = "/home/flo/eval_dataset"
+    #eval_dataset_path = "/home/flo/eval_dataset"
+    eval_dataset_path = "/media/flo/8ACA8610CA85F8A9/eval_dataset"
     output_dir = "output"
     #eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
     #output_dir = r".\\output"
