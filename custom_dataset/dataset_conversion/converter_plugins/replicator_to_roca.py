@@ -9,39 +9,10 @@ import trimesh
 from trimesh.sample import sample_surface_even
 
 from .converter_interface import ConverterInterface
+from .dataset_helper import replicator, roca
 
 
 class ReplicatorToRoca(ConverterInterface):
-    @staticmethod
-    def _get_scene_nrs(rep_data_path: str) -> list[str]:
-        """
-        Retrieves scene numbers from a replicator dataset.
-
-        :param rep_data_path: Path to the replicator dataset containing camera_params_*.json files.
-        :type rep_data_path: str
-        :return: List of scene numbers.
-        :rtype: list[str]
-        """
-
-        # Find all JSON files matching the pattern camera_params_*.json
-        json_files = glob.glob(os.path.join(rep_data_path, "camera_params_*.json"))
-
-        # Create and return list of scene numbers
-        return [os.path.basename(json_file).split('_')[2].split('.')[0] for json_file in json_files]
-
-    @staticmethod
-    def __obj_file_name_to_semantic_label(obj_file_name: str) -> str:
-        """
-        Converts the file name of an OBJ file to a semantic label.
-
-        :param obj_file_name: The file name of the OBJ file.
-        :type obj_file_name: str
-        :return: A semantic label derived from the file name.
-        :rtype: str
-        """
-
-        return obj_file_name.removesuffix(".obj").lower().replace(" ", "_")
-
     @staticmethod
     def _get_obj_paths_semantic_labels_and_class_id(obj_dir: str) -> list[dict]:
         """
@@ -54,12 +25,11 @@ class ReplicatorToRoca(ConverterInterface):
         """
 
         # Find all .obj files in the obj_path
-        obj_files = glob.glob(os.path.join(obj_dir, "*.obj"))
+        obj_paths = glob.glob(os.path.join(obj_dir, "*.obj"))
 
         # Extract semantic labels / categories from the file name
-        semantic_labels = [ReplicatorToRoca.__obj_file_name_to_semantic_label(os.path.basename(obj_file).split('.')[0]) for obj_file in
-                           obj_files]
-        files_and_labels = list(zip(obj_files, semantic_labels))
+        semantic_labels = [roca.obj_path_to_semantic_label(obj_path) for obj_path in obj_paths]
+        files_and_labels = list(zip(obj_paths, semantic_labels))
 
         # Sort is required, because this is how the order in scan2cad_alignment_classes.json is created
         # The index of the class in scan2cad_alignment_classes.json is then used as the category_id during training
@@ -410,7 +380,7 @@ class ReplicatorToRoca(ConverterInterface):
         os.makedirs(roca_metadata_dir, exist_ok=True)
 
         # Convert training data
-        scene_numbers = ReplicatorToRoca._get_scene_nrs(replicator_data_dir)
+        scene_numbers = replicator.get_scene_nrs(replicator_data_dir)
         obj_paths_labels_ids = ReplicatorToRoca._get_obj_paths_semantic_labels_and_class_id(obj_files_dir)
         print("Converting camera intrinsics...")
         ReplicatorToRoca._replicator_intrinsics_to_scannet(replicator_data_dir, output_dir, scene_numbers)

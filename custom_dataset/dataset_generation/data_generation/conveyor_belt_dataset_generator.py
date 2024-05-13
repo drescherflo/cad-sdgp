@@ -75,25 +75,27 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     num_frames_per_scene = config["num_frames_per_scene"]
     render_frequency = config["render_frequency"]
     physics_frequency = config["physics_frequency"]
+    eval_dataset = config["eval_dataset"] if "eval_dataset" in config else False
 
     # Parse writer config
     writer_configs = parse_writer_args(args.writer)
 
     # Write train val split
-    train_val_split_config = {
-        "train_scenes": config["train_frames"],
-        "val_scenes": config["val_frames"]
-    }
+    if not eval_dataset:
+        train_val_split_config = {
+            "train_scenes": config["train_frames"],
+            "val_scenes": config["val_frames"]
+        }
 
-    # Create out_dir if necessary
-    os.makedirs(out_dir, exist_ok=True)
+        # Create out_dir if necessary
+        os.makedirs(out_dir, exist_ok=True)
 
-    # Check for empty out_dir
-    quit_if_out_dir_not_empty(out_dir, simulation_app)
+        # Check for empty out_dir
+        quit_if_out_dir_not_empty(out_dir, simulation_app)
 
-    # Write train val split config
-    with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
-        json.dump(train_val_split_config, f, indent=4)
+        # Write train val split config
+        with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
+            json.dump(train_val_split_config, f, indent=4)
 
     # Scene generation loop
     frame_number = 0
@@ -351,7 +353,8 @@ if __name__ == '__main__':
     main(args.config_file, args.usd_dir, out_dir)
     simulation_app.close()
 
-    # conf_path = "custom_dataset/dataset_generation/config_generation/config.json"
+    # Uncomment for debug
+    # conf_path = "custom_dataset/dataset_generation/config_generation/configs/cluttered/ma_simple_object_1_conveyor.json"
     # usd_dir = "CAD Models/OBJ_converted"
     # out_dir = os.path.abspath("temp_replicator_out")
     # main(conf_path, usd_dir, out_dir)

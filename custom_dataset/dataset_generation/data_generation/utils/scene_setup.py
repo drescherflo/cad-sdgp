@@ -3,6 +3,7 @@ import numpy as np
 import omni.replicator.core as rep
 from omni.isaac.core.materials import OmniPBR, OmniGlass
 from omni.replicator.core.scripts.utils import ReplicatorItem
+import omni.isaac.core.utils.prims as prim_utils
 
 
 def generate_materials(materials_config) -> list[OmniGlass | OmniPBR]:
@@ -18,12 +19,16 @@ def generate_materials(materials_config) -> list[OmniGlass | OmniPBR]:
 
     materials = []
     for material_config in materials_config:
-        if material_config["is_glass"]:
+        if "is_glass" in material_config and material_config["is_glass"]:
             materials.append(OmniGlass(f"/obj_materials/material_{material_config['material_idx']}", color=np.array(material_config["color"])))
-        else:
+        elif "is_glass" in material_config and not material_config["is_glass"]:
             material = OmniPBR(f"/obj_materials/material_{material_config['material_idx']}", color=np.array(material_config["color"]))
             material.set_reflection_roughness(material_config["surface_roughness"])
             materials.append(material)
+        elif "is_conveyor" in material_config and material_config["is_conveyor"]:
+            materials.append(OmniPBR("/World/ConveyorBeltMaterial"))
+        else:
+            raise ValueError("Unknown material config!")
 
     return materials
 

@@ -13,7 +13,7 @@ import numpy as np
 from sklearn.model_selection import train_test_split
 
 from utils import io, config
-from utils.scene_randomization import generate_random_vec_3, generate_random_rgb_color, generate_materials_conf, generate_sphere_light_confs_for_one_frame
+from utils.scene_randomization import generate_random_vec_3, generate_random_rgb_color, generate_materials_conf, generate_sphere_light_confs_for_one_frame, usd_model_to_semantic_class_label
 
 
 def generate_camera_conf(frame_width: int, frame_height: int, cam_distance_to_background: float) -> dict:
@@ -75,7 +75,7 @@ def generate_obj_conf(num_random_materials: int, usd_model: str, min_x: float, m
             "orientation": generate_random_vec_3(-180, 180, -180, 180, -180, 180) # all axes from (-180° to 180°) (including)
         },
         "material_idx": random.randint(0, num_random_materials - 1),
-        "semantic_class_label": usd_model.removesuffix("_obj.usd").lower().replace(" ", "_")
+        "semantic_class_label": usd_model_to_semantic_class_label(usd_model)
     }
 
 

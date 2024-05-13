@@ -20,23 +20,23 @@ echo "Converting OBJ to USD"
   --folders "$CUSTOM_DATASET_DIR/cad_models/OBJ"
 
 ## Generate config for 6 DOF dataset
-# echo "Generating config for the 6 DOF dataset generation"
-#source custom_dataset/dataset_generation/config_generation/venv/bin/activate
-#python custom_dataset/dataset_generation/config_generation/6_dof_config_generator.py \
-#   --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" \
-#   --out_path "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" \
-#   --num_frames_per_object 1000
-#deactivate
+echo "Generating config for the 6 DOF dataset generation"
+source custom_dataset/dataset_generation/config_generation/venv/bin/activate
+python custom_dataset/dataset_generation/config_generation/6_dof_config_generator.py \
+   --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" \
+   --out_path "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" \
+   --num_frames_per_object 1000
+deactivate
 
 ## Generate 6 DOF dataset
-# echo "Generating 6 DOF dataset"
-# "$ISAAC_SIM_INSTALL_DIR"/python.sh custom_dataset/dataset_generation/data_generation/6_dof_dataset_generator.py \
-#   --headless \
-#   --output_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" \
-#   --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" \
-#   --config_file "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" \
-#   --writer ResumableBasicWriter rgb=True camera_params=True \
-#   --writer WorldPoseWriter
+echo "Generating 6 DOF dataset"
+"$ISAAC_SIM_INSTALL_DIR"/python.sh custom_dataset/dataset_generation/data_generation/6_dof_dataset_generator.py \
+   --headless \
+   --output_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" \
+   --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" \
+   --config_file "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" \
+   --writer ResumableBasicWriter rgb=True camera_params=True \
+   --writer WorldPoseWriter
 
 
 ## Generate config for conveyor dataset
@@ -68,8 +68,9 @@ echo "Converting datasets to ROCA format"
 source custom_dataset/dataset_conversion/venv/bin/activate
 python custom_dataset/dataset_conversion/dataset_converter.py \
   --obj_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ/" \
+  --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" \
   --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/conveyor_belt/" \
-  --output_dir "$CUSTOM_DATASET_DIR/converted/"
+  --output_dir "$CUSTOM_DATASET_DIR/converted/" \
+  --converter ReplicatorToRoca
 deactivate
 
-#  --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" \

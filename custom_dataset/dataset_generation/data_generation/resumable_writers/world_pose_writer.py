@@ -54,9 +54,11 @@ class WorldPoseWriter(ResumableWriterInterface):
                 prim_pose = prim.get_world_pose()
                 semantic_id = bbox_data["data"][i][0]
                 semantic_labels = bbox_data["info"]["idToLabels"][str(semantic_id)]
+                occlusion_ratio = bbox_data["data"][i]["occlusionRatio"].astype(float)
 
                 semantic_labels_and_pose = {
                     "semantic_labels": semantic_labels,
+                    "occlusion_ratio": occlusion_ratio,
                     "pose": {
                         "position": {
                             "x": prim_pose[0][0].astype(float),

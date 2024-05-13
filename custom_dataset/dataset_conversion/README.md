@@ -1,13 +1,13 @@
-# Gebrauchsanweisung: `dataset_converter.py`
+# Gebrauchsanweisung
 
 ## Kurze Beschreibung
 Das Skript `dataset_converter.py` dient dazu, Datensätze aus dem Format von NVIDIA Replicator in ein anderes umzuwandeln. 
 Es lädt Konverter-Plugins aus dem Paket `converter_plugins` und wendet diese auf die bereitgestellten Daten an.
 
 ## Argumente
-- `obj_dir`: Pflichtargument. Verzeichnis, das die Quelldateien im OBJ-Format enthält. Kein Standardwert.
-- `replicator_data_dir`: Pflichtargument. Verzeichnis, das die Quelldateien im Replicator-Datenformat enthält. Kein Standardwert.
-- `output_dir`: Pflichtargument. Zielverzeichnis für die konvertierten Dateien. Jedes Plugin erhält ein eigenes Unterverzeichnis. Kein Standardwert.
+- `--obj_dir`: Pflichtargument. Verzeichnis, das die Quelldateien im OBJ-Format enthält. Kein Standardwert.
+- `--replicator_data_dir`: Pflichtargument. Verzeichnis, das die Quelldateien im Replicator-Datenformat enthält. Kein Standardwert.
+- `--output_dir`: Pflichtargument. Zielverzeichnis für die konvertierten Dateien. Jedes Plugin erhält ein eigenes Unterverzeichnis. Kein Standardwert.
 
 ## Beispielbefehl
 ```bash

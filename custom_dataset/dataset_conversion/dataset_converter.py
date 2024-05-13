@@ -17,6 +17,7 @@ def main(args: list[str]) -> None:
     parser.add_argument("--obj_dir", help="Directory with all CAD Models in OBJ format", required=True)
     parser.add_argument("--replicator_data_dir", action="append", help="Input directory containing the files in the Replicator format. Argument can be added multiple times", required=True)
     parser.add_argument("--output_dir", help="Directory in which the plugins should create the converted data. Each plugin gets its own subdirectory", required=True)
+    parser.add_argument("--converters", nargs="+", help="List of converter plugins to use from the 'converter_plugins' package", required=True)
     args = parser.parse_args(args)
 
     # Test if replicator_data_dirs and obj_dir exist
@@ -32,10 +33,19 @@ def main(args: list[str]) -> None:
     # Load converter plugins
     converter_plugins = load_converter_plugins()
 
+    # Only use specified converters
+    converter_plugins = [converter_plugin for converter_plugin in converter_plugins if converter_plugin.__name__ in args.converters]
+    if len(converter_plugins) == 0:
+        print(f"No converters matching the class names in the converter_plugins module. Exiting...")
+        exit(-1)
+
     # Convert every dataset
     for replicator_dataset_dir in replicator_dataset_dirs:
         # Get base dir for building correct output dir
-        base_dir = os.path.basename(os.path.dirname(replicator_dataset_dir))
+        if replicator_dataset_dir.endswith("/"):
+            base_dir = os.path.basename(os.path.dirname(replicator_dataset_dir))
+        else:
+            base_dir = os.path.basename(replicator_dataset_dir)
 
         # Run conversion process for each converter plugin
         for converter_plugin in converter_plugins:
