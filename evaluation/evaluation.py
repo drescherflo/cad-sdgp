@@ -117,7 +117,7 @@ def main(eval_dataset_path: str, output_dir: str):
     for dataset_type_name in ["cluttered", "uncluttered"]:
         os.makedirs(os.path.join(output_dir, dataset_type_name), exist_ok=True)
         dataset_type_dataset_paths = sorted(glob.glob(os.path.join(eval_dataset_path, "converted", dataset_type_name, "*")))
-        dataset_type_dataset_paths = [dataset_type_dataset_path for dataset_type_dataset_path in dataset_type_dataset_paths if not dataset_type_dataset_path.endswith("glass") and not "4" in os.path.basename(dataset_type_dataset_path) and not "5" in os.path.basename(dataset_type_dataset_path) and "ma_small_object_2_conveyor" in os.path.basename(dataset_type_dataset_path)]
+        dataset_type_dataset_paths = [dataset_type_dataset_path for dataset_type_dataset_path in dataset_type_dataset_paths if not dataset_type_dataset_path.endswith("glass") and not dataset_type_dataset_path.endswith("default") and not "4" in os.path.basename(dataset_type_dataset_path) and not "5" in os.path.basename(dataset_type_dataset_path)]# and "ma_small_object_2_conveyor" in os.path.basename(dataset_type_dataset_path)]
         per_dataset_results = {}
         for dataset_type_dataset_path in dataset_type_dataset_paths:
             dataset_name = os.path.basename(dataset_type_dataset_path)
@@ -506,7 +506,7 @@ def main(eval_dataset_path: str, output_dir: str):
                       f"Datensatz: {dataset_name}")
             for neural_net_name, neural_net_result in dataset_result.items():
                 dataset_neural_net_df = neural_net_result["dataframe"]
-                plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_neural_net_df["Inference Time (s)"], label=neural_net_name)
+                plt.plot(range(len(neural_net_results["per_frame_results"])), dataset_neural_net_df["Inference Time (s)"], label=neural_net_name.removesuffix("_Augmentation"))
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Inferenz-Zeit [s]")
             plt.legend()
@@ -551,7 +551,7 @@ def main(eval_dataset_path: str, output_dir: str):
                 dataset_neural_net_df = neural_net_result["dataframe"]
                 max_distance_errors = dataset_neural_net_df["Max Distance Error (m)"]
                 all_max_distance_errors.extend(max_distance_errors)
-                plt.plot(frames, max_distance_errors, label=neural_net_name)
+                plt.plot(frames, max_distance_errors, label=neural_net_name.removesuffix("_Augmentation"))
             distance_plots_y_lim_upper = ceil_to_pos(np.max(all_max_distance_errors), 0)
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Distanzfehler [m]")
@@ -572,7 +572,7 @@ def main(eval_dataset_path: str, output_dir: str):
             for neural_net_name, neural_net_result in dataset_result.items():
                 dataset_neural_net_df = neural_net_result["dataframe"]
                 min_distance_errors = dataset_neural_net_df["Min Distance Error (m)"]
-                plt.plot(frames, min_distance_errors, label=neural_net_name)
+                plt.plot(frames, min_distance_errors, label=neural_net_name.removesuffix("_Augmentation"))
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Distanzfehler [m]")
             plt.legend()
@@ -640,7 +640,7 @@ def main(eval_dataset_path: str, output_dir: str):
                       f"Datensatz: {dataset_name}")
             for neural_net_name, neural_net_result in dataset_result.items():
                 dataset_neural_net_df = neural_net_result["dataframe"]
-                plt.plot(frames, dataset_neural_net_df["Min Rotation Error"], label=neural_net_name)
+                plt.plot(frames, dataset_neural_net_df["Min Rotation Error"], label=neural_net_name.removesuffix("_Augmentation"))
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Rotationsfehler")
             plt.legend()
@@ -659,7 +659,7 @@ def main(eval_dataset_path: str, output_dir: str):
                       f"Datensatz: {dataset_name}")
             for neural_net_name, neural_net_result in dataset_result.items():
                 dataset_neural_net_df = neural_net_result["dataframe"]
-                plt.plot(frames, dataset_neural_net_df["Max Rotation Error"], label=neural_net_name)
+                plt.plot(frames, dataset_neural_net_df["Max Rotation Error"], label=neural_net_name.removesuffix("_Augmentation"))
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Rotationsfehler")
             plt.legend()
@@ -684,7 +684,7 @@ def main(eval_dataset_path: str, output_dir: str):
                 dataset_neural_net_df = neural_net_result["dataframe"]
                 max_scale_errors = dataset_neural_net_df["Max Scale Error"]
                 all_max_scale_errors.extend(max_scale_errors)
-                plt.plot(frames, max_scale_errors, label=neural_net_name)
+                plt.plot(frames, max_scale_errors, label=neural_net_name.removesuffix("_Augmentation"))
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Skalierungsfehler")
             plt.legend()
@@ -704,7 +704,7 @@ def main(eval_dataset_path: str, output_dir: str):
                       f"Datensatz: {dataset_name}")
             for neural_net_name, neural_net_result in dataset_result.items():
                 dataset_neural_net_df = neural_net_result["dataframe"]
-                plt.plot(frames, dataset_neural_net_df["Min Scale Error"], label=neural_net_name)
+                plt.plot(frames, dataset_neural_net_df["Min Scale Error"], label=neural_net_name.removesuffix("_Augmentation"))
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Skalierungsfehler")
             plt.legend()
@@ -823,7 +823,7 @@ def main(eval_dataset_path: str, output_dir: str):
                       f"Datensatz: {dataset_name}")
             for neural_net_name, neural_net_result in dataset_result.items():
                 dataset_neural_net_df = neural_net_result["dataframe"]
-                plt.plot(frames, dataset_neural_net_df["Undetected Max Occlusion Ratio"], label=neural_net_name)
+                plt.plot(frames, dataset_neural_net_df["Undetected Max Occlusion Ratio"], label=neural_net_name.removesuffix("_Augmentation"))
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Verdeckungsgrad")
             plt.legend()
@@ -843,7 +843,7 @@ def main(eval_dataset_path: str, output_dir: str):
                       f"Datensatz: {dataset_name}")
             for neural_net_name, neural_net_result in dataset_result.items():
                 dataset_neural_net_df = neural_net_result["dataframe"]
-                plt.plot(frames, dataset_neural_net_df["Undetected Min Occlusion Ratio"], label=neural_net_name)
+                plt.plot(frames, dataset_neural_net_df["Undetected Min Occlusion Ratio"], label=neural_net_name.removesuffix("_Augmentation"))
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Verdeckungsgrad")
             plt.legend()
@@ -865,7 +865,7 @@ def main(eval_dataset_path: str, output_dir: str):
                 dataset_neural_net_df = neural_net_result["dataframe"]
                 occlusion_ratio = dataset_neural_net_df["Undetected Mean Occlusion Ratio"]
                 occlusion_std = dataset_neural_net_df["Undetected STD Occlusion Ratio"]
-                plt.plot(frames, occlusion_ratio, label=neural_net_name)
+                plt.plot(frames, occlusion_ratio, label=neural_net_name.removesuffix("_Augmentation"))
                 plt.fill_between(frames, occlusion_ratio - occlusion_std, occlusion_ratio + occlusion_std, alpha=0.2)
             plt.xlabel("Frame-Nummer")
             plt.ylabel("Verdeckungsgrad")
@@ -940,6 +940,7 @@ def main(eval_dataset_path: str, output_dir: str):
         x = np.arange(len(x_labels))  # label locations
         num_bars_per_group = len(neural_net_names)
         bar_width = 0.9 / num_bars_per_group
+        best_bar_width = 0.9 / 4
 
         # Create plot data
         neural_net_found_object_means_grouped_by_neural_net_name = {}
@@ -1014,7 +1015,7 @@ def main(eval_dataset_path: str, output_dir: str):
         ## Ratio of found objects
         fig, ax = plt.subplots() # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
-            rects = ax.bar(x + i * bar_width, neural_net_found_object_means_grouped_by_neural_net_name[neural_net_name], bar_width, label=neural_net_name, yerr=neural_net_found_object_std_grouped_by_neural_net_name[neural_net_name],
+            rects = ax.bar(x + i * bar_width, neural_net_found_object_means_grouped_by_neural_net_name[neural_net_name], bar_width, label=neural_net_name.removesuffix("_Augmentation"), yerr=neural_net_found_object_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
             autolabel_percent(rects, ax)
@@ -1026,9 +1027,10 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.set_xticklabels(x_labels)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
         fig.tight_layout()
 
         plot_path = os.path.join(out_dir, "detected-objects-per-material.pdf")
@@ -1036,11 +1038,40 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Ratio of found objects (best)
+        best_neural_net_names = [neural_net_name for neural_net_name in neural_net_names if neural_net_name.endswith("Conveyor") or neural_net_name.endswith("Conveyor_Augmentation")]
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width, neural_net_found_object_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_found_object_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel_percent(rects, ax)
+        ax.set_ylabel("Anteil gefundener Objekte")
+        ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Anteil gefundener Objekte nach Objektmaterial")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "detected-objects-per-material-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Distance error
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_distance_error_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_distance_error_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1061,11 +1092,38 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Distance error (best)
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width,
+                           neural_net_distance_error_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_distance_error_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel(rects, ax)
+        ax.set_ylabel("Distanzfehler [m]")
+        # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Distanzfehler nach Objektmaterial")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        # ax.set_ylim([0, 1.2])
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "distance-errors-per-material-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Rotation error
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_rotation_error_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_rotation_error_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1079,9 +1137,10 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
         fig.tight_layout()
 
         plot_path = os.path.join(out_dir, "rotation-errors-per-material.pdf")
@@ -1089,11 +1148,41 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Rotation error (best)
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width,
+                           neural_net_rotation_error_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_rotation_error_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel(rects, ax)
+        ax.set_ylabel("Rotationsfehler")
+        # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Rotationsfehler nach Objektmaterial")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "rotation-errors-per-material-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Scale error
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_scale_error_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_scale_error_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1107,6 +1196,7 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         # ax.set_ylim([0, 1.2])
         ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
         fig.tight_layout()
 
         plot_path = os.path.join(out_dir, "scale-errors-per-material.pdf")
@@ -1114,11 +1204,37 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Scale error (best)
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width, neural_net_scale_error_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_scale_error_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel(rects, ax, round_decimals=4)
+        ax.set_ylabel("Skalierungsfehler")
+        # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Skalierungsfehler nach Objektmaterial")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        # ax.set_ylim([0, 1.2])
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "scale-errors-per-material-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Occlusion of undetected objects
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_occlusion_ratio_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_occlusion_ratio_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1132,9 +1248,10 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
         fig.tight_layout()
 
         plot_path = os.path.join(out_dir, "occlusion-undetected-per-material.pdf")
@@ -1142,11 +1259,41 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Occlusion of undetected objects (best)
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width,
+                           neural_net_occlusion_ratio_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_occlusion_ratio_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel_percent(rects, ax)
+        ax.set_ylabel("Verdeckungsgrad")
+        ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Verdeckungsgrad unentdeckter Objekte nach Objektmaterial")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "occlusion-undetected-per-material-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Correct classifications ratio
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_correct_classifications_ratio_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_correct_classifications_ratio_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1160,14 +1307,46 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
         fig.tight_layout()
 
         plot_path = os.path.join(out_dir, "correct-classifications-per-material.pdf")
         plt.savefig(plot_path)
         #plt.show()
+        plt.close()
+
+        ## Correct classifications ratio
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width,
+                           neural_net_correct_classifications_ratio_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_correct_classifications_ratio_std_grouped_by_neural_net_name[
+                               neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel_percent(rects, ax)
+        ax.set_ylabel("Anteil korrekter Klassifizierungen")
+        ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Anteil korrekter Klassifizierungen nach Objektmaterial")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "correct-classifications-per-material-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
         plt.close()
 
         # Per Object Type
@@ -1234,6 +1413,7 @@ def main(eval_dataset_path: str, output_dir: str):
         x = np.arange(len(x_labels))  # label locations
         num_bars_per_group = len(neural_net_names)
         bar_width = 0.9 / num_bars_per_group
+        best_bar_width = 0.9 / 4
 
         # Create plot data
         neural_net_found_object_means_grouped_by_neural_net_name = {}
@@ -1314,7 +1494,7 @@ def main(eval_dataset_path: str, output_dir: str):
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_found_object_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_found_object_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1328,9 +1508,10 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
         fig.tight_layout()
 
         plot_path = os.path.join(out_dir, "detected-objects-per-object-type.pdf")
@@ -1338,11 +1519,41 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Ratio of found objects (best)
+        best_neural_net_names = [neural_net_name for neural_net_name in neural_net_names if neural_net_name.endswith("Conveyor") or neural_net_name.endswith("Conveyor_Augmentation")]
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width, neural_net_found_object_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_found_object_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel_percent(rects, ax)
+        ax.set_ylabel("Anteil gefundener Objekte")
+        ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Anteil gefundener Objekte nach Objekttyp")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "detected-objects-per-object-type-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Distance error
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_distance_error_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_distance_error_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1363,11 +1574,38 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Distance error (best)
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width,
+                           neural_net_distance_error_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_distance_error_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel(rects, ax)
+        ax.set_ylabel("Distanzfehler [m]")
+        # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Distanzfehler nach Objekttyp")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        # ax.set_ylim([0, 1.2])
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "distance-errors-per-object-type-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Rotation error
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_rotation_error_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_rotation_error_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1381,8 +1619,8 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         ax.legend()
         fig.tight_layout()
 
@@ -1391,11 +1629,41 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Rotation error (best)
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width,
+                           neural_net_rotation_error_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_rotation_error_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel(rects, ax)
+        ax.set_ylabel("Rotationsfehler")
+        # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Rotationsfehler nach Objekttyp")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "rotation-errors-per-object-type-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Scale error
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_scale_error_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_scale_error_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1409,6 +1677,7 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         # ax.set_ylim([0, 1.2])
         ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
         fig.tight_layout()
 
         plot_path = os.path.join(out_dir, "scale-errors-per-object-type.pdf")
@@ -1416,11 +1685,37 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Scale error (best)
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width, neural_net_scale_error_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_scale_error_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel(rects, ax, round_decimals=4)
+        ax.set_ylabel("Skalierungsfehler")
+        # ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Skalierungsfehler nach Objekttyp")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        # ax.set_ylim([0, 1.2])
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "scale-errors-per-object-type-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Occlusion of undetected objects
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width, neural_net_occlusion_ratio_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_occlusion_ratio_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1434,9 +1729,10 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
         fig.tight_layout()
 
         plot_path = os.path.join(out_dir, "occlusion-undetected-per-object-type.pdf")
@@ -1444,12 +1740,42 @@ def main(eval_dataset_path: str, output_dir: str):
         #plt.show()
         plt.close()
 
+        ## Occlusion of undetected objects (best)
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width,
+                           neural_net_occlusion_ratio_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_occlusion_ratio_std_grouped_by_neural_net_name[neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel_percent(rects, ax)
+        ax.set_ylabel("Verdeckungsgrad")
+        ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Verdeckungsgrad unentdeckter Objekte nach Objekttyp")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "occlusion-undetected-per-object-type-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
+        plt.close()
+
         ## Correct classifications ratio
         fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
         for i, neural_net_name in enumerate(neural_net_names):  # add data for each neural net to plot
             rects = ax.bar(x + i * bar_width,
                            neural_net_correct_classifications_ratio_means_grouped_by_neural_net_name[neural_net_name],
-                           bar_width, label=neural_net_name,
+                           bar_width, label=neural_net_name.removesuffix("_Augmentation"),
                            yerr=neural_net_correct_classifications_ratio_std_grouped_by_neural_net_name[neural_net_name],
                            error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
             # ax.bar_label(rects, padding=3)
@@ -1463,14 +1789,46 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
         fig.tight_layout()
 
         plot_path = os.path.join(out_dir, "correct-classifications-per-object-type.pdf")
         plt.savefig(plot_path)
         #plt.show()
+        plt.close()
+
+        ## Correct classifications ratio (best)
+        fig, ax = plt.subplots()  # figsize=(12.0, 4.8), dpi=300)
+        for i, neural_net_name in enumerate(best_neural_net_names):  # add data for each neural net to plot
+            rects = ax.bar(x + i * best_bar_width,
+                           neural_net_correct_classifications_ratio_means_grouped_by_neural_net_name[neural_net_name],
+                           best_bar_width, label=neural_net_name.removesuffix("_Augmentation"),
+                           yerr=neural_net_correct_classifications_ratio_std_grouped_by_neural_net_name[
+                               neural_net_name],
+                           error_kw=dict(ecolor='lightgray', lw=2, capsize=5, capthick=2))
+            # ax.bar_label(rects, padding=3)
+            autolabel_percent(rects, ax)
+        ax.set_ylabel("Anteil korrekter Klassifizierungen")
+        ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+        ax.set_title("Mittlerer Anteil korrekter Klassifizierungen nach Objekttyp")
+        x_ticks = x + best_bar_width * (4 - 1) / 2
+        ax.set_xticks(x_ticks)
+        ax.set_xticklabels(x_labels)
+        ax.tick_params(axis='x', labelrotation=90)
+        plt.ylim(bottom=0)
+        current_max = plt.ylim()[1]
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
+        ax.legend()
+        ax.tick_params(axis='x', labelrotation=90)
+        fig.tight_layout()
+
+        plot_path = os.path.join(out_dir, "correct-classifications-per-object-type-best.pdf")
+        plt.savefig(plot_path)
+        # plt.show()
         plt.close()
 
         # Whole dataset type (cluttered / uncluttered)
@@ -1640,8 +1998,8 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         #ax.legend()
         fig.tight_layout()
 
@@ -1691,8 +2049,8 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         #ax.legend()
         fig.tight_layout()
 
@@ -1742,8 +2100,8 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         #ax.legend()
         fig.tight_layout()
 
@@ -1769,8 +2127,8 @@ def main(eval_dataset_path: str, output_dir: str):
         ax.tick_params(axis='x', labelrotation=90)
         plt.ylim(bottom=0)
         current_max = plt.ylim()[1]
-        if current_max < 1.3:
-            plt.ylim(top=1.3)
+        if current_max < 1.4:
+            plt.ylim(top=1.4)
         #ax.legend()
         fig.tight_layout()
 
@@ -1880,8 +2238,8 @@ def main(eval_dataset_path: str, output_dir: str):
     ax.tick_params(axis='x', labelrotation=90)
     plt.ylim(bottom=0)
     current_max = plt.ylim()[1]
-    if current_max < 1.3:
-        plt.ylim(top=1.3)
+    if current_max < 1.4:
+        plt.ylim(top=1.4)
     # ax.legend()
     fig.tight_layout()
 
@@ -1933,8 +2291,8 @@ def main(eval_dataset_path: str, output_dir: str):
     ax.tick_params(axis='x', labelrotation=90)
     plt.ylim(bottom=0)
     current_max = plt.ylim()[1]
-    if current_max < 1.3:
-        plt.ylim(top=1.3)
+    if current_max < 1.4:
+        plt.ylim(top=1.4)
     # ax.legend()
     fig.tight_layout()
 
@@ -1986,8 +2344,8 @@ def main(eval_dataset_path: str, output_dir: str):
     ax.tick_params(axis='x', labelrotation=90)
     plt.ylim(bottom=0)
     current_max = plt.ylim()[1]
-    if current_max < 1.3:
-        plt.ylim(top=1.3)
+    if current_max < 1.4:
+        plt.ylim(top=1.4)
     # ax.legend()
     fig.tight_layout()
 
@@ -2015,8 +2373,8 @@ def main(eval_dataset_path: str, output_dir: str):
     ax.tick_params(axis='x', labelrotation=90)
     plt.ylim(bottom=0)
     current_max = plt.ylim()[1]
-    if current_max < 1.3:
-        plt.ylim(top=1.3)
+    if current_max < 1.4:
+        plt.ylim(top=1.4)
     # ax.legend()
     fig.tight_layout()
 
@@ -2038,7 +2396,7 @@ def main(eval_dataset_path: str, output_dir: str):
                             subplot_kw=dict(projection='radar'))
     ax.set_title("Objekterkennung und Klassifizierung")
     for neural_net_name, d in data.items():
-        ax.plot(radar_plot, d, label=neural_net_name)
+        ax.plot(radar_plot, d, label=neural_net_name.removesuffix("_Augmentation"))
         ax.fill(radar_plot, d, alpha=0.25)
     ax.set_varlabels(share_plot_axes_names)
 
