@@ -1,10 +1,16 @@
+# Code wurde mit Unterstützung von ChatGPT erzeugt
+
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+# import tikzplotlib
+
+#mpl.use("pgf")
 
 # Schriftgrößen anpassen
 #plt.rc('text', usetex=True)
-plt.rc('font', size=14)  # Grundlegende Schriftgröße
+#plt.rc('font', size=14)  # Grundlegende Schriftgröße
 #plt.rc('axes', titlesize=24)     # Schriftgröße für Titel
 #plt.rc('axes', labelsize=20)     # Schriftgröße für Achsenbeschriftungen
 #plt.rc('xtick', labelsize=16)    # Schriftgröße für die X-Achsen-Tick-Markierungen
@@ -87,6 +93,7 @@ axs[1, 1].legend()
 plt.tight_layout()
 
 # Speichern der Figur als PDF
-plt.savefig("02_Aktivierungsfunktionen.pdf")
+plt.savefig("out/02_Aktivierungsfunktionen.pdf")
+#plt.savefig("02_Aktivierungsfunktionen.pgf")
 
 plt.show()
