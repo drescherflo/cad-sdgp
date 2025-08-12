@@ -1,0 +1,19 @@
+# Defines the conda environment for the SDGP
+name: sodah-sdgp
+channels:
+  - conda-forge
+dependencies:
+  - python=3.11
+  - pip
+  - numpy=1.26.*
+  - pillow=10.2.*
+  - scipy=1.13.*
+  - trimesh=4.0.*
+  - pythonocc-core=7.7.*
+  - pandas=2.2.*
+  - matplotlib=3.8.*
+  - pip:
+    - numpy-stl~=3.1.1
+    - numpy-quaternion~=2023.0.3
+    - --extra-index-url https://pypi.nvidia.com
+    - isaacsim[all,extscache]==5.0.0
