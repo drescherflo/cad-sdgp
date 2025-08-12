@@ -417,10 +417,6 @@ FodyWeavers.xsd
 
 # VS Code files for those working on multiple tools
 .vscode/*
-!.vscode/settings-2022.2.1.json
-!.vscode/tasks.json
-!.vscode/launch-2022.2.1.json
-!.vscode/extensions.json
 *.code-workspace
 
 # Local History for Visual Studio Code
