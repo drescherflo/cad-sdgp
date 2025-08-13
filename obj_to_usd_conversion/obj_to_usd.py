@@ -1,6 +1,7 @@
 import argparse
 import os
 import asyncio
+import logging
 
 os.environ["OMNI_KIT_ACCEPT_EULA"] = "YES"
 from isaacsim import SimulationApp
@@ -27,8 +28,9 @@ async def convert(input_file_path, output_file_path):
     converter_task = converter_instance.create_converter_task(input_file_path, output_file_path)
     success = await converter_task.wait_until_finished()
     if not success:
+        logger = logging.getLogger(__name__)
         detailed_status_error_string = converter_task.get_error_message()
-        print(detailed_status_error_string)
+        logger.error(detailed_status_error_string)
     
 
 
@@ -38,6 +40,9 @@ if __name__ == "__main__":
     Handles command-line arguments and orchestrates the conversion.
     """
 
+    # Get logger
+    logger = logging.getLogger(__name__)
+    
     # Create argument parser
     parser = argparse.ArgumentParser(description="Converts STEP files to STL files")
     parser.add_argument("--input_dir", help="Input directory containing .obj files")
@@ -46,17 +51,18 @@ if __name__ == "__main__":
     # Parse args
     args = parser.parse_args()
     if args.input_dir is None:
-        print("No input directory provided via --input_dir. Exiting...")
+        logger.error("No input directory provided via --input_dir. Exiting...")
         exit(-1)
     if args.output_dir is None:
-        print("No output directory provided via --output_dir. Exiting...")
+        logger.error("No output directory provided via --output_dir. Exiting...")
         exit(-1)
     
     # Test if input dir and output dir exist
     if not os.path.isdir(args.input_dir):
-        print("Input directory does not exist. Exiting...")
+        logger.error("Input directory does not exist. Exiting...")
         exit(-1)
     if not os.path.isdir(args.output_dir):
+        logger.debug("Creating ouput dir f{args.output_dir}, because it does not exist yet")
         os.makedirs(args.output_dir)
 
     # Convert obj to usd files
@@ -71,6 +77,8 @@ if __name__ == "__main__":
         output_file_path = os.path.join(args.output_dir, file).replace(".obj", ".usd").replace(".OBJ", ".usd")
 
         # Convert obj to usd
+        logger.info("Converting f{file}...")
         asyncio.get_event_loop().run_until_complete(convert(input_file_path, output_file_path))
     
+    logger.info("Conversion to .usd finished")
     kit.close()
