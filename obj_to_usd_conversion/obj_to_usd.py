@@ -2,6 +2,7 @@ import argparse
 import os
 import asyncio
 
+os.environ["OMNI_KIT_ACCEPT_EULA"] = "YES"
 from isaacsim import SimulationApp
 
 def get_obj_files_in_dir(directory):
