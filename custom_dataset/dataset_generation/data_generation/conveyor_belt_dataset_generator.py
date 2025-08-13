@@ -20,7 +20,8 @@ parser.add_argument("--writer", nargs="*", action="append", help="Configures wri
 args = parser.parse_args(sys.argv[1:])
 
 # Launch Isaac Sim
-from omni.isaac.kit import SimulationApp
+os.environ["OMNI_KIT_ACCEPT_EULA"] = "YES"
+from isaacsim import SimulationApp
 
 CONFIG = {"renderer": "RayTracedLighting", "headless": args.headless}
 simulation_app = SimulationApp(launch_config=CONFIG)
@@ -28,14 +29,14 @@ simulation_app = SimulationApp(launch_config=CONFIG)
 # Omniverse imports and omniverse related imports need to be done after the simulation has been started
 import omni.graph.core as og
 import omni.replicator.core as rep
-import omni.isaac.core.utils.stage as stage_utils
-import omni.isaac.core.utils.prims as prim_utils
-from omni.isaac.core import World
-from omni.isaac.core.utils import extensions
-from omni.isaac.core.utils import prims
-from omni.isaac.core.utils.rotations import euler_angles_to_quat
-from omni.isaac.core.prims import RigidPrim, XFormPrim, GeometryPrim
-from omni.isaac.core.materials import OmniPBR
+import isaacsim.core.utils.stage as stage_utils
+import isaacsim.core.utils.prims as prim_utils
+from isaacsim.core.api import World
+from isaacsim.core.utils import extensions
+from isaacsim.core.utils import prims
+from isaacsim.core.utils.rotations import euler_angles_to_quat
+from isaacsim.core.prims import RigidPrim, XFormPrim, GeometryPrim
+from isaacsim.core.api.materials import OmniPBR
 
 from resumable_writers import load_resumable_writer_plugins
 from utils.scene_setup import generate_materials, randomize_sphere_light
@@ -91,7 +92,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         os.makedirs(out_dir, exist_ok=True)
 
         # Check for empty out_dir
-        quit_if_out_dir_not_empty(out_dir, simulation_app)
+        #quit_if_out_dir_not_empty(out_dir, simulation_app)
 
         # Write train val split config
         with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
@@ -180,18 +181,20 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
             prim_name = f"object_{i:0{len(str(num_objects_per_scene))}}"
             prim_path = f"/objects/{prim_name}"
-            object_prims.append(prims.create_prim(prim_path=prim_path,
+            prim = prims.create_prim(prim_path=prim_path,
                                                   usd_path=usd_path,
+                                                  scale=[1.0, 1.0, 1.0],
                                                   semantic_label=object["semantic_class_label"],
                                                   position=object["object_init_pose"]["position"],
-                                                  orientation=euler_angles_to_quat(np.array(object["object_init_pose"]["rotation"]), degrees=True, extrinsic=False)))
-
+                                                  orientation=euler_angles_to_quat(np.array(object["object_init_pose"]["rotation"]), degrees=True, extrinsic=False))
+            object_prims.append(prim)
+            
             # Enable physics and collision
             # Don't use rep.physics.rigid_body() and rep.physics.collider() or else either the simulation or PhysX will crash!
-            rigid_prim = RigidPrim(prim_path=prim_path, name=prim_name + "_rigid")  # RigidPrim for Physics
-            geometry_prim = GeometryPrim(prim_path=prim_path, name=prim_name + "_geometry",
-                                         collision=True)  # GeometryPrim for Collisions
-            geometry_prim.set_collision_approximation("convexDecomposition")  # Use Convex Decomposition for a more fine granular collision calculation at cost of simulation performance
+            rigid_prim = RigidPrim(prim_paths_expr=prim_path, name=prim_name + "_rigid")  # RigidPrim for Physics
+            geometry_prim = GeometryPrim(prim_paths_expr=prim_path, name=prim_name + "_geometry",
+                                         collisions=[True])  # GeometryPrim for Collisions
+            geometry_prim.set_collision_approximations(["convexDecomposition"])  # Use Convex Decomposition for a more fine granular collision calculation at cost of simulation performance
 
             world.scene.add(rigid_prim)  # Register in world's scene to enable physics simulation
             world.scene.add(geometry_prim)  # Register in world's scene to enable collision calculations
@@ -217,7 +220,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             world.step(render=True, step_sim=True)
 
             # If linear velocity of all objects is small, they stopped falling
-            if all([np.linalg.norm(object_prim.get_linear_velocity()) < max_lin_velocity_for_finished_falling for object_prim in object_rigid_prims]):
+            if all([np.linalg.norm(object_prim.get_linear_velocities()) < max_lin_velocity_for_finished_falling for object_prim in object_rigid_prims]):
                 break
 
             # Sometimes objects fall through the conveyor belt
@@ -225,7 +228,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # To prevent an endless loop the last 10 max velocities are checked if they are in a specified delta
             # If so one can assume that the objects don't move anymore are not falling anymore
             # Else the max velocity would have large changes due to gravity or the collision with the belt / ground plane / etc
-            max_lin_vel = max([np.linalg.norm(object_prim.get_linear_velocity()) for object_prim in object_rigid_prims])
+            max_lin_vel = max([np.linalg.norm(object_prim.get_linear_velocities()) for object_prim in object_rigid_prims])
             last_max_velocities.append(max_lin_vel)
             # print("Last max linear velocity:", max_lin_vel) # for debugging
             if len(last_max_velocities) < num_velocities_to_check:
@@ -238,12 +241,12 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
                 print("Warning! Min one object may glitched through the conveyor belt or fell off the belt. The detection if objects stopped falling may be inaccurate!")
                 break
 
-        num_objects_under_conveyor = len(list(filter(lambda obj_rigid_prim: obj_rigid_prim.get_world_pose()[0][2] < 1.78, object_rigid_prims)))  # 1.78m is z-coordinate of conveyor belt surface
+        num_objects_under_conveyor = len(list(filter(lambda obj_rigid_prim: obj_rigid_prim.get_world_poses()[0][0][2] < 1.78, object_rigid_prims)))  # 1.78m is z-coordinate of conveyor belt surface
         print(f"Warning! {num_objects_under_conveyor} are under the conveyor belt. Number of objects in the scene: {num_objects_per_scene}")
 
-        # while simulation_app.is_running:
-        #     simulation_app.update()
-        # quit_on_error("Simulation stopped", simulation_app)
+        while simulation_app.is_running:
+            simulation_app.update()
+        quit_on_error("Simulation stopped", simulation_app)
 
         # Set conveyor belt speed to specified value
         for conveyor_node_prim_path in conveyor_node_prim_paths:
@@ -262,13 +265,13 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         while True:
             # Run simulation for one step and check if one object passed min_x_pos_for_record_start
             world.step(render=True, step_sim=True)
-            if any([object_prim.get_world_pose()[0][0] > min_x_pos_for_record_start for object_prim in object_rigid_prims]):
+            if any([object_prim.get_world_poses()[0][0][0] > min_x_pos_for_record_start for object_prim in object_rigid_prims]):
                 break
 
             # Check if objects are even moving on the conveyor belt
             # If not, proceed with recording
             if waited_frames_before_movement_check > num_frames_to_wait_for_movement_check:
-                max_x_pos = max([object_prim.get_world_pose()[0][0] for object_prim in object_rigid_prims])
+                max_x_pos = max([object_prim.get_world_poses()[0][0][0] for object_prim in object_rigid_prims])
                 last_max_x_positions.append(max_x_pos)
                 if len(last_max_velocities) < num_x_positions_to_check:
                     continue
@@ -322,7 +325,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         rep.orchestrator.preview()
 
         # Capture data
-        last_max_x_pos = max([object_prim.get_world_pose()[0][0] if object_prim.get_world_pose()[0][2] > 1.5 else -inf for object_prim in object_rigid_prims])  # for debugging
+        last_max_x_pos = max([object_prim.get_world_poses()[0][0][0] if object_prim.get_world_poses()[0][0][2] > 1.5 else -inf for object_prim in object_rigid_prims])  # for debugging
         for scene_frame_nr in range(num_frames_per_scene):
             if not simulation_app.is_running():
                 quit_on_error("Simulation has been stopped. Exiting...", simulation_app)
@@ -333,13 +336,13 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Setting a per frame trigger results in [Error] [omni.graph.core.plugin] [/Replicator/SDGPipeline] Assertion raised in compute
             for obj_idx, object_prim in enumerate(object_rigid_prims):
                 material_idx = object_material_assignments[scene_frame_nr][obj_idx]["material_idx"]
-                object_prim.apply_visual_material(materials[material_idx])
+                object_prim.apply_visual_materials(materials[material_idx])
             
             # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
 
             # Calculate object speed on conveyor belt (for debugging)
-            new_max_x_pose = max([object_prim.get_world_pose()[0][0] if object_prim.get_world_pose()[0][2] > 1.5 else -inf for object_prim in object_rigid_prims])
+            new_max_x_pose = max([object_prim.get_world_poses()[0][0][0] if object_prim.get_world_poses()[0][0][2] > 1.5 else -inf for object_prim in object_rigid_prims])
             delta = new_max_x_pose - last_max_x_pos
             print("object velocity on conveyor:", delta / (1.0/render_frequency), "m/s ; conveyor belt speed / target speed:", conveyor_belt_speed, "m/s")
             last_max_x_pos = new_max_x_pose
