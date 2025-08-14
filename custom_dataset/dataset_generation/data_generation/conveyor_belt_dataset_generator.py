@@ -27,6 +27,7 @@ CONFIG = {"renderer": "RayTracedLighting", "headless": args.headless}
 simulation_app = SimulationApp(launch_config=CONFIG)
 
 # Omniverse imports and omniverse related imports need to be done after the simulation has been started
+import omni
 import omni.graph.core as og
 import omni.replicator.core as rep
 import isaacsim.core.utils.stage as stage_utils
@@ -45,7 +46,7 @@ from utils.io import quit_if_out_dir_not_empty
 
 
 # Enable conveyor belt extension
-extensions.enable_extension("omni.isaac.conveyor")
+extensions.enable_extension("isaacsim.asset.gen.conveyor")
 
 
 def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
@@ -146,10 +147,10 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         conveyor_belt_material = OmniPBR(conveyor_belt_material_path)
         conveyor_belt_material.set_reflection_roughness(1.0)
         conveyor_belt_prim_paths = prim_utils.find_matching_prim_paths(
-            "/World/ConveyorTrack(.)*/Belt/SM_ConveyorBelt_A09_Belt_02")
+            "/World/ConveyorTrack.*/Belt/SM_ConveyorBelt_.*_Belt.*")
         for conveyor_belt_prim_path in conveyor_belt_prim_paths:
             xform_conveyor_belt_prim = XFormPrim(conveyor_belt_prim_path)
-            xform_conveyor_belt_prim.apply_visual_material(conveyor_belt_material)
+            xform_conveyor_belt_prim.apply_visual_materials(conveyor_belt_material)
         rep_conveyor_belt_material = rep.get.material(conveyor_belt_material_path)
 
         # Add material for custom color of conveyor belt frame
@@ -158,10 +159,10 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         conveyor_frame_material = OmniPBR(conveyor_frame_material_path)
         conveyor_frame_material.set_reflection_roughness(1.0)
         conveyor_frame_prim_paths = prim_utils.find_matching_prim_paths(
-            "/World/ConveyorTrack(.)*/SM_ConveyorBelt_A09_02")
+            "/World/ConveyorTrack.*/SM_ConveyorBelt.*")
         for conveyor_frame_prim_path in conveyor_frame_prim_paths:
             xform_conveyor_frame_prim = XFormPrim(conveyor_frame_prim_path)
-            xform_conveyor_frame_prim.apply_visual_material(conveyor_frame_material)
+            xform_conveyor_frame_prim.apply_visual_materials(conveyor_frame_material)
         rep_conveyor_frame_material = rep.get.material(conveyor_frame_material_path)
 
         # Add distant light
@@ -204,12 +205,19 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         # Reset the world to handle the physics of the newly created prims
         world.reset()
 
-        # Set conveyor belt speed to 0 (until all objects stopped falling to prevent lower objects already moving on the conveyor belt)
-        # Use OmniGraph for this since replicator does not work since world is not loaded with open_stage()
-        conveyor_node_prim_paths = prim_utils.find_matching_prim_paths("/World/ConveyorTrack(.)*/ConveyorBeltGraph/ConveyorNode")
+        # Set correct conveyor direction
+        conveyor_node_prim_paths = prim_utils.find_matching_prim_paths("/World/ConveyorTrack.*/ConveyorBeltGraph/ConveyorNode")
         for conveyor_node_prim_path in conveyor_node_prim_paths:
-            assert og.Controller.set(og.Controller.attribute(conveyor_node_prim_path + ".inputs:velocity"), 0.0)
+            assert og.Controller.attribute(conveyor_node_prim_path + ".inputs:direction").set([1.0, 0.0, 0.0])
 
+        # Set conveyor belt speed to 0.0 (until all objects stopped falling to prevent lower objects already moving on the conveyor belt)
+        # Use OmniGraph for this since replicator does not work since world is not loaded with open_stage()
+        conveyor_belt_graph_prim_paths = prim_utils.find_matching_prim_paths("/World/ConveyorTrack.*/ConveyorBeltGraph")
+        for conveyor_belt_graph_prim_path in conveyor_belt_graph_prim_paths:
+            graph = og.get_graph_by_path(conveyor_belt_graph_prim_path)
+            graph_context = graph.get_context()
+            assert og.Controller.variable(conveyor_belt_graph_prim_path + ".graph:variable:Velocity").set(graph_context, 0.0)
+                    
         # Run simulation until all objects stopped falling
         num_velocities_to_check = 10
         max_lin_velocity_for_finished_falling = 0.001
@@ -244,14 +252,20 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         num_objects_under_conveyor = len(list(filter(lambda obj_rigid_prim: obj_rigid_prim.get_world_poses()[0][0][2] < 1.78, object_rigid_prims)))  # 1.78m is z-coordinate of conveyor belt surface
         print(f"Warning! {num_objects_under_conveyor} are under the conveyor belt. Number of objects in the scene: {num_objects_per_scene}")
 
-        while simulation_app.is_running:
-            simulation_app.update()
-        quit_on_error("Simulation stopped", simulation_app)
+        # while simulation_app.is_running:
+        #     simulation_app.update()
+        # quit_on_error("Simulation stopped", simulation_app)
 
         # Set conveyor belt speed to specified value
-        for conveyor_node_prim_path in conveyor_node_prim_paths:
-            assert og.Controller.set(og.Controller.attribute(conveyor_node_prim_path + ".inputs:velocity"), conveyor_belt_speed)
+        for conveyor_belt_graph_prim_path in conveyor_belt_graph_prim_paths:
+            graph = og.get_graph_by_path(conveyor_belt_graph_prim_path)
+            graph_context = graph.get_context()
+            assert og.Controller.variable(conveyor_belt_graph_prim_path + ".graph:variable:Velocity").set(graph_context, conveyor_belt_speed)
 
+        # while simulation_app.is_running:
+        #     simulation_app.update()
+        # quit_on_error("Simulation stopped", simulation_app)
+        
         # Wait for min one object to pass min_x_pos_for_record_start before start of recording
         # Calc max num frames before checking if objects are moving
         max_object_distance_to_min_x_pos_for_record_start = min_x_pos_for_record_start - min(object["object_init_pose"]["position"][0] for object in scene_config["objects"])
