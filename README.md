@@ -31,7 +31,7 @@ conda env create -f environment.yaml
 - CAD-Modelle im STEP-Format in Verzeichnis `~/custom_dataset/cad_models/step` legen
 - Pipeline ausführen
   ```bash
-  ./build_custom_dataset_native.sh
+  ./create_dataset.sh
   ```
 - Datensatz für ROCA liegt unter `~/custom_dataset/converted/6_dof/ReplicatorToROCA`
 
