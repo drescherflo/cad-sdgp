@@ -17,7 +17,8 @@ parser.add_argument("--writer", nargs="*", action="append", help="Configures wri
 args = parser.parse_args(sys.argv[1:])
 
 # Launch Isaac Sim
-from omni.isaac.kit import SimulationApp
+os.environ["OMNI_KIT_ACCEPT_EULA"] = "YES"
+from isaacsim import SimulationApp
 
 CONFIG = {"renderer": "RayTracedLighting", "headless": args.headless}
 simulation_app = SimulationApp(launch_config=CONFIG)
@@ -25,10 +26,10 @@ simulation_app = SimulationApp(launch_config=CONFIG)
 
 # Omniverse imports and omniverse related imports need to be done after the simulation has been started
 import omni.replicator.core as rep
-from omni.isaac.core.utils.stage import create_new_stage
-from omni.isaac.core.prims import XFormPrim
-from omni.isaac.core.utils import prims
-from omni.isaac.core.utils.rotations import euler_angles_to_quat
+from isaacsim.core.utils.stage import create_new_stage
+from isaacsim.core.prims import XFormPrim
+from isaacsim.core.utils import prims
+from isaacsim.core.utils.rotations import euler_angles_to_quat
 
 from resumable_writers import load_resumable_writer_plugins
 from utils.scene_setup import generate_materials, randomize_sphere_light
@@ -90,7 +91,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     os.makedirs(out_dir, exist_ok=True)
 
     # Check for empty out_dir
-    quit_if_out_dir_not_empty(out_dir, simulation_app)
+    # quit_if_out_dir_not_empty(out_dir, simulation_app)
 
     # Write train val split config
     with open(os.path.join(out_dir, "train_val_scenes.json"), "w") as f:
@@ -158,12 +159,12 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         with rep.trigger.on_frame():  # Change on every rendered frame
             # Change background color
             with plane_material:
-                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(background_colors))
+                rep.modify.attribute("inputs:diffuse_color_constant", rep.distribution.sequence(background_colors))
 
             # Change dome_light color
             with dome_light:
-                rep.modify.attribute("color", rep.distribution.sequence(dome_light_colors))
-                rep.modify.attribute("intensity", rep.distribution.sequence(dome_light_intensities))
+                rep.modify.attribute("inputs:color", rep.distribution.sequence(dome_light_colors))
+                rep.modify.attribute("inputs:intensity", rep.distribution.sequence(dome_light_intensities))
 
             # Change sphere light color and position
             for i in range(len(sphere_lights)):
@@ -181,11 +182,11 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             for obj_idx, object_prim in enumerate(object_prims):
                 material_idx = current_scene_config["object_configs"][obj_idx]["material_idx"]
                 xform_object_prim = XFormPrim(object_prim.GetPrimPath().pathString)
-                xform_object_prim.apply_visual_material(materials[material_idx])
+                xform_object_prim.apply_visual_materials(materials[material_idx])
                 position = current_scene_config["object_configs"][obj_idx]["pose"]["position"]
                 orientation = current_scene_config["object_configs"][obj_idx]["pose"]["orientation"]
                 orientation_quaternion = euler_angles_to_quat(np.array(orientation), degrees=True, extrinsic=False)
-                xform_object_prim.set_world_pose(position=position, orientation=orientation_quaternion)
+                xform_object_prim.set_world_poses(positions=np.array([position]), orientations=np.array([orientation_quaternion]))
 
             # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)
