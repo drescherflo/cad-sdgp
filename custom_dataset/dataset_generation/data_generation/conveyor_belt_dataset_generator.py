@@ -307,12 +307,12 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
             # Change ground plane color
             with plane_material:
-                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(ground_plane_colors))
+                rep.modify.attribute("inputs:diffuse_color_constant", rep.distribution.sequence(ground_plane_colors))
 
             # Change distant light color, intensity and orientation
             with distant_light:
-                rep.modify.attribute("color", rep.distribution.sequence(distant_light_colors))
-                rep.modify.attribute("intensity", rep.distribution.sequence(distant_light_intensities))
+                rep.modify.attribute("inputs:color", rep.distribution.sequence(distant_light_colors))
+                rep.modify.attribute("inputs:intensity", rep.distribution.sequence(distant_light_intensities))
                 rep.modify.pose(rotation=rep.distribution.sequence(distant_light_orientations))
 
             # Change sphere light color, position and intensities
@@ -321,11 +321,11 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
             # Change conveyor belt color
             with rep_conveyor_belt_material:
-                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_belt_colors))
+                rep.modify.attribute("inputs:diffuse_color_constant", rep.distribution.sequence(conveyor_belt_colors))
 
             # Change conveyor frame color
             with rep_conveyor_frame_material:
-                rep.modify.attribute("diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))
+                rep.modify.attribute("inputs:diffuse_color_constant", rep.distribution.sequence(conveyor_frame_colors))
 
         # Initialize writers
         writers = []
