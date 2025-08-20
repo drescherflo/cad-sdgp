@@ -2,7 +2,7 @@ import random
 
 
 def usd_model_to_semantic_class_label(usd_model: str) -> str:
-    return usd_model.removesuffix("_obj.usd").lower().replace(" ", "_")
+    return usd_model.removesuffix(".usd").lower().replace(" ", "_")
 
 def generate_random_vec_3(min_x: float, max_x: float, min_y: float, max_y: float, min_z: float, max_z: float):
     """
