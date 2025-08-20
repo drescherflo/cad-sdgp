@@ -5,31 +5,31 @@ set -euo pipefail
 
 # Set variables
 CUSTOM_DATASET_DIR="$HOME/eval_dataset"
-ISAAC_SIM_INSTALL_DIR="$HOME/.local/share/ov/pkg/isaac_sim-2023.1.1"
 
 # Run dataset generation
+cd ..
+
 ## STEP to OBJ
 echo "Converting STEP files to OBJ"
-conda run --no-capture-output -n step-to-obj python step_to_obj_conversion/step_to_obj.py \
-  --input_dir "$CUSTOM_DATASET_DIR/cad_models/STEP/" \
-  --output_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ/"
+conda run --no-capture-output -n sodah-sdgp python asset_converter/step_to_obj.py \
+  --input_dir "$CUSTOM_DATASET_DIR/cad_models/step/" \
+  --output_dir "$CUSTOM_DATASET_DIR/cad_models/obj/"
 
 ## OBJ to USD
 echo "Converting OBJ to USD"
-"$ISAAC_SIM_INSTALL_DIR"/python.sh "$ISAAC_SIM_INSTALL_DIR/standalone_examples/api/omni.kit.asset_converter/asset_usd_converter.py" \
-  --folders "$CUSTOM_DATASET_DIR/cad_models/OBJ"
+conda run --no-capture-output -n sodah-sdgp python asset_converter/obj_to_usd.py \
+  --input_dir "$CUSTOM_DATASET_DIR/cad_models/obj" \
+  --output_dir "$CUSTOM_DATASET_DIR/cad_models/usd"
 
 ## Generate eval dataset configs
-usd_dir="$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/"
+usd_dir="$CUSTOM_DATASET_DIR/cad_models/usd/"
 config_base="$CUSTOM_DATASET_DIR/dataset_generator_configs/"
 
 echo "Generating configs for the eval datasets"
-source custom_dataset/dataset_generation/config_generation/venv/bin/activate
-python custom_dataset/dataset_generation/config_generation/eval_conveyor_config_generator.py \
+conda run --no-capture-output -n sodah-sdgp python dataset_config_generator/eval_conveyor_config_generator.py \
    --usd_dir "$usd_dir" \
    --out_dir "$config_base" \
-   --object_material_config_file "custom_dataset/dataset_generation/config_generation/config/eval_object_materials.json"
-deactivate
+   --object_material_config_file "dataset_config_generator/config/eval_object_materials.json"
 
 ## Generate eval datasets
 set +e # don't exit on exit code != 0 (this prevents aborting the script when isaac sim segfaults on exit for unknown reasons)
@@ -52,7 +52,7 @@ for dir in "${config_dirs[@]}"; do
     output_dir="${replicator_dataset_base}/${dir}/${filename}/"
 
     # Run dataset generation script
-    "$ISAAC_SIM_INSTALL_DIR"/python.sh custom_dataset/dataset_generation/data_generation/conveyor_belt_dataset_generator.py \
+    conda run --no-capture-output -n sodah-sdgp python dataset_generator/conveyor_belt_dataset_generator.py \
       --headless \
       --output_dir "$output_dir" \
       --usd_dir "$usd_dir" \
@@ -65,16 +65,14 @@ set -e  # Re-enable exit on exit code != 0
 
 ## Convert datasets
 echo "Converting the generated datasets"
-source custom_dataset/dataset_conversion/venv/bin/activate
 for dir in "${config_dirs[@]}"; do
   dataset_type_dir="$CUSTOM_DATASET_DIR/replicator_dataset/$dir"
   for dataset_dir in "$dataset_type_dir"/*; do
     echo "Converting $dataset_dir ..."
-    python custom_dataset/dataset_conversion/dataset_converter.py \
+    conda run --no-capture-output -n sodah-sdgp python dataset_converter/dataset_converter.py \
       --obj_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ/" \
       --replicator_data_dir "$dataset_dir" \
       --output_dir "$CUSTOM_DATASET_DIR/converted/$dir/" \
       --converter ReplicatorToRocaEval
   done
 done
-deactivate
