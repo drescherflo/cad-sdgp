@@ -1,9 +1,10 @@
-# Gebrauchsanweisung
+# dataset_config_generator
+Enthält Skripte für die Generierung von JSON-Konfigurationsdateien.
+Diese Konfigurationsdateien definieren eindeutig, wie ein Frame im zu generierenden synthetischen Datensatz auszusehen hat.
+Hierfür wird etwas die Position und Intensität von Licht festgelegt. 
 
-## Konfig-Generator für die Erstellung eines universal einsetzbaren 6-DOF-Datensatzes
-Das Skript `6_dof_config_generator.py` dient zur Generierung einer Konfigurationsdatei für die Erstellung von Trainingsdaten. 
-Es erstellt eine detaillierte Konfiguration, die Kameraeinstellungen, Materialkonfigurationen, Szenenkonfigurationen und weitere Parameter enthält. 
-Die generierte Konfiguration wird im JSON-Format gespeichert.
+## 6_dof_config_generator.py
+Das Skript `6_dof_config_generator.py` dient zur Generierung einer Konfigurationsdatei für einen allgemeingültigen Datensatz, in dem die Objekte beliebig im Raum vor der Kamera schweben. 
 
 ### Argumente
 - `--usd_dir`: Pflichtargument. Pfad zum Verzeichnis mit USD-Dateien. Kein Standardwert.
@@ -38,9 +39,7 @@ python 6_dof_config_generator.py --usd_dir "/pfad/zum/verzeichnis" --out_path "/
 - `cam_distance_to_background` muss größer als 0 sein.
 - `train_val_split` gibt den Anteil der Daten für das Validierungsset an und sollte zwischen 0 und 1 liegen.
 
-
-
-## Konfig-Generator für die Erstellung eines Datensatzes in einer Förderband-Szenario
+## conveyor_config_generator.py
 Das Skript `conveyor_config_generator.py` generiert eine Konfigurationsdatei für die Erstellung eines Datensatzes in einem Förderbandszenario, inklusive Objekt-, Kamera-, Beleuchtungs- und Materialkonfigurationen.
 
 ### Argumente

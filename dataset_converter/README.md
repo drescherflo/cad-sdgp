@@ -1,6 +1,5 @@
-# Gebrauchsanweisung
-
-## Kurze Beschreibung
+# dataset_converter
+## dataset_converter.py
 Das Skript `dataset_converter.py` dient dazu, Datensätze aus dem Format von NVIDIA Replicator in ein anderes umzuwandeln. 
 Es lädt Konverter-Plugins aus dem Paket `converter_plugins` und wendet diese auf die bereitgestellten Daten an.
 

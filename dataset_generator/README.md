@@ -1,12 +1,10 @@
-# Gebrauchsanweisung
+# dataset_generator
+Die hier enthaltenen Skripte generieren mit Hilfe von NVIDIA Isaac Sim synthetische Trainingsdatensätze.
 
-## Datensatz-Generator für einen universell einsetzbaren 6-DOF-Datensatz
+## 6_dof_dataset_generator.py
 Das Skript `6_dof_dataset_generator.py` generiert Trainingsdatensätze für Anwendungen mit sechs Freiheitsgraden (6-DOF). 
 Es verwendet eine Konfigurationsdatei und USD-Modelle, um Szenen für das Training zu erstellen.
 Die Daten werden mittels sogenannter Writer erfasst und auf den Datenträger geschrieben. 
-
-Das Skript muss mit dem NVIDIA Isaac Sim Python-Interpreter ausgeführt werden.
-Dieser befindet sich für NVIDIA Isaac Sim 2023.1.1 unter Verwendung der Standardeinstellungen während der Installation unter `~/.local/share/ov/pkg/isaac_sim-2023.1.1/python.sh`.
 
 ### Argumente
 - `--headless`: Startet das Skript im Headless-Modus. Keine grafische Benutzeroberfläche wird angezeigt.
@@ -25,13 +23,10 @@ python.sh 6_dof_dataset_generator.py --headless --output_dir "/pfad/zum/output" 
 - Der `--headless`-Modus ist optional und nützlich für Umgebungen ohne grafische Benutzeroberfläche.
 - Das ist durch verschiedene Writer erweiterbar, die im `resumable_writers` Plugin-Paket definiert sind. Weitere Writer können hinzugefügt werden, müssen allerdings von der abstrakten Klasse `ResumableWriterInterface` erben.
 
-## Datensatz-Generator für einen Datensatz in einer Förderband-Umgebung
+## conveyor_belt_dataset_generator.py
 Das Skript `conveyor_belt_dataset_generator.py` generiert Trainingsdatensätze für Anwendungen auf einem Förderband. 
 Es verwendet eine Konfigurationsdatei und USD-Modelle, um Szenen für das Training zu erstellen.
 Die Daten werden mittels sogenannter Writer erfasst und auf den Datenträger geschrieben. 
-
-Das Skript muss mit dem NVIDIA Isaac Sim Python-Interpreter ausgeführt werden.
-Dieser befindet sich für NVIDIA Isaac Sim 2023.1.1 unter Verwendung der Standardeinstellungen während der Installation unter `~/.local/share/ov/pkg/isaac_sim-2023.1.1/python.sh`.
 
 ### Argumente
 1. `--headless`: Führt das Skript im Headless-Modus aus. Kein Standardwert.
