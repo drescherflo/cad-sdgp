@@ -1,50 +1,60 @@
 # Synthetic Data Generation Pipeline
-Eine Synthetic Data Generation Pipeline (SDGP), die mithilfe von CAD-Modellen im STEP-Format und NVIDIA Isaac Sim synthetische Trainingsdaten für verschiedene Neuronale Netze (momentan: ROCA) erzeugen kann.
 
-## Voraussetzungen
+A Synthetic Data Generation Pipeline (SDGP) that can generate synthetic training data for various neural networks (currently: ROCA) using CAD models in STEP format and NVIDIA Isaac Sim.
+
+## Prerequisites
+
 - NVIDIA RTX GPU
-- Installierter NVIDIA Treiber
+- Installed NVIDIA driver
 - Anaconda / Miniconda
 
-### Miniconda installieren
-- Anaconda Installer herunterladen
-  ```bash
-  wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-  ```
+### Install Miniconda
 
-- Installer ausführen
-  ```bash
-  bash ~/Miniconda3-latest-Linux-x86_64.sh -b -u
-  ```
+- Download the Anaconda installer
 
-- Installation abschließen und Terminal neu laden
-  ```bash
-  source ~/.bashrc
-  ```
+```bash
+wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
+```
 
-### Conda Environment einrichten
+ - Run the installer
+
+```bash
+bash ~/Miniconda3-latest-Linux-x86_64.sh -b -u
+```
+
+- Finish the installation and reload the terminal
+
+```bash
+source ~/.bashrc
+```
+
+### Set up the Conda environment
+
 ```bash
 conda env create -f environment.yaml
 ```
 
-## Verwendung der SDGP
-- CAD-Modelle im STEP-Format in Verzeichnis `~/custom_dataset/cad_models/step` legen
-- Pipeline ausführen
-  ```bash
-  ./create_dataset.sh
-  ```
-- Datensatz für ROCA liegt unter `~/custom_dataset/converted/6_dof/ReplicatorToROCA`
+## Using the SDGP
 
-- **Hinweise**:
-  - Arbeitsverzeichnis ist in Bash-Skripten über Variable `CUSTOM_DATASET_DIR` dir auf `~/custom_dataset`
-  - Soll anderer Pfad verwendet werden, kann diese Variable abgeändert werden
+- Place CAD models in STEP format into the directory `~/custom_dataset/cad_models/step`
+- Run the pipeline
+
+```bash
+./create_dataset.sh
+```
+
+- The dataset for ROCA will be located at `~/custom_dataset/converted/6_dof/ReplicatorToROCA`
+- The working directory is defined in the Bash script via the variable `CUSTOM_DATASET_DIR`, which points to `~/custom_dataset`. If a different path should be used, this variable can be modified.
 
 ## Development
+
 ```bash
 conda env create -f environment.yaml
 conda activate sodah-sdgp
 python -m isaacsim --generate-vscode-settings
-```
+``` 
 
 ## Sources
-- https://docs.isaacsim.omniverse.nvidia.com/5.0.0/installation/install_python.html (12.08.2025)
+
+- https://docs.isaacsim.omniverse.nvidia.com/5.0.0/installation/install_python.html (12 Aug 2025)
+
