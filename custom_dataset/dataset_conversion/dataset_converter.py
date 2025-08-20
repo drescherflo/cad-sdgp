@@ -56,9 +56,9 @@ def main(args: list[str]) -> None:
             os.makedirs(plugin_out_dir, exist_ok=True)
 
             # Check for empty output dir
-            if len(os.listdir(plugin_out_dir)) != 0:
-                print(f"Output directory {plugin_out_dir} is not empty. Exiting...")
-                exit(-1)
+            # if len(os.listdir(plugin_out_dir)) != 0:
+            #     print(f"Output directory {plugin_out_dir} is not empty. Exiting...")
+            #     exit(-1)
 
             # Convert data with plugin
             converter_plugin.convert(replicator_dataset_dir, args.obj_dir, plugin_out_dir)
