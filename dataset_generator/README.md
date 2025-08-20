@@ -1,59 +1,81 @@
 # dataset_generator
-Die hier enthaltenen Skripte generieren mit Hilfe von NVIDIA Isaac Sim synthetische Trainingsdatensätze.
+
+The scripts in this folder generate synthetic training datasets using NVIDIA Isaac Sim.
 
 ## 6_dof_dataset_generator.py
-Das Skript `6_dof_dataset_generator.py` generiert Trainingsdatensätze für Anwendungen mit sechs Freiheitsgraden (6-DOF). 
-Es verwendet eine Konfigurationsdatei und USD-Modelle, um Szenen für das Training zu erstellen.
-Die Daten werden mittels sogenannter Writer erfasst und auf den Datenträger geschrieben. 
 
-### Argumente
-- `--headless`: Startet das Skript im Headless-Modus. Keine grafische Benutzeroberfläche wird angezeigt.
-- `--output_dir`: Pflichtargument. Gibt das Ausgabeverzeichnis an, in dem die generierten Daten gespeichert werden.
-- `--usd_dir`: Pflichtargument. Verzeichnis, das die USD-Versionen (Universal Scene Description) der CAD-Modelle enthält, die für die Datengenerierung verwendet werden.
-- `--config_file`: Pflichtargument. Pfad zur JSON-Konfigurationsdatei, die die zu generierenden Szenen beschreibt. Zu Erstellen mit [6_dof_config_generator.py](../config_generation).
-- `--writer`: Pflichtargument. Konfiguriert Writer aus dem Plugin-Paket `resumable_writers`. Ein Writer wird nur dann geladen, wenn dessen Klassenname korrekt geschrieben wird. Die Argumente des Writers müssen das Format `argument=(true|false)` haben. Jeder Wert `!= true` wird als `False` interpretiert. Dieses Argument kann mehrfach hinzugefügt werden.
+The script `6_dof_dataset_generator.py` creates training datasets for applications with six degrees of freedom (6‑DOF). 
+It uses a configuration file and USD models to build scenes for training. The data are captured by so‑called writers and written to disk.
 
-### Beispielbefehl
+### Arguments
+
+- `--headless`: Runs the script in headless mode (no graphical user interface).
+- `--output_dir`: **required**. Directory where the generated data will be stored.
+- `--usd_dir`: **required**. Directory containing the USD (Universal Scene Description) versions of the CAD models used for data generation.
+- `--config_file`: **required**. Path to the JSON configuration file that describes the scenes to be generated (created with `6_dof_config_generator.py`).
+- `--writer`: **required**. Configures a writer from the `resumable_writers` plugin package. A writer is loaded only when its class name is spelled correctly. Writer arguments must follow the format `argument=(true|false)`; any value other than `true` is interpreted as `False`. This argument can be supplied multiple times.
+
+### Example command
+
 ```bash
-python.sh 6_dof_dataset_generator.py --headless --output_dir "/pfad/zum/output" --usd_dir "/pfad/zum/usd" --config_file "/pfad/zur/config.json" --writer Writer1 writer1_arg=true writer1_arg2=false --writer Writer2
+python 6_dof_dataset_generator.py \
+  --headless \
+  --output_dir "/path/to/output" \
+  --usd_dir "/path/to/usd" \
+  --config_file "/path/to/config.json" \
+  --writer Writer1 writer1_arg=true writer1_arg2=false \
+  --writer Writer2
 ```
 
-### Wichtige Hinweise
-- Alle Pflichtargumente (`--output_dir`, `--usd_dir`, `--config_file`, `--writer`) müssen korrekt angegeben werden, um das Skript erfolgreich auszuführen.
-- Der `--headless`-Modus ist optional und nützlich für Umgebungen ohne grafische Benutzeroberfläche.
-- Das ist durch verschiedene Writer erweiterbar, die im `resumable_writers` Plugin-Paket definiert sind. Weitere Writer können hinzugefügt werden, müssen allerdings von der abstrakten Klasse `ResumableWriterInterface` erben.
+### Important notes
+
+- All required arguments (`--output_dir`, `--usd_dir`, `--config_file`, `--writer`) must be provided correctly for the script to run successfully.
+- The `--headless` flag is optional and useful in environments without a graphical UI.
+- The functionality can be extended with additional writers defined in the `resumable_writers` plugin package. Any new writer must inherit from the abstract class `ResumableWriterInterface`.
 
 ## conveyor_belt_dataset_generator.py
-Das Skript `conveyor_belt_dataset_generator.py` generiert Trainingsdatensätze für Anwendungen auf einem Förderband. 
-Es verwendet eine Konfigurationsdatei und USD-Modelle, um Szenen für das Training zu erstellen.
-Die Daten werden mittels sogenannter Writer erfasst und auf den Datenträger geschrieben. 
 
-### Argumente
-1. `--headless`: Führt das Skript im Headless-Modus aus. Kein Standardwert.
-2. `--output_dir`: Ausgabeverzeichnis für die generierten Daten. Pflichtargument, kein Standardwert.
-3. `--usd_dir`: Verzeichnis, das die USD-Versionen der CAD-Modelle für die Datengenerierung enthält. Pflichtargument, kein Standardwert.
-4. `--config_file`: Pfad zur JSON-Konfigurationsdatei, die die zu generierenden Szenen beschreibt. Pflichtargument, kein Standardwert.
-5. `--writer`: Konfiguriert Writer aus dem `resumable_writers` Plugin-Paket. Dieses Argument kann mehrmals hinzugefügt werden. Pflichtargument, kein Standardwert.
+The script `conveyor_belt_dataset_generator.py` generates training datasets for conveyor‑belt scenarios. 
+It also uses a configuration file and USD models to build training scenes, captures data with writers, and writes the results to disk.
 
-### Beispielbefehl
+### Arguments
+
+- --`headless`: Runs the script in headless mode (no default value).
+- --`output_dir`: required. Output directory for the generated data (no default).
+- --`usd_dir`: required. Directory containing the USD versions of the CAD models used for data generation (no default).
+- --`config_file`: required. Path to the JSON configuration file describing the scenes to generate (no default).
+- --`writer`: required. Configures a writer from the `resumable_writers` plugin package. A writer is loaded only when its class name is spelled correctly. Writer arguments must follow the format `argument=(true|false)`; any value other than `true` is interpreted as `False`. This argument can be supplied multiple times.
+
+### Example command
+
 ```bash
-python.sh conveyor_belt_dataset_generator.py --headless --output_dir "/pfad/zum/ausgabeverzeichnis" --usd_dir "/pfad/zum/usd_verzeichnis" --config_file "/pfad/zur/config.json" --writer name=example_writer arg1=val1 arg2=val2
+python conveyor_belt_dataset_generator.py \
+  --headless \
+  --output_dir "/path/to/output_directory" \
+  --usd_dir "/path/to/usd_directory" \
+  --config_file "/path/to/config.json" \
+  --writer Writer1 writer1_arg=true writer1_arg2=false \
+  --writer Writer2
 ```
 
-### Wichtige Hinweise
-- Alle Pflichtargumente (`--output_dir`, `--usd_dir`, `--config_file`, `--writer`) müssen korrekt angegeben werden, um das Skript erfolgreich auszuführen.
-- Der `--headless`-Modus ist optional und nützlich für Umgebungen ohne grafische Benutzeroberfläche.
-- Das ist durch verschiedene Writer erweiterbar, die im `resumable_writers` Plugin-Paket definiert sind. Weitere Writer können hinzugefügt werden, müssen allerdings von der abstrakten Klasse `ResumableWriterInterface` erben.
+### Important notes
 
-## Bereits implementierte Writer
+- All required arguments (`--output_dir`, `--usd_dir`, `--config_file`, `--writer`) must be provided correctly for the script to run successfully.
+- The `--headless` flag is optional and useful in environments without a graphical UI.
+- The functionality can be extended with additional writers defined in the `resumable_writers` plugin package. Any new writer must inherit from the abstract class `ResumableWriterInterface`.
+
+## Implemented Writers
+
 ### ResumableBasicWriter
-Während der Generierung der Trainingsdaten wird die Simulation mehrfach zurückgesetzt.
-Dies hat zur Folge, dass das von NVIDIA bereitgestellte BasicWriter die bisher erzeugten Trainingsdaten überschreibt.
 
-Der ResumableBasicWriter ist ein Wrapper um den BasicWriter von NVIDIA und verhindert das Überschreiben von bereits erzeugten Trainingsdaten.
-FÜr die Initialisierung des BasicWriter über die Kommandozeilenargumente werden nur die Argumente vom Typ `bool` unterstützt.
-Die Argumente des NVIDIA BasicWriter befinden sich in der zugehörigen [API-Dokumentation](https://docs.omniverse.nvidia.com/py/replicator/1.10.10/source/extensions/omni.replicator.core/docs/API.html#basicwriter).
+During dataset generation the simulation is reset multiple times, which would cause NVIDIA’s BasicWriter to overwrite previously generated training data.
+
+ResumableBasicWriter wraps NVIDIA’s BasicWriter and prevents overwriting of already generated data. 
+Only boolean‑type arguments are supported for initializing the BasicWriter via command‑line arguments. 
+The BasicWriter arguments are documented in the corresponding [API documentation](https://docs.omniverse.nvidia.com/py/replicator/1.10.10/source/extensions/omni.replicator.core/docs/API.html#basicwriter).
 
 ### WorldPoseWriter
-Der WorldPoseWriter speichert Position und Orientierung für jedes sichtbare Objekt im Kamerabild und das zugehörige semantische Label.
-Er unterstützt keine Argumente, die über die Kommandozeile angegeben werden können.
+
+WorldPoseWriter records the position and orientation of every visible object in the camera image together with its semantic label. 
+It does not accept any command‑line arguments.
+
