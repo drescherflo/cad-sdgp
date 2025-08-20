@@ -24,7 +24,7 @@ Eine Synthetic Data Generation Pipeline (SDGP), die mithilfe von CAD-Modellen im
 
 ### Conda Environment einrichten
 ```bash
-./create_environments.sh
+conda env create -f environment.yaml
 ```
 
 ## Verwendung der SDGP
