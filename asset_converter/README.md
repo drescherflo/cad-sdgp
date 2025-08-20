@@ -1,35 +1,44 @@
 # asset_converter
-Die hier enthaltenen Skripte können verwendet werden, um CAD-Modelle von STEP nach OBJ oder von OBJ nach USD zu konvertieren.
+
+The scripts contained here can be used to convert CAD models from STEP to OBJ or from OBJ to USD.
 
 ## step_to_obj.py
-Das Skript `step_to_obj.py` dient zur Konvertierung von STEP-Dateien (`.stp` oder `.step`) in OBJ-Dateien (`.obj`).
 
-### Argumente
-- `--input_dir`: Pflichtargument. Verzeichnis, das die STEP-Dateien enthält. 
-- `--output_dir`: Pflichtargument. Zielverzeichnis für die konvertierten OBJ-Dateien. 
-- `--scale_factor`: Optionaler Skalierungsfaktor für die OBJ-Dateien. Standardwert ist 0.001.
+The script `step_to_obj.py` converts STEP files (`.stp` or `.step`) into OBJ files (`.obj`).
 
-### Beispielbefehl
+### Arguments
+
+- `--input_dir`: **required**. Directory that contains the STEP files.  
+- `--output_dir`: **required**. Destination directory for the converted OBJ files.  
+- `--scale_factor`: Optional scaling factor for the OBJ files. The default value is `0.001`.
+
+### Example command
+
+```bash
+python step_to_obj.py --input_dir "/path/to/input-directory" --output_dir "/path/to/output-directory" --scale_factor 0.01
 ```
-python step_to_obj.py --input_dir "/pfad/zum/input-verzeichnis" --output_dir "/pfad/zum/output-verzeichnis" --scale_factor 0.01
-```
 
-### Wichtige Hinweise
-- Die Pfade zu den Verzeichnissen müssen existieren und korrekt angegeben werden.
-- Während der Konvertierung werden temporäre STL-Dateien im Prozess erstellt, die nach Abschluss des Vorgangs automatisch gelöscht werden.
-- Der standardmäßige Skalierungsfaktor von 0.001 ist typisch, wenn das Objekt in Millimetern entworfen wurde. Der Skalierungsfaktor kann bei Bedarf angepasst werden.
+### Important notes
+
+- The paths to the directories must exist and be specified correctly.
+- During conversion temporary STL files are created as part of the process; they are automatically deleted once the conversion finishes.
+- The default scaling factor of 0.001 is typical when the original model was designed in millimetres Adjust the scaling factor as needed.
 
 ## obj_to_usd.py
-Das Skript `obj_to_usd.py` dient zur Konvertierung von OBJ-Dateien (`.obj`) in USD-Dateien (`.usd`).
 
-### Argumente
-- `--input_dir`: Pflichtargument. Verzeichnis, das die OBJ-Dateien enthält. 
-- `--output_dir`: Pflichtargument. Zielverzeichnis für die konvertierten USD-Dateien. 
+The script `obj_to_usd.py` converts OBJ files (.obj) into USD files (.usd).
 
-### Beispielbefehl
+### Arguments
+
+- `--input_dir`: **required**. Directory that contains the OBJ files.
+- `--output_dir`: **required**. Destination directory for the converted USD files.
+
+### Example command
+
+```bash
+python obj_to_usd.py --input_dir "/path/to/input-directory" --output_dir "/path/to/output-directory"
 ```
-python obj_to_usd.py --input_dir "/pfad/zum/input-verzeichnis" --output_dir "/pfad/zum/output-verzeichnis"
-```
 
-### Wichtige Hinweise
-- Die Pfade zu den Verzeichnissen müssen existieren und korrekt angegeben werden.
+### Important notes
+
+- The paths to the directories must exist and be specified correctly.
