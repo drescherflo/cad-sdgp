@@ -1,23 +1,36 @@
 # dataset_converter
+
 ## dataset_converter.py
-Das Skript `dataset_converter.py` dient dazu, Datensätze aus dem Format von NVIDIA Replicator in ein anderes umzuwandeln. 
-Es lädt Konverter-Plugins aus dem Paket `converter_plugins` und wendet diese auf die bereitgestellten Daten an.
 
-## Argumente
-- `--obj_dir`: Pflichtargument. Verzeichnis, das die Quelldateien im OBJ-Format enthält. Kein Standardwert.
-- `--replicator_data_dir`: Pflichtargument. Verzeichnis, das die Quelldateien im Replicator-Datenformat enthält. Kein Standardwert.
-- `--output_dir`: Pflichtargument. Zielverzeichnis für die konvertierten Dateien. Jedes Plugin erhält ein eigenes Unterverzeichnis. Kein Standardwert.
+The script `dataset_converter.py` converts datasets from the NVIDIA Replicator format to another format. It loads converter plugins from the `converter_plugins` package and applies them to the provided data.
 
-## Beispielbefehl
+### Arguments
+
+- `--obj_dir`: **required**. Directory containing the source files in OBJ format. No default.
+- `--replicator_data_dir`: **required**. Directory containing the source files in the Replicator data format. No default. Can be specified multiple times.
+- `--output_dir`: **required**. Destination directory for the converted files. Each plugin receives its own subdirectory. No default.
+- `--converters`: **required**. List of converters to convert the Replicator dataset. No default.
+
+### Example command
+
 ```bash
-python dataset_converter.py --obj_dir "/pfad/zum/obj_verzeichnis" --replicator_data_dir "/pfad/zum/replicator_verzeichnis" --output_dir "/pfad/zum/ausgabe_verzeichnis"
+python dataset_converter.py \
+  --obj_dir "/path/to/obj_directory" \
+  --replicator_data_dir "/path/to/replicator_directory1" \
+  --replicator_data_dir "/path/to/replicator_directory2" \
+  --output_dir "/path/to/output_directory" \
+  --converters converter1 converter2
 ```
 
-## Wichtige Hinweise
-- Das Skript erfordert, dass die Verzeichnisse `obj_dir` und `replicator_data_dir` existieren und entsprechende Dateien enthalten.
-- Das Zielverzeichnis `output_dir` wird für die Speicherung der konvertierten Dateien verwendet.
-- Eigene Konvertierungsroutinen können durch Erstellen eines eigenen Plugins hinzugefügt werden. Sie werden automatisch ausgeführt, wenn sie von der Klasse `ConverterInterface` erben und im Paket `converter_plugins` liegen.
+### Important notes
 
-## Existierende Konverter-Plugins
+- The script requires that the `obj_dir` and `replicator_data_dir` directories exist and contain the appropriate files.
+- The `output_dir` is used to store the converted files.
+- Custom conversion routines can be added by creating your own plugin. Any plugin that inherits from the `ConverterInterface` class and resides in the `converter_plugins` package can be used as an argument for the `--converters` flag.
+
+## Existing Converter Plugins
+
 ### ReplicatorToROCA
-Dieses Plugin wandelt die Ausgabe von NVIDIA-Replicator in das Format, welches [ROCA](https://github.com/drescherflo/ROCA) für das Training benötigt.
+
+This plugin converts the output of NVIDIA Replicator into the format required by [ROCA](https://github.com/drescherflo/ROCA) for training.
+
