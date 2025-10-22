@@ -63,10 +63,10 @@ def main():
 
     gpu_available = has_gpu()
     if gpu_available:
-        logger.info("GPU detected — running normal Isaac Sim mode.")
+        logger.info("GPU detected, running normal Isaac Sim mode.")
     else:
         logger.warning(
-            "No GPU or driver found — running CPU-only/headless fallback mode.")
+            "No GPU or driver found, running CPU-only/headless fallback mode.")
 
     # Headless fallback config
     sim_config = {

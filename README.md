@@ -62,16 +62,3 @@ python -m isaacsim --generate-vscode-settings
 
 Instructions can be found in the directory [paper-reproduction](paper-reproduction).
 
-
-## Converting multiple obj files
-
-- activate Isaac Sim Python environment and run command (adjust paths)
-
-```bash
-~/isaacsim/python.sh \
-  ~/ros2_ws/src/synthetic-data-generation-pipeline/asset_converter/obj_to_usd_recursive.py \
-  --input_root  ~/ros2_ws/resource/EGAD/train \
-  --output_root ~/ros2_ws/resource/EGAD_usd/train
-```
-
-the script will automatically launch isaac sim in headless mode and convert all .obj files in folder input_root to .usd files and place them in output_root
