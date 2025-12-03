@@ -1,117 +1,176 @@
-"""
-Batch-Konverter für EGAD-Objekte:
-- Durchsucht --input_root rekursiv nach .obj-Dateien
-- Konvertiert sie zu .usd mit identischer Ordnerstruktur unter --output_root
-- Funktioniert auch ohne aktive GPU / NVIDIA-Treiber (CPU-only fallback)
-"""
-
+#!/usr/bin/env python3
 import argparse
-import asyncio
-import logging
 import os
 import sys
-from typing import List
+import traceback
+import asyncio
 
-os.environ.setdefault("OMNI_KIT_ACCEPT_EULA", "YES")
+from isaacsim import SimulationApp
 
-# Prüfe, ob GPU verfügbar ist (bzw. ob nvidia-smi funktioniert)
+config = {
+    "headless": True,
+    "renderer": "RayTracedLighting",
+    "width": 1280,
+    "height": 720,
+}
+simulation_app = SimulationApp(config)
+
+from omni.kit.asset_converter import get_instance as get_asset_converter, AssetConverterContext
+from pxr import Usd, Sdf, Gf, UsdGeom, UsdPhysics, PhysxSchema
 
 
-def has_gpu() -> bool:
-    try:
-        import subprocess
-        subprocess.run(
-            ["nvidia-smi"], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True
-        )
-        return True
-    except Exception:
+async def _convert_single_obj_async(converter, src_obj: str, dst_usd: str) -> bool:
+    """Async-Wrapper um die AssetConverter-Task."""
+    print(f"[INFO]    Konvertiere OBJ → USD: {src_obj} -> {dst_usd}")
+
+    ctx = AssetConverterContext()
+    ctx.ignore_materials = False
+    ctx.smooth_normals = True
+    ctx.create_collider = False
+    ctx.create_physics_scene = False
+
+    task = converter.create_converter_task(
+        src_obj,
+        dst_usd,
+        asset_converter_context=ctx,
+    )
+
+    success = await task.wait_until_finished()
+    if not success:
+        print(f"[WARN]    Konvertierung fehlgeschlagen: {src_obj}")
+        print(f"         Fehler: {task.get_error_message()}")
         return False
 
+    print(f"[INFO]    Konvertierung erfolgreich: {dst_usd}")
+    return True
 
-def find_obj_files_recursive(root_dir: str) -> List[str]:
-    out = []
-    for dp, dn, fn in os.walk(root_dir):
-        for f in fn:
+
+def convert_single_obj(converter, src_obj: str, dst_usd: str) -> bool:
+    """Sync-Hülle, damit der restliche Code unverändert bleiben kann."""
+    loop = asyncio.new_event_loop()
+    try:
+        asyncio.set_event_loop(loop)
+        return loop.run_until_complete(_convert_single_obj_async(converter, src_obj, dst_usd))
+    finally:
+        loop.close()
+
+
+def postprocess_usd(usdfile: str, scale: float):
+    print(f"[INFO]    Postprocessing USD: {usdfile}")
+    stage = Usd.Stage.Open(usdfile)
+    if stage is None:
+        print(f"[ERROR]   Konnte Stage nicht öffnen: {usdfile}")
+        return
+
+    root_prim = stage.GetDefaultPrim()
+    if not root_prim:
+        root_prim = UsdGeom.Xform.Define(stage, "/World").GetPrim()
+        stage.SetDefaultPrim(root_prim)
+
+    mesh_prims = [prim for prim in stage.Traverse() if prim.IsA(UsdGeom.Mesh)]
+    if not mesh_prims:
+        print("[WARN]    Keine Meshes gefunden.")
+        stage.Save()
+        return
+
+    meshes = [UsdGeom.Mesh(prim) for prim in mesh_prims]
+
+    if abs(scale - 1.0) > 1e-6:
+        xformable = UsdGeom.Xformable(root_prim)
+        ops = xformable.GetOrderedXformOps()
+        scale_op = None
+        for op in ops:
+            if op.GetOpType() == UsdGeom.XformOp.TypeScale:
+                scale_op = op
+                break
+        if scale_op is None:
+            scale_op = xformable.AddScaleOp()
+        scale_op.Set(Gf.Vec3f(scale, scale, scale))
+
+
+    scene_path = Sdf.Path("/World/physicsScene")
+    if not stage.GetPrimAtPath(scene_path):
+        phys_scene = UsdPhysics.Scene.Define(stage, scene_path)
+        UsdPhysics.Scene(phys_scene).CreateGravityDirectionAttr(Gf.Vec3f(0.0, 0.0, -1.0))
+        UsdPhysics.Scene(phys_scene).CreateGravityMagnitudeAttr(981.0)  # cm/s²
+
+    for mesh in meshes:
+        prim = mesh.GetPrim()
+
+        UsdPhysics.RigidBodyAPI.Apply(prim).CreateRigidBodyEnabledAttr(True)
+
+        UsdPhysics.CollisionAPI.Apply(prim)
+        mesh_coll = UsdPhysics.MeshCollisionAPI.Apply(prim)
+
+        approx_attr = mesh_coll.GetApproximationAttr()
+        if not approx_attr or not approx_attr.IsValid():
+            approx_attr = mesh_coll.CreateApproximationAttr()
+        approx_attr.Set("convexHull")
+
+
+    stage.Save()
+    print(f"[INFO]    Postprocessing fertig: {usdfile}")
+
+
+def convert_folder_recursive(input_dir: str, output_dir: str, scale: float):
+    converter = get_asset_converter()
+
+    obj_files = []
+    for root, _, files in os.walk(input_dir):
+        for f in files:
             if f.lower().endswith(".obj"):
-                out.append(os.path.join(dp, f))
-    return sorted(out)
+                obj_files.append(os.path.join(root, f))
+
+    if not obj_files:
+        print("[ERROR]  Keine OBJ-Dateien gefunden.")
+        return
+
+    obj_files.sort()
+    print(f"[INFO]   {len(obj_files)} OBJ-Dateien gefunden, starte Konvertierung...")
+
+    for idx, obj_path in enumerate(obj_files, start=1):
+        rel = os.path.relpath(obj_path, input_dir)
+        usd_rel = os.path.splitext(rel)[0] + ".usd"
+        dst_usd = os.path.join(output_dir, usd_rel)
+        os.makedirs(os.path.dirname(dst_usd), exist_ok=True)
+
+        print(f"[INFO] [{idx}/{len(obj_files)}] {rel}")
+
+        try:
+            ok = convert_single_obj(converter, obj_path, dst_usd)
+            if not ok:
+                continue
+            postprocess_usd(dst_usd, scale)
+        except Exception:
+            print(f"[ERROR]  Ausnahme bei Datei {obj_path}:")
+            traceback.print_exc()
+
+    print("[INFO]   Rekursiver Conversion-Run fertig.")
 
 
-def make_output_path(input_path: str, input_root: str, output_root: str) -> str:
-    rel = os.path.relpath(input_path, input_root)
-    rel_usd = os.path.splitext(rel)[0] + ".usd"
-    out_path = os.path.join(output_root, rel_usd)
-    os.makedirs(os.path.dirname(out_path), exist_ok=True)
-    return out_path
+def parse_args():
+    p = argparse.ArgumentParser()
+    p.add_argument("--input_dir", required=True, help="Ordner mit OBJ-Dateien")
+    p.add_argument("--output_dir", required=True, help="Zielordner für USD-Dateien")
+    p.add_argument("--scale", type=float, default=1.0, help="Einheitsloser Skalierungsfaktor")
+    return p.parse_args()
 
 
 def main():
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s [%(levelname)s] %(message)s")
-    logger = logging.getLogger("obj_to_usd_recursive")
+    args = parse_args()
+    in_dir = os.path.abspath(args.input_dir)
+    out_dir = os.path.abspath(args.output_dir)
 
-    parser = argparse.ArgumentParser(
-        description="Recursively convert all .obj files to .usd format.")
-    parser.add_argument("--input_root", required=True)
-    parser.add_argument("--output_root", required=True)
-    args = parser.parse_args()
+    if not os.path.isdir(in_dir):
+        print(f"[ERROR] Input-Verzeichnis existiert nicht: {in_dir}")
+        return
 
-    if not os.path.isdir(args.input_root):
-        logger.error("Input root does not exist: %s", args.input_root)
-        sys.exit(1)
-    os.makedirs(args.output_root, exist_ok=True)
-
-    gpu_available = has_gpu()
-    if gpu_available:
-        logger.info("GPU detected, running normal Isaac Sim mode.")
-    else:
-        logger.warning(
-            "No GPU or driver found, running CPU-only/headless fallback mode.")
-
-    # Headless fallback config
-    sim_config = {
-        "headless": True,
-        "renderer": "RayTracedLighting" if gpu_available else None,
-        "renderer.enable": gpu_available,
-        "audio.enabled": False,
-        "app.filecache.enabled": False,
-        "app.window.width": 1,
-        "app.window.height": 1,
-    }
-
-    # Import SimulationApp
-    from isaacsim import SimulationApp
-    kit = SimulationApp(sim_config)
-
-    from isaacsim.core.utils.extensions import enable_extension
-    enable_extension("omni.kit.asset_converter")
-
-    try:
-        from asset_converter.obj_to_usd import convert as convert_single
-    except Exception as e:
-        logger.error("Failed to import converter: %s", e)
-        kit.close()
-        sys.exit(1)
-
-    objs = find_obj_files_recursive(args.input_root)
-    logger.info("Found %d OBJ files.", len(objs))
-
-    loop = asyncio.get_event_loop()
-    converted, failed = 0, 0
-    for idx, in_path in enumerate(objs, 1):
-        out_path = make_output_path(in_path, args.input_root, args.output_root)
-        logger.info("(%d/%d) Converting %s -> %s",
-                    idx, len(objs), in_path, out_path)
-        try:
-            loop.run_until_complete(convert_single(in_path, out_path))
-            converted += 1
-        except Exception as e:
-            logger.exception("Failed to convert %s: %s", in_path, e)
-            failed += 1
-
-    logger.info("Done. Converted: %d, Failed: %d", converted, failed)
-    kit.close()
+    os.makedirs(out_dir, exist_ok=True)
+    convert_folder_recursive(in_dir, out_dir, args.scale)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        main()
+    finally:
+        simulation_app.close()
