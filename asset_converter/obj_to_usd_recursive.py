@@ -76,17 +76,26 @@ def postprocess_usd(usdfile: str, scale: float):
     meshes = [UsdGeom.Mesh(prim) for prim in mesh_prims]
 
     if abs(scale - 1.0) > 1e-6:
-        xformable = UsdGeom.Xformable(root_prim)
-        ops = xformable.GetOrderedXformOps()
-        scale_op = None
-        for op in ops:
-            if op.GetOpType() == UsdGeom.XformOp.TypeScale:
-                scale_op = op
-                break
-        if scale_op is None:
-            scale_op = xformable.AddScaleOp()
-        scale_op.Set(Gf.Vec3f(scale, scale, scale))
+        for mesh in meshes:
+            pts_attr = mesh.GetPointsAttr()
+            pts = pts_attr.Get()
+            if not pts:
+                continue
 
+            scaled = [Gf.Vec3f(p[0] * scale, p[1] * scale, p[2] * scale) for p in pts]
+            pts_attr.Set(scaled)
+
+            min_p = Gf.Vec3f(scaled[0])
+            max_p = Gf.Vec3f(scaled[0])
+            for p in scaled[1:]:
+                min_p[0] = min(min_p[0], p[0])
+                min_p[1] = min(min_p[1], p[1])
+                min_p[2] = min(min_p[2], p[2])
+                max_p[0] = max(max_p[0], p[0])
+                max_p[1] = max(max_p[1], p[1])
+                max_p[2] = max(max_p[2], p[2])
+
+            mesh.GetExtentAttr().Set([min_p, max_p])
 
     scene_path = Sdf.Path("/World/physicsScene")
     if not stage.GetPrimAtPath(scene_path):
@@ -107,9 +116,9 @@ def postprocess_usd(usdfile: str, scale: float):
             approx_attr = mesh_coll.CreateApproximationAttr()
         approx_attr.Set("convexHull")
 
-
     stage.Save()
     print(f"[INFO]    Postprocessing fertig: {usdfile}")
+
 
 
 def convert_folder_recursive(input_dir: str, output_dir: str, scale: float):
