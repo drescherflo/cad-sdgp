@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import argparse
 import os
-import sys
 import traceback
 import asyncio
 
@@ -20,8 +19,7 @@ from pxr import Usd, Sdf, Gf, UsdGeom, UsdPhysics, PhysxSchema
 
 
 async def _convert_single_obj_async(converter, src_obj: str, dst_usd: str) -> bool:
-    """Async-Wrapper um die AssetConverter-Task."""
-    print(f"[INFO]    Konvertiere OBJ → USD: {src_obj} -> {dst_usd}")
+    print(f"[INFO] Konvertiere OBJ → USD: {src_obj} -> {dst_usd}")
 
     ctx = AssetConverterContext()
     ctx.ignore_materials = False
@@ -37,16 +35,15 @@ async def _convert_single_obj_async(converter, src_obj: str, dst_usd: str) -> bo
 
     success = await task.wait_until_finished()
     if not success:
-        print(f"[WARN]    Konvertierung fehlgeschlagen: {src_obj}")
-        print(f"         Fehler: {task.get_error_message()}")
+        print(f"[WARN] Konvertierung fehlgeschlagen: {src_obj}")
+        print(f"Fehler: {task.get_error_message()}")
         return False
 
-    print(f"[INFO]    Konvertierung erfolgreich: {dst_usd}")
+    print(f"[INFO] Konvertierung erfolgreich: {dst_usd}")
     return True
 
 
 def convert_single_obj(converter, src_obj: str, dst_usd: str) -> bool:
-    """Sync-Hülle, damit der restliche Code unverändert bleiben kann."""
     loop = asyncio.new_event_loop()
     try:
         asyncio.set_event_loop(loop)
@@ -55,11 +52,11 @@ def convert_single_obj(converter, src_obj: str, dst_usd: str) -> bool:
         loop.close()
 
 
-def postprocess_usd(usdfile: str, scale: float):
-    print(f"[INFO]    Postprocessing USD: {usdfile}")
+def postprocess_usd(usdfile: str, scale: float, collision, rigid_body, mass_props, density):
+    print(f"[INFO] Postprocessing USD: {usdfile}")
     stage = Usd.Stage.Open(usdfile)
     if stage is None:
-        print(f"[ERROR]   Konnte Stage nicht öffnen: {usdfile}")
+        print(f"[ERROR] Konnte Stage nicht öffnen: {usdfile}")
         return
 
     root_prim = stage.GetDefaultPrim()
@@ -69,7 +66,7 @@ def postprocess_usd(usdfile: str, scale: float):
 
     mesh_prims = [prim for prim in stage.Traverse() if prim.IsA(UsdGeom.Mesh)]
     if not mesh_prims:
-        print("[WARN]    Keine Meshes gefunden.")
+        print("[WARN] Keine Meshes gefunden.")
         stage.Save()
         return
 
@@ -106,41 +103,70 @@ def postprocess_usd(usdfile: str, scale: float):
     for mesh in meshes:
         prim = mesh.GetPrim()
 
-        UsdPhysics.RigidBodyAPI.Apply(prim).CreateRigidBodyEnabledAttr(True)
+        if rigid_body:
+            UsdPhysics.RigidBodyAPI.Apply(prim).CreateRigidBodyEnabledAttr(True)
 
-        UsdPhysics.CollisionAPI.Apply(prim)
-        mesh_coll = UsdPhysics.MeshCollisionAPI.Apply(prim)
+        if collision == "convexHull":
+            UsdPhysics.CollisionAPI.Apply(prim)
+            coll = UsdPhysics.MeshCollisionAPI.Apply(prim)
+            coll.CreateApproximationAttr().Set("convexHull")
 
-        approx_attr = mesh_coll.GetApproximationAttr()
-        if not approx_attr or not approx_attr.IsValid():
-            approx_attr = mesh_coll.CreateApproximationAttr()
-        approx_attr.Set("convexHull")
+        if mass_props:
+            extent = mesh.GetExtentAttr().Get()
+            if not extent:
+                continue
+
+            min_p, max_p = extent
+            dx = max_p[0] - min_p[0]
+            dy = max_p[1] - min_p[1]
+            dz = max_p[2] - min_p[2]
+
+            if dx <= 0 or dy <= 0 or dz <= 0:
+                continue
+
+            volume = dx * dy * dz
+            mass = density * volume
+
+            com = Gf.Vec3f(
+                (min_p[0] + max_p[0]) * 0.5,
+                (min_p[1] + max_p[1]) * 0.5,
+                (min_p[2] + max_p[2]) * 0.5,
+            )
+
+            Ix = (1/12) * mass * (dy*dy + dz*dz)
+            Iy = (1/12) * mass * (dx*dx + dz*dz)
+            Iz = (1/12) * mass * (dx*dx + dy*dy)
+
+            mapi = UsdPhysics.MassAPI.Apply(prim)
+            mapi.CreateMassAttr(mass)
+            mapi.CreateCenterOfMassAttr(com)
+            mapi.CreateDiagonalInertiaAttr(Gf.Vec3f(Ix, Iy, Iz))
 
     stage.Save()
-    print(f"[INFO]    Postprocessing fertig: {usdfile}")
+    print(f"[INFO] Postprocessing fertig: {usdfile}")
 
 
 
-def convert_folder_recursive(input_dir: str, output_dir: str, scale: float):
+def convert_folder_recursive(args):
     converter = get_asset_converter()
 
     obj_files = []
-    for root, _, files in os.walk(input_dir):
+    for root, _, files in os.walk(args.input_dir):
         for f in files:
             if f.lower().endswith(".obj"):
                 obj_files.append(os.path.join(root, f))
 
     if not obj_files:
-        print("[ERROR]  Keine OBJ-Dateien gefunden.")
+        print("[ERROR] Keine OBJ-Dateien gefunden.")
         return
 
     obj_files.sort()
-    print(f"[INFO]   {len(obj_files)} OBJ-Dateien gefunden, starte Konvertierung...")
+    print(f"[INFO] {len(obj_files)} OBJ-Dateien gefunden, starte Konvertierung...")
 
     for idx, obj_path in enumerate(obj_files, start=1):
-        rel = os.path.relpath(obj_path, input_dir)
+        rel = os.path.relpath(obj_path, args.input_dir)
         usd_rel = os.path.splitext(rel)[0] + ".usd"
-        dst_usd = os.path.join(output_dir, usd_rel)
+        dst_usd = os.path.join(args.output_dir, usd_rel)
         os.makedirs(os.path.dirname(dst_usd), exist_ok=True)
 
         print(f"[INFO] [{idx}/{len(obj_files)}] {rel}")
@@ -149,37 +175,33 @@ def convert_folder_recursive(input_dir: str, output_dir: str, scale: float):
             ok = convert_single_obj(converter, obj_path, dst_usd)
             if not ok:
                 continue
-            postprocess_usd(dst_usd, scale)
+            postprocess_usd(dst_usd, args.scale, args.collision, args.rigid_body, args.mass_props, args.density)
         except Exception:
-            print(f"[ERROR]  Ausnahme bei Datei {obj_path}:")
+            print(f"[ERROR] Ausnahme bei Datei {obj_path}:")
             traceback.print_exc()
 
-    print("[INFO]   Rekursiver Conversion-Run fertig.")
+    print("[INFO] Rekursiver Conversion-Run fertig.")
 
 
 def parse_args():
     p = argparse.ArgumentParser()
-    p.add_argument("--input_dir", required=True, help="Ordner mit OBJ-Dateien")
-    p.add_argument("--output_dir", required=True, help="Zielordner für USD-Dateien")
-    p.add_argument("--scale", type=float, default=1.0, help="Einheitsloser Skalierungsfaktor")
+    p.add_argument("--input_dir", required=True)
+    p.add_argument("--output_dir", required=True)
+    p.add_argument("--scale", type=float, default=1.0)
+
+    p.add_argument("--collision",
+                   choices=["none", "convexHull"],
+                   default="convexHull")
+
+    p.add_argument("--rigid_body", action="store_true")
+    p.add_argument("--mass_props", action="store_true")
+    p.add_argument("--density", type=float, default=1000.0)
+
     return p.parse_args()
-
-
-def main():
-    args = parse_args()
-    in_dir = os.path.abspath(args.input_dir)
-    out_dir = os.path.abspath(args.output_dir)
-
-    if not os.path.isdir(in_dir):
-        print(f"[ERROR] Input-Verzeichnis existiert nicht: {in_dir}")
-        return
-
-    os.makedirs(out_dir, exist_ok=True)
-    convert_folder_recursive(in_dir, out_dir, args.scale)
 
 
 if __name__ == "__main__":
     try:
-        main()
+        convert_folder_recursive(parse_args())
     finally:
         simulation_app.close()
