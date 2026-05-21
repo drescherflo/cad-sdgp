@@ -19,25 +19,6 @@ import json
 import math
 
 
-# Zuerst für cluttered
-# Pro Netz jede Szene
-    # Fehler in Translation
-    # Fehler in Rotation
-    # Fehler in Objekttyp
-
-# Durchschnitt plus STD über alle Szenen pro Netz
-# Hoffentlich ergibt sich dann ein Favorit bis max 3 Favs
-
-# Durchschnitt Fehler pro Szene
-# Fehler über Frame-Verlauf
-
-# Tabelle mit Mapping, welches Objekt wurde korrekt erkannt, welches nicht
-
-# Anzahl fehlender Objekte mit Verdeckungsgrad
-
-# Dann nochmal für uncluttered
-
-
 def calc_per_axis_position_difference(ground_truth_object, found_object):
     return [ground_truth_object["pose"]["position"]["x"] - found_object["translation"][0],
             ground_truth_object["pose"]["position"]["y"] - found_object["translation"][1],
@@ -2560,10 +2541,6 @@ def radar_factory(num_vars, frame='circle'):
 
 
 if __name__ == '__main__':
-    #eval_dataset_path = "/Users/flo/eval_dataset"
-    #eval_dataset_path = "/home/flo/eval_dataset"
-    eval_dataset_path = "/media/flo/8ACA8610CA85F8A9/eval_dataset"
+    eval_dataset_path = "/home/flo/eval_dataset"
     output_dir = "output"
-    #eval_dataset_path = "C:\\Users\\floriand\\eval_dataset"
-    #output_dir = r".\\output"
     main(eval_dataset_path, output_dir)

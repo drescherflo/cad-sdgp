@@ -6,7 +6,7 @@ set -euo pipefail
 # Set variables
 CUSTOM_DATASET_DIR="$HOME/custom_dataset"
 EVAL_DATASET_BASE_DIR="$HOME/eval_dataset"
-ROCA_DIR="$HOME/Dokumente/Masterarbeit/ROCA"
+ROCA_DIR="$HOME/ROCA"
 ROCA_NETWORK_DIR="$ROCA_DIR/network"
 ROCA_MODELS_AND_CONF_BASE="$CUSTOM_DATASET_DIR/ROCA_Outputs"
 

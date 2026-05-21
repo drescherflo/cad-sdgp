@@ -58,3 +58,7 @@ python -m isaacsim --generate-vscode-settings
 
 - https://docs.isaacsim.omniverse.nvidia.com/5.0.0/installation/install_python.html (12 Aug 2025)
 
+## Reproducing the Results of "Synthetic Data Generation Pipeline for CAD-Based Object Reconstruction and Pose Estimation"
+
+Instructions can be found in the directory [paper-reproduction](paper-reproduction).
+

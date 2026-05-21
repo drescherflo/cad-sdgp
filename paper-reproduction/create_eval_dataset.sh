@@ -10,26 +10,26 @@ CUSTOM_DATASET_DIR="$HOME/eval_dataset"
 cd ..
 
 ## STEP to OBJ
-echo "Converting STEP files to OBJ"
-conda run --no-capture-output -n sodah-sdgp python asset_converter/step_to_obj.py \
-  --input_dir "$CUSTOM_DATASET_DIR/cad_models/step/" \
-  --output_dir "$CUSTOM_DATASET_DIR/cad_models/obj/"
+# echo "Converting STEP files to OBJ"
+# conda run --no-capture-output -n sodah-sdgp python asset_converter/step_to_obj.py \
+#   --input_dir "$CUSTOM_DATASET_DIR/cad_models/step/" \
+#   --output_dir "$CUSTOM_DATASET_DIR/cad_models/obj/"
 
 ## OBJ to USD
-echo "Converting OBJ to USD"
-conda run --no-capture-output -n sodah-sdgp python asset_converter/obj_to_usd.py \
-  --input_dir "$CUSTOM_DATASET_DIR/cad_models/obj" \
-  --output_dir "$CUSTOM_DATASET_DIR/cad_models/usd"
+# echo "Converting OBJ to USD"
+# conda run --no-capture-output -n sodah-sdgp python asset_converter/obj_to_usd.py \
+#   --input_dir "$CUSTOM_DATASET_DIR/cad_models/obj" \
+#   --output_dir "$CUSTOM_DATASET_DIR/cad_models/usd"
 
 ## Generate eval dataset configs
-usd_dir="$CUSTOM_DATASET_DIR/cad_models/usd/"
-config_base="$CUSTOM_DATASET_DIR/dataset_generator_configs/"
+# usd_dir="$CUSTOM_DATASET_DIR/cad_models/usd/"
+# config_base="$CUSTOM_DATASET_DIR/dataset_generator_configs/"
 
-echo "Generating configs for the eval datasets"
-conda run --no-capture-output -n sodah-sdgp python dataset_config_generator/eval_conveyor_config_generator.py \
-   --usd_dir "$usd_dir" \
-   --out_dir "$config_base" \
-   --object_material_config_file "dataset_config_generator/config/eval_object_materials.json"
+# echo "Generating configs for the eval datasets"
+# conda run --no-capture-output -n sodah-sdgp python dataset_config_generator/eval_conveyor_config_generator.py \
+#    --usd_dir "$usd_dir" \
+#    --out_dir "$config_base" \
+#    --object_material_config_file "dataset_config_generator/config/eval_object_materials.json"
 
 ## Generate eval datasets
 set +e # don't exit on exit code != 0 (this prevents aborting the script when isaac sim segfaults on exit for unknown reasons)
