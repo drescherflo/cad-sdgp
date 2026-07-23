@@ -57,6 +57,7 @@ class WorldPoseWriter(ResumableWriterInterface):
                 occlusion_ratio = bbox_data["data"][i]["occlusionRatio"].astype(float)
 
                 semantic_labels_and_pose = {
+                    "prim_path": prim_path,
                     "semantic_labels": semantic_labels,
                     "occlusion_ratio": occlusion_ratio,
                     "pose": {
