@@ -24,7 +24,7 @@ async def convert(input_file_path, output_file_path):
     import omni.kit.asset_converter
     # https://docs.omniverse.nvidia.com/extensions/latest/ext_asset-converter.html (05.06.2025)
     converter_context = omni.kit.asset_converter.AssetConverterContext()  # used for config
-    converter_context.use_meter_as_world_unit = False  # set MPU to 1.0 -> Unit in USD is intepreted as meters and not as centimeters
+    converter_context.use_meter_as_world_unit = True  # set MPU to 1.0 -> Unit in USD is intepreted as meters and not as centimeters
     converter_context.convert_stage_up_z = True  # set z axis as the upward axis
     converter_instance = omni.kit.asset_converter.get_instance()
     converter_task = converter_instance.create_converter_task(input_file_path, output_file_path, asset_converter_context=converter_context)
