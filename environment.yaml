@@ -18,4 +18,4 @@ dependencies:
     - numpy-stl~=3.2.0
     - numpy-quaternion~=2023.0.3
     - --extra-index-url https://pypi.nvidia.com
-    - isaacsim[all,extscache]==5.0.0
+    - isaacsim[all,extscache]==5.1.0
