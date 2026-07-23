@@ -34,30 +34,6 @@ async def convert(input_file_path, output_file_path):
         detailed_status_error_string = converter_task.get_error_message()
         logger.error(detailed_status_error_string)
 
-"""
-async def convert(input_file_path, output_file_path):    
-    import omni.kit.asset_converter
-    # https://docs.omniverse.nvidia.com/extensions/latest/ext_asset-converter.html (05.06.2025)
-    converter_context = omni.kit.asset_converter.AssetConverterContext()  # used for config
-    converter_context.use_meter_as_world_unit = True  # set MPU to 1.0 -> Unit in USD is intepreted as meters and not as centimeters
-    converter_context.convert_stage_up_z = True  # set z axis as the upward axis
-
-    inst = omni.kit.asset_converter.get_instance()
-    task = inst.create_converter_task(
-        input_file_path,
-        output_file_path,
-        asset_converter_context=converter_context
-    )
-
-    success = await task.wait_until_finished()
-    if not success:
-        logger = logging.getLogger(__name__)
-        logger.error(task.get_error_message())
-
-    return success
-"""
-
-
 if __name__ == "__main__":
     """
     Main function to initiate the conversion process from OBJ to USD format.
