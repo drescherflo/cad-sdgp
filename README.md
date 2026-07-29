@@ -6,33 +6,41 @@ A Synthetic Data Generation Pipeline (SDGP) that can generate synthetic training
 
 - NVIDIA RTX GPU
 - Installed NVIDIA driver
-- Anaconda / Miniconda
+- Linux with glibc 2.35 or newer (Ubuntu 22.04+), as required by the Isaac Sim wheels
+- pixi
 
-### Install Miniconda
+### Install pixi
 
-- Download the Anaconda installer
-
-```bash
-wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-```
-
- - Run the installer
+- Run the installer
 
 ```bash
-bash ~/Miniconda3-latest-Linux-x86_64.sh -b -u
+curl -fsSL https://pixi.sh/install.sh | sh
 ```
 
-- Finish the installation and reload the terminal
+- Reload the terminal
 
 ```bash
 source ~/.bashrc
 ```
 
-### Set up the Conda environment
+### Set up the environment
 
 ```bash
-conda env create -f environment.yaml
+pixi install
 ```
+
+This resolves the environment from `pixi.toml` / `pixi.lock`. Note that the Isaac Sim download is
+large (roughly 20 GB), so the first run takes a while.
+
+The workspace defines two environments:
+
+| Environment   | Purpose                                                                     |
+|---------------|-----------------------------------------------------------------------------|
+| `default`     | The SDGP pipeline itself (Isaac Sim, pythonocc-core, ...)                    |
+| `paper-repro` | The evaluation scripts in `paper-reproduction/`, without Isaac Sim           |
+
+Commands are run with `pixi run <command>`; the `paper-repro` environment is selected via
+`pixi run -e paper-repro <command>`.
 
 ## Using the SDGP
 
@@ -49,10 +57,11 @@ conda env create -f environment.yaml
 ## Development
 
 ```bash
-conda env create -f environment.yaml
-conda activate sodah-sdgp
-python -m isaacsim --generate-vscode-settings
-``` 
+pixi install
+pixi run python -m isaacsim --generate-vscode-settings
+```
+
+Use `pixi shell` to drop into an activated shell instead of prefixing every command with `pixi run`.
 
 ## Sources
 
