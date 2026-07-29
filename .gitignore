@@ -1,3 +1,6 @@
+# Ignore the pixi environments (pixi.lock is committed)
+.pixi/
+
 # Ignore contents in temporory replicator and conversion output (directories used for testing)
 temp_replicator_out/
 temp_roca_out/
