@@ -29,8 +29,7 @@ source ~/.bashrc
 pixi install
 ```
 
-This resolves the environment from `pixi.toml` / `pixi.lock`. Note that the Isaac Sim download is
-large (roughly 20 GB), so the first run takes a while.
+This resolves the environment from `pixi.toml` / `pixi.lock`.
 
 The workspace defines two environments:
 
