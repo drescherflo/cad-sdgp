@@ -81,6 +81,68 @@ def sanitize_material_name(name):
     return sanitized if sanitized else "step_material"
 
 
+# Matches COLOUR_RGB entities, which are regularly wrapped across several lines
+STEP_COLOUR_RGB_PATTERN = re.compile(
+    r"COLOUR_RGB\s*\(\s*'((?:[^']|'')*)'\s*,\s*"
+    r"([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*\)",
+    re.DOTALL,
+)
+
+# Names CAD exporters generate when a colour was never named by the designer, e.g. "Opaque(160,160,160)"
+STEP_GENERATED_NAME_PATTERN = re.compile(r"^(opaque|colou?r|rgb)\b", re.IGNORECASE)
+
+
+def parse_step_color_names(step_file_path):
+    """
+    Parses the names of all COLOUR_RGB entities from the raw step text.
+
+    OpenCASCADE discards the name a colour carries in the step file and reports the name of the
+    owning shape instead, so the text is scanned directly to recover names like "Stahl - satiniert".
+
+    :param step_file_path: Path to the STEP file.
+    :type step_file_path: str
+    :return: List of (name, (r, g, b)) tuples with the colour in sRGB as stored in the file.
+    :rtype: list
+    """
+
+    with open(step_file_path, 'r', encoding='utf-8', errors='replace') as f:
+        content = f.read()
+
+    colors = []
+    for match in STEP_COLOUR_RGB_PATTERN.finditer(content):
+        name = match.group(1).replace("''", "'").strip()  # step escapes a quote by doubling it
+        rgb = tuple(float(match.group(group_idx)) for group_idx in (2, 3, 4))
+        colors.append((name, rgb))
+    return colors
+
+
+def select_material_name(step_file_path, rgb, fallback_name):
+    """
+    Picks the most descriptive name the step file provides for a given colour.
+
+    :param step_file_path: Path to the STEP file.
+    :type step_file_path: str
+    :param rgb: The colour resolved via XCAF as (r, g, b) in sRGB.
+    :type rgb: tuple
+    :param fallback_name: Name to fall back to when the file holds no usable colour name.
+    :type fallback_name: str
+    :return: The selected material name.
+    :rtype: str
+    """
+
+    candidates = [entry for entry in parse_step_color_names(step_file_path)
+                  if all(abs(parsed - resolved) < 1e-4 for parsed, resolved in zip(entry[1], rgb))]
+
+    # Prefer a name the designer chose over one the exporter generated
+    for name, _ in candidates:
+        if name and not STEP_GENERATED_NAME_PATTERN.match(name):
+            return name
+    for name, _ in candidates:
+        if name:
+            return name
+    return fallback_name
+
+
 def extract_step_color(step_file_path):
     """
     Extracts the surface colour of a STEP file via the XDE/XCAF layer.
@@ -128,7 +190,8 @@ def extract_step_color(step_file_path):
             for channel in (XCAFDoc_ColorSurf, XCAFDoc_ColorGen):
                 color = Quantity_Color()
                 if color_tool.GetColor(candidate, channel, color):
-                    return name, tuple(linear_to_srgb(c) for c in (color.Red(), color.Green(), color.Blue()))
+                    rgb = tuple(linear_to_srgb(c) for c in (color.Red(), color.Green(), color.Blue()))
+                    return select_material_name(step_file_path, rgb, name), rgb
 
     return None
 
