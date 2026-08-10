@@ -17,6 +17,7 @@ parser.add_argument("--output_dir", help="Output directory", required=True)
 parser.add_argument("--usd_dir", help="Directory containing the USD versions of the CAD models to be used for data generation", required=True)
 parser.add_argument("--config_file", help="Path to the JSON configuration file describing the to be generated scenes", required=True)
 parser.add_argument("--writer", nargs="*", action="append", help="Configures writers from the resumable_writers plugin package. Argument can be added multiple times", required=True)
+parser.add_argument("--keep_cad_materials", help="Render the objects with the materials extracted from the CAD models instead of the randomized materials from the config file", action="store_true")
 args = parser.parse_args(sys.argv[1:])
 
 # Launch Isaac Sim
@@ -129,7 +130,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         world = World(physics_dt=1.0/physics_frequency, rendering_dt=1.0/render_frequency)
 
         # Generate object materials
-        materials = generate_materials(config["materials"])
+        # Skipped when the materials of the CAD models are kept, since they would never be assigned
+        materials = [] if args.keep_cad_materials else generate_materials(config["materials"])
 
         # Add camera
         camera = rep.create.camera()
@@ -348,9 +350,12 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
 
             # Assign material to object manually since replicator does not support sequential assignment of materials
             # Setting a per frame trigger results in [Error] [omni.graph.core.plugin] [/Replicator/SDGPipeline] Assertion raised in compute
-            for obj_idx, object_prim in enumerate(object_rigid_prims):
-                material_idx = object_material_assignments[scene_frame_nr][obj_idx]["material_idx"]
-                object_prim.apply_visual_materials(materials[material_idx])
+            # apply_visual_materials() binds the material as "stronger than descendants" and therefore
+            # overrides the material the CAD model carries, so it is skipped when that material is kept
+            if not args.keep_cad_materials:
+                for obj_idx, object_prim in enumerate(object_rigid_prims):
+                    material_idx = object_material_assignments[scene_frame_nr][obj_idx]["material_idx"]
+                    object_prim.apply_visual_materials(materials[material_idx])
             
             # Generate multiple sub-frames for 1 frame for better quality (see https://docs.omniverse.nvidia.com/extensions/latest/ext_replicator/subframes_examples.html#subframes-examples (08.01.2024))
             rep.orchestrator.step(rt_subframes=sub_frames_per_frame)

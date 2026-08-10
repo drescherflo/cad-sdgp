@@ -14,6 +14,7 @@ parser.add_argument("--output_dir", help="Output directory", required=True)
 parser.add_argument("--usd_dir", help="Directory containing the USD versions of the CAD models to be used for data generation", required=True)
 parser.add_argument("--config_file", help="Path to the JSON configuration file describing the to be generated scenes", required=True)
 parser.add_argument("--writer", nargs="*", action="append", help="Configures writers from the resumable_writers plugin package. Argument can be added multiple times", required=True)
+parser.add_argument("--keep_cad_materials", help="Render the objects with the materials extracted from the CAD models instead of the randomized materials from the config file", action="store_true")
 args = parser.parse_args(sys.argv[1:])
 
 # Launch Isaac Sim
@@ -119,7 +120,8 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         create_new_stage()  # Create new stage and delete previous contents
 
         # Generate object materials
-        materials = generate_materials(config["materials"])
+        # Skipped when the materials of the CAD models are kept, since they would never be assigned
+        materials = [] if args.keep_cad_materials else generate_materials(config["materials"])
 
         # Add camera
         camera = rep.create.camera(position=camera_position, rotation=camera_orientation)
@@ -180,9 +182,12 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
             # Assign material to object manually since replicator does not support sequential assignment
             # Modify pose of object manually since replicator throws error "WritePrimAttribute Error: cannot reshape array of size 3 into shape (2,newaxis)"
             for obj_idx, object_prim in enumerate(object_prims):
-                material_idx = current_scene_config["object_configs"][obj_idx]["material_idx"]
                 xform_object_prim = XFormPrim(object_prim.GetPrimPath().pathString)
-                xform_object_prim.apply_visual_materials(materials[material_idx])
+                # apply_visual_materials() binds the material as "stronger than descendants" and therefore
+                # overrides the material the CAD model carries, so it is skipped when that material is kept
+                if not args.keep_cad_materials:
+                    material_idx = current_scene_config["object_configs"][obj_idx]["material_idx"]
+                    xform_object_prim.apply_visual_materials(materials[material_idx])
                 position = current_scene_config["object_configs"][obj_idx]["pose"]["position"]
                 orientation = current_scene_config["object_configs"][obj_idx]["pose"]["orientation"]
                 orientation_quaternion = euler_angles_to_quat(np.array(orientation), degrees=True, extrinsic=False)
