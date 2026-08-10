@@ -5,7 +5,7 @@ import shutil
 
 from OCC.Extend.DataExchange import read_step_file, write_stl_file
 from OCC.Core.IFSelect import IFSelect_RetDone
-from OCC.Core.Quantity import Quantity_Color
+from OCC.Core.Quantity import Quantity_Color, Quantity_TOC_sRGB
 from OCC.Core.STEPCAFControl import STEPCAFControl_Reader
 from OCC.Core.TDF import TDF_LabelSequence
 from OCC.Core.TDocStd import TDocStd_Document
@@ -46,25 +46,6 @@ def convert_exponential_to_decimal(input_strings):
         converted_string = '  '.join(converted_numbers)  # Convert back to string
         converted_strings.append(converted_string)
     return converted_strings
-
-
-def linear_to_srgb(channel):
-    """
-    Converts a single colour channel from linear RGB to sRGB.
-
-    OpenCASCADE reports colours in linear space, while the Kd entry of an MTL file is
-    interpreted as sRGB by the consuming renderers (Isaac Sim included). Without this
-    conversion the material ends up noticeably too dark.
-
-    :param channel: Colour channel in linear space.
-    :type channel: float
-    :return: Colour channel in sRGB space.
-    :rtype: float
-    """
-
-    if channel <= 0.0031308:
-        return 12.92 * channel
-    return 1.055 * (channel ** (1 / 2.4)) - 0.055
 
 
 def sanitize_material_name(name):
@@ -190,7 +171,7 @@ def extract_step_color(step_file_path):
             for channel in (XCAFDoc_ColorSurf, XCAFDoc_ColorGen):
                 color = Quantity_Color()
                 if color_tool.GetColor(candidate, channel, color):
-                    rgb = tuple(linear_to_srgb(c) for c in (color.Red(), color.Green(), color.Blue()))
+                    rgb = tuple(color.Values(Quantity_TOC_sRGB))
                     return select_material_name(step_file_path, rgb, name), rgb
 
     return None
