@@ -11,7 +11,7 @@ All required files can be downloaded here: https://drive.proton.me/urls/27FPHA51
 1. Create the directory `~/custom_dataset/cad_models`
 2. Place the three directories `OBJ`, `OBJ_converted`, and `STEP` from the `cad-models` folder of the downloaded files into `~/custom_dataset/cad_models`
 3. Copy the contents of the `training` directory from the downloaded files into `~/custom_dataset/`
-4. Set up the conda environment for the SDGP as described in the root `README.md`
+4. Set up the SDGP environment as described in the root `README.md` (`pixi install`)
 5. Run `create_train_dataset.sh` - depending on your hardware, this may take one to two days
 6. Clone [ROCA](https://github.com/drescherflo/ROCA) into your home directory
 7. `cd` into `ROCA` and run `setup.sh` to set up the environment
@@ -38,7 +38,7 @@ All required files can be downloaded here: https://drive.proton.me/urls/27FPHA51
 3. Create the directory `~/eval_dataset/cad_models`
 4. Place the three directories `OBJ`, `OBJ_converted`, and `STEP` from the `cad-models` folder of the downloaded files into `~/eval_dataset/cad_models`
 5. Copy the directory `evaluation/dataset_generator_configs` from the downloaded files into `~/eval_dataset/`
-6. Set up the conda environment for the SDGP as described in the root `README.md`
+6. Set up the SDGP environment as described in the root `README.md` (`pixi install`)
 7. Run `create_eval_dataset.sh` - depending on your hardware, this may take up to five days
 
 ### Generating Raw Evaluation Data
@@ -50,9 +50,8 @@ All required files can be downloaded here: https://drive.proton.me/urls/27FPHA51
 
 ### Running the Evaluation
 
-1. Run `setup_env.sh` to create the required virtual environment
-2. Open `evaluation.py` and set the path to the evaluation dataset at the end of the file
-3. Run `evaluation.py`
+1. Open `evaluation.py` and set the path to the evaluation dataset at the end of the file
+2. Run it in the `paper-repro` environment: `pixi run -e paper-repro python evaluation.py`
 
 ---
 
