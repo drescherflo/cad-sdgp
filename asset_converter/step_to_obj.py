@@ -58,7 +58,10 @@ def sanitize_material_name(name):
     :rtype: str
     """
 
-    sanitized = re.sub(r"[^A-Za-z0-9_.-]", "_", name.strip())
+    # A separator absorbs the whitespace around it, otherwise a name like "Stahl - satiniert"
+    # would keep an underscore on either side of the dash
+    collapsed = re.sub(r"\s*([-_.])\s*", r"\1", name.strip())
+    sanitized = re.sub(r"[^A-Za-z0-9_.-]+", "_", collapsed).strip("_")
     return sanitized if sanitized else "step_material"
 
 
