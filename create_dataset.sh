@@ -8,6 +8,15 @@ cd "$(dirname "${BASH_SOURCE[0]}")"
 
 # Set variables
 CUSTOM_DATASET_DIR="$HOME/custom_dataset"
+# Set to "true" to render the objects with the materials extracted from the CAD models
+# instead of the randomized materials from the generator configs
+KEEP_CAD_MATERIALS="${KEEP_CAD_MATERIALS:-false}"
+
+# Build the optional flag for the dataset generators
+KEEP_CAD_MATERIALS_FLAG=()
+if [ "$KEEP_CAD_MATERIALS" = "true" ]; then
+  KEEP_CAD_MATERIALS_FLAG=(--keep_cad_materials)
+fi
 
 # Run dataset generation
 ## STEP to OBJ
@@ -37,7 +46,8 @@ pixi run python dataset_generator/6_dof_dataset_generator.py \
    --usd_dir "$CUSTOM_DATASET_DIR/cad_models/usd/" \
    --config_file "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" \
    --writer ResumableBasicWriter rgb=True camera_params=True distance_to_image_plane=True instance_segmentation=True colorize_instance_segmentation=False \
-   --writer WorldPoseWriter
+   --writer WorldPoseWriter \
+   "${KEEP_CAD_MATERIALS_FLAG[@]}"
 
 
 ## Generate config for conveyor dataset
@@ -60,7 +70,8 @@ pixi run python dataset_generator/conveyor_belt_dataset_generator.py \
   --usd_dir "$CUSTOM_DATASET_DIR/cad_models/usd/" \
   --config_file "$CUSTOM_DATASET_DIR/dataset_generator_configs/conveyor_generator_config.json" \
   --writer ResumableBasicWriter rgb=True camera_params=True distance_to_image_plane=True instance_segmentation=True colorize_instance_segmentation=False \
-  --writer WorldPoseWriter
+  --writer WorldPoseWriter \
+  "${KEEP_CAD_MATERIALS_FLAG[@]}"
 
 ## Convert dataset
 echo "Converting datasets to ROCA format"

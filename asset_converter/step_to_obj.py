@@ -1,8 +1,15 @@
 import argparse
 import os
+import re
 import shutil
 
 from OCC.Extend.DataExchange import read_step_file, write_stl_file
+from OCC.Core.IFSelect import IFSelect_RetDone
+from OCC.Core.Quantity import Quantity_Color, Quantity_TOC_sRGB
+from OCC.Core.STEPCAFControl import STEPCAFControl_Reader
+from OCC.Core.TDF import TDF_LabelSequence
+from OCC.Core.TDocStd import TDocStd_Document
+from OCC.Core.XCAFDoc import XCAFDoc_ColorGen, XCAFDoc_ColorSurf, XCAFDoc_DocumentTool
 from stl import mesh
 import numpy as np
 
@@ -39,6 +46,159 @@ def convert_exponential_to_decimal(input_strings):
         converted_string = '  '.join(converted_numbers)  # Convert back to string
         converted_strings.append(converted_string)
     return converted_strings
+
+
+def sanitize_material_name(name):
+    """
+    Turns an arbitrary STEP label into a name that is safe to use inside an MTL file.
+
+    :param name: The raw name taken from the STEP file.
+    :type name: str
+    :return: A name without whitespace or special characters.
+    :rtype: str
+    """
+
+    # A separator absorbs the whitespace around it, otherwise a name like "Stahl - satiniert"
+    # would keep an underscore on either side of the dash
+    collapsed = re.sub(r"\s*([-_.])\s*", r"\1", name.strip())
+    sanitized = re.sub(r"[^A-Za-z0-9_.-]+", "_", collapsed).strip("_")
+    return sanitized if sanitized else "step_material"
+
+
+# Matches COLOUR_RGB entities, which are regularly wrapped across several lines
+STEP_COLOUR_RGB_PATTERN = re.compile(
+    r"COLOUR_RGB\s*\(\s*'((?:[^']|'')*)'\s*,\s*"
+    r"([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*,\s*([-+0-9.eE]+)\s*\)",
+    re.DOTALL,
+)
+
+# Names CAD exporters generate when a colour was never named by the designer, e.g. "Opaque(160,160,160)"
+STEP_GENERATED_NAME_PATTERN = re.compile(r"^(opaque|colou?r|rgb)\b", re.IGNORECASE)
+
+
+def parse_step_color_names(step_file_path):
+    """
+    Parses the names of all COLOUR_RGB entities from the raw step text.
+
+    OpenCASCADE discards the name a colour carries in the step file and reports the name of the
+    owning shape instead, so the text is scanned directly to recover names like "Stahl - satiniert".
+
+    :param step_file_path: Path to the STEP file.
+    :type step_file_path: str
+    :return: List of (name, (r, g, b)) tuples with the colour in sRGB as stored in the file.
+    :rtype: list
+    """
+
+    with open(step_file_path, 'r', encoding='utf-8', errors='replace') as f:
+        content = f.read()
+
+    colors = []
+    for match in STEP_COLOUR_RGB_PATTERN.finditer(content):
+        name = match.group(1).replace("''", "'").strip()  # step escapes a quote by doubling it
+        rgb = tuple(float(match.group(group_idx)) for group_idx in (2, 3, 4))
+        colors.append((name, rgb))
+    return colors
+
+
+def select_material_name(step_file_path, rgb, fallback_name):
+    """
+    Picks the most descriptive name the step file provides for a given colour.
+
+    :param step_file_path: Path to the STEP file.
+    :type step_file_path: str
+    :param rgb: The colour resolved via XCAF as (r, g, b) in sRGB.
+    :type rgb: tuple
+    :param fallback_name: Name to fall back to when the file holds no usable colour name.
+    :type fallback_name: str
+    :return: The selected material name.
+    :rtype: str
+    """
+
+    candidates = [entry for entry in parse_step_color_names(step_file_path)
+                  if all(abs(parsed - resolved) < 1e-4 for parsed, resolved in zip(entry[1], rgb))]
+
+    # Prefer a name the designer chose over one the exporter generated
+    for name, _ in candidates:
+        if name and not STEP_GENERATED_NAME_PATTERN.match(name):
+            return name
+    for name, _ in candidates:
+        if name:
+            return name
+    return fallback_name
+
+
+def extract_step_color(step_file_path):
+    """
+    Extracts the surface colour of a STEP file via the XDE/XCAF layer.
+
+    The plain reader used for the geometry discards all presentation data, so the file is
+    read a second time through STEPCAFControl_Reader. Only a single colour per file is
+    resolved, because the STL intermediate merges all sub shapes into one mesh and the
+    per face assignment would be lost anyway.
+
+    :param step_file_path: Path to the STEP file.
+    :type step_file_path: str
+    :return: Tuple of (name, (r, g, b)) with the colour in sRGB, or None if the file carries no colour.
+    :rtype: tuple | None
+    """
+
+    doc = TDocStd_Document("step-colour-import")
+    shape_tool = XCAFDoc_DocumentTool.ShapeTool(doc.Main())
+    color_tool = XCAFDoc_DocumentTool.ColorTool(doc.Main())
+
+    reader = STEPCAFControl_Reader()
+    reader.SetColorMode(True)
+    reader.SetNameMode(True)
+    if reader.ReadFile(step_file_path) != IFSelect_RetDone:
+        return None
+    reader.Transfer(doc)
+
+    roots = TDF_LabelSequence()
+    shape_tool.GetFreeShapes(roots)
+    if roots.Length() == 0:
+        return None
+    name = roots.Value(1).GetLabelName()
+
+    # The label based overloads of GetColor are not callable from python, so the colour is
+    # resolved through the shape a label refers to. Sub shapes are checked as well because
+    # assemblies usually carry the colour on their components rather than on the root.
+    for root_idx in range(1, roots.Length() + 1):
+        label = roots.Value(root_idx)
+        candidates = [shape_tool.GetShape(label)]
+
+        sub_shapes = TDF_LabelSequence()
+        shape_tool.GetSubShapes(label, sub_shapes)
+        candidates += [shape_tool.GetShape(sub_shapes.Value(i)) for i in range(1, sub_shapes.Length() + 1)]
+
+        for candidate in candidates:
+            for channel in (XCAFDoc_ColorSurf, XCAFDoc_ColorGen):
+                color = Quantity_Color()
+                if color_tool.GetColor(candidate, channel, color):
+                    rgb = tuple(color.Values(Quantity_TOC_sRGB))
+                    return select_material_name(step_file_path, rgb, name), rgb
+
+    return None
+
+
+def write_mtl_file(mtl_file_path, material_name, rgb):
+    """
+    Writes a Wavefront MTL file containing a single diffuse material.
+
+    :param mtl_file_path: Destination path of the .mtl file.
+    :type mtl_file_path: str
+    :param material_name: Name the material is registered under.
+    :type material_name: str
+    :param rgb: Diffuse colour as (r, g, b) in sRGB.
+    :type rgb: tuple
+    """
+
+    with open(mtl_file_path, 'w') as f:
+        f.write(f"newmtl {material_name}\n")
+        f.write(f"Kd {rgb[0]:.6f} {rgb[1]:.6f} {rgb[2]:.6f}\n")
+        f.write("Ka 0.000000 0.000000 0.000000\n")
+        f.write("Ks 0.000000 0.000000 0.000000\n")
+        f.write("d 1.000000\n")
+        f.write("illum 2\n")
 
 
 def main():
@@ -90,9 +250,23 @@ def main():
         shape = read_step_file(input_file_path)
         write_stl_file(shape, tmp_file_path, mode="ascii")
 
+        # The stl intermediate cannot carry the material, so read it from the step file directly
+        material = extract_step_color(input_file_path)
+        if material is None:
+            print("  No colour found in step file, writing obj without material")
+
         # Convert tmp stl to obj
         stl_mesh = mesh.Mesh.from_file(tmp_file_path)
         with open(output_file_path, 'w') as f:
+            # Write material reference
+            if material is not None:
+                material_name = sanitize_material_name(material[0])
+                mtl_file_path = os.path.splitext(output_file_path)[0] + ".mtl"
+                write_mtl_file(mtl_file_path, material_name, material[1])
+                print(f"  Extracted material '{material_name}' -> {os.path.basename(mtl_file_path)}")
+                f.write(f"mtllib {os.path.basename(mtl_file_path)}\n")
+                f.write(f"usemtl {material_name}\n")
+
             # Write vertices
             for v in np.vstack(stl_mesh.vectors):
                 # scale by provided factor (default 0.001)
