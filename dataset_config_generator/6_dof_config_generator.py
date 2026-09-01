@@ -276,7 +276,7 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--sphere_max_intensity", default=5000, type=float,
                         help="The maximum light intensity of a sphere light")
     parser.add_argument("--train_val_split", default=0.2, type=float,
-                        help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
+                        help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20 percent of the dataset are assigned to the validation dataset")
     parser.add_argument("--min_x", default=-2, type=float, help="The minimum x coordinate of the object in the scene")
     parser.add_argument("--max_x", default=2, type=float, help="The maximum x coordinate of the object in the scene")
     parser.add_argument("--min_y", default=-1, type=float, help="The minimum y coordinate of the object in the scene")
