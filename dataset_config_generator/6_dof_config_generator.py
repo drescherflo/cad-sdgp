@@ -12,11 +12,11 @@ import random
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from utils import io, config
+from utils import io, config, camera_intrinsics
 from utils.scene_randomization import generate_random_vec_3, generate_random_rgb_color, generate_materials_conf, generate_sphere_light_confs_for_one_frame, usd_model_to_semantic_class_label
 
 
-def generate_camera_conf(frame_width: int, frame_height: int, cam_distance_to_background: float) -> dict:
+def generate_camera_conf(frame_width: int, frame_height: int, cam_distance_to_background: float, intrinsics: dict) -> dict:
     """
     Generates a configuration dictionary for a camera setup.
 
@@ -29,7 +29,9 @@ def generate_camera_conf(frame_width: int, frame_height: int, cam_distance_to_ba
     :type frame_width: int
     :param cam_distance_to_background: Camera distance to the background plane
     :type cam_distance_to_background: float
-    :return: A dictionary containing the camera configuration, including frame size and pose.
+    :param intrinsics: The camera's intrinsic parameters, as returned by camera_intrinsics.build_camera_intrinsics_conf.
+    :type intrinsics: dict
+    :return: A dictionary containing the camera configuration, including frame size, pose and intrinsics.
     :rtype: dict
     """
 
@@ -39,7 +41,8 @@ def generate_camera_conf(frame_width: int, frame_height: int, cam_distance_to_ba
         "pose": {
             "position": [0, 0, cam_distance_to_background],
             "orientation": [-90, -90, 0]  # Look at (0, 0, 0) with x-axis to the right
-        }
+        },
+        "intrinsics": intrinsics
     }
 
 
@@ -284,6 +287,7 @@ def main(argv: list[str]) -> None:
                         help="The minimum light intensity of the dome light")
     parser.add_argument("--dome_light_max_intensity", default=1000, type=float,
                         help="The maximum light intensity of the dome light")
+    camera_intrinsics.add_camera_intrinsics_args(parser)
 
     # Parse args
     args = parser.parse_args(argv)
@@ -338,7 +342,8 @@ def main(argv: list[str]) -> None:
 
     # Build final config
     data_generation_config = {
-        "camera_config": generate_camera_conf(frame_width, frame_height, cam_distance_to_background),
+        "camera_config": generate_camera_conf(frame_width, frame_height, cam_distance_to_background,
+                                              camera_intrinsics.build_camera_intrinsics_conf(args, frame_width, frame_height)),
         "sub_frames_per_frame": sub_frames_per_frame,
         "num_frames_per_object": num_frames_per_object,
         "materials": generate_materials_conf(num_random_materials, probability_of_glass_material),

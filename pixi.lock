@@ -1,6 +1,6 @@
 version: 7
 platforms:
-- name: p1
+- name: linux-64-glibc-2-35
   subdir: linux-64
   virtual-packages:
   - __glibc=2.35
@@ -15,7 +15,7 @@ environments:
     - https://pypi.org/simple
     - https://pypi.nvidia.com/
     packages:
-      p1:
+      linux-64-glibc-2-35:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_9.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/fontconfig-2.18.2-h27c8c51_0.conda
@@ -247,7 +247,7 @@ environments:
     indexes:
     - https://pypi.org/simple
     packages:
-      p1:
+      linux-64-glibc-2-35:
       - conda: https://conda.anaconda.org/conda-forge/linux-64/_openmp_mutex-4.5-20_gnu.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/bzip2-1.0.8-hda65f42_9.conda
       - conda: https://conda.anaconda.org/conda-forge/linux-64/icu-78.3-h54a6638_2.conda
