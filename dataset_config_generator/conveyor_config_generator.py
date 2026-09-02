@@ -9,7 +9,7 @@ import json
 import os
 import argparse
 
-from utils import config, io
+from utils import config, io, camera_intrinsics
 from utils.conveyor_config import generate_config
 
 
@@ -129,6 +129,7 @@ def main(argv: list[str]) -> None:
                         help="The render frequency in Hz")
     parser.add_argument("--physics_frequency", default=360, type=int,
                         help="The frequency at which the physics are calculated")
+    camera_intrinsics.add_camera_intrinsics_args(parser)
 
     # Parse args
     args = parser.parse_args(argv)
@@ -253,6 +254,7 @@ def main(argv: list[str]) -> None:
                     min_x_pos_for_record_start,
                     render_frequency,
                     physics_frequency,
+                    camera_intrinsics.build_camera_intrinsics_conf(args, frame_width, frame_height),
                     args)
 
     # Write config
