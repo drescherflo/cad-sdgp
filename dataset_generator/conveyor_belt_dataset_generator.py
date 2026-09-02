@@ -72,6 +72,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     # Parse general config
     image_width = config["camera_frame_config"]["frame_width"]
     image_height = config["camera_frame_config"]["frame_height"]
+    camera_intrinsics = config["camera_frame_config"].get("intrinsics", {})  # .get(...) required for compatibility with old configs
     sub_frames_per_frame = config["sub_frames_per_frame"]
     conveyor_belt_speed = config["conveyor_belt_speed"]
     min_x_pos_for_record_start = config["min_x_pos_for_record_start"]
@@ -134,7 +135,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         materials = [] if args.keep_cad_materials else generate_materials(config["materials"])
 
         # Add camera
-        camera = rep.create.camera()
+        camera = rep.create.camera(**camera_intrinsics)
         render_product = rep.create.render_product(camera=camera, resolution=(image_width, image_height))
 
         # Add material for custom colors of ground plane

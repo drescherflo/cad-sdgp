@@ -77,6 +77,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
     image_height = config["camera_config"]["frame_height"]
     camera_position = config["camera_config"]["pose"]["position"]
     camera_orientation = config["camera_config"]["pose"]["orientation"]
+    camera_intrinsics = config["camera_config"].get("intrinsics", {})  # .get(...) required for compatibility with old configs
     sub_frames_per_frame = config["sub_frames_per_frame"]
 
     # Parse writer config
@@ -124,7 +125,7 @@ def main(conf_path: str, usd_dir: str, out_dir: str) -> None:
         materials = [] if args.keep_cad_materials else generate_materials(config["materials"])
 
         # Add camera
-        camera = rep.create.camera(position=camera_position, rotation=camera_orientation)
+        camera = rep.create.camera(position=camera_position, rotation=camera_orientation, **camera_intrinsics)
         render_product = rep.create.render_product(camera=camera, resolution=(image_width, image_height))
 
         # Initialize writers
