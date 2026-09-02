@@ -52,7 +52,7 @@ def main(argv: list[str]) -> None:
     parser.add_argument("--num_sphere_lights", default=5, type=int,
                         help="Specifies the number of sphere lights with random light color in the scene")
     parser.add_argument("--train_val_split", default=0.2, type=float,
-                        help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20% of the dataset are assigned to the validation dataset")
+                        help="Sets the train and validation split of the generated dataset. The default value of 0.2 means that 20 percent of the dataset are assigned to the validation dataset")
     parser.add_argument("--object_init_min_x", default=-2.0, type=float,
                         help="The minimum initial x coordinate of the object in the scene")
     parser.add_argument("--object_init_max_x", default=-1.5, type=float,
