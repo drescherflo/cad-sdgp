@@ -28,6 +28,13 @@ The script `6_dof_config_generator.py` generates a configuration file for a gene
 - `--cam_distance_to_background`: Distance of the camera to the background plane. Default is `5`.
 - `--dome_light_min_intensity`: Minimum intensity of the dome lighting. Default is `5000`.
 - `--dome_light_max_intensity`: Maximum intensity of the dome lighting. Default is `50000`.
+- `--focal_length_px`: Focal length in pixels (fx == fy), as produced by a camera calibration. Defaults to the equivalent of Isaac Sim's built-in default for the given `--frame_width`.
+- `--principal_point_x`: Principal point x coordinate in pixels (cx). Defaults to `frame_width / 2` (centered).
+- `--principal_point_y`: Principal point y coordinate in pixels (cy). Defaults to `frame_height / 2` (centered).
+- `--f_stop`: Lens aperture. `0.0` disables depth-of-field. Default is `0.0`.
+- `--focus_distance`: Focus distance in world units. Default is `400.0`.
+- `--clipping_range_near`: Near clipping distance in world units. Default is `1.0`.
+- `--clipping_range_far`: Far clipping distance in world units. Default is `1000000.0`.
 
 ### Example command
 
@@ -118,6 +125,13 @@ The script `conveyor_config_generator.py` creates a configuration file for gener
 - `--min_x_pos_for_record_start`: Minimum X coordinate at which data recording starts (default derived from preset values).
 - `--render_frequency`: Rendering frequency in Hz. Default is `60`.
 - `--physics_frequency`: Frequency at which physics calculations are performed. Default is `360`.
+- `--focal_length_px`: Focal length in pixels (fx == fy), as produced by a camera calibration. Defaults to the equivalent of Isaac Sim's built-in default for the given `--frame_width`.
+- `--principal_point_x`: Principal point x coordinate in pixels (cx). Defaults to `frame_width / 2` (centered).
+- `--principal_point_y`: Principal point y coordinate in pixels (cy). Defaults to `frame_height / 2` (centered).
+- `--f_stop`: Lens aperture. `0.0` disables depth-of-field. Default is `0.0`.
+- `--focus_distance`: Focus distance in world units. Default is `400.0`.
+- `--clipping_range_near`: Near clipping distance in world units. Default is `1.0`.
+- `--clipping_range_far`: Far clipping distance in world units. Default is `1000000.0`.
 
 ### Example command
 
