@@ -11,7 +11,7 @@ import os
 import argparse
 import json5
 
-from utils import io, config
+from utils import io, config, camera_intrinsics
 from utils.conveyor_config import generate_multiple_object_scenes
 from utils.scene_randomization import usd_model_to_semantic_class_label
 
@@ -46,6 +46,7 @@ def generate_scenes(
                     sub_frames_per_frame: int,
                     physics_frequency: int,
                     render_frequency: int,
+                    intrinsics: dict,
                     args
                     ):
     # Create out dir
@@ -107,7 +108,7 @@ def generate_scenes(
                 # Create missing config and replace materials with current material
                 config_materials = [material for _ in range(len(materials))]
                 scene_config = {
-                    "camera_frame_config": {"frame_height": frame_height, "frame_width": frame_width},
+                    "camera_frame_config": {"frame_height": frame_height, "frame_width": frame_width, "intrinsics": intrinsics},
                     "sub_frames_per_frame": sub_frames_per_frame,
                     "materials": config_materials,
                     "scenes": [modified_scene],
@@ -278,6 +279,7 @@ def main(argv: list[str]) -> None:
                         help="The conveyor belt color in rgb (g value, value should be between 0 and 1)")
     parser.add_argument("--conveyor_belt_color_b", default=0.45882353, type=float,
                         help="The conveyor belt color in rgb (b value, value should be between 0 and 1)")
+    camera_intrinsics.add_camera_intrinsics_args(parser)
 
     # Parse args
     args = parser.parse_args(argv)
@@ -340,6 +342,7 @@ def main(argv: list[str]) -> None:
     conveyor_belt_color_r = args.conveyor_belt_color_r
     conveyor_belt_color_g = args.conveyor_belt_color_g
     conveyor_belt_color_b = args.conveyor_belt_color_b
+    intrinsics = camera_intrinsics.build_camera_intrinsics_conf(args, frame_width, frame_height)
 
     # Check range args for plausibility
     config.check_range_plausibility(object_init_min_x, object_init_max_x)
@@ -406,6 +409,7 @@ def main(argv: list[str]) -> None:
                     sub_frames_per_frame,
                     physics_frequency,
                     render_frequency,
+                    intrinsics,
                     args)
 
     print("Generating cluttered scenes...")
@@ -439,6 +443,7 @@ def main(argv: list[str]) -> None:
                     sub_frames_per_frame,
                     physics_frequency,
                     render_frequency,
+                    intrinsics,
                     args)
 
 
