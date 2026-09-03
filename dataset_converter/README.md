@@ -54,6 +54,9 @@ This plugin converts the output of NVIDIA Replicator into the [BOP format](https
 ├── models/
 │   ├── obj_000001.ply ...               # CAD models in millimeters
 │   └── models_info.json                 # extents and diameter of each model
+├── models_eval/                         # a copy of models/, see below
+│   ├── obj_000001.ply ...
+│   └── models_info.json
 ├── train_pbr/000000/
 │   ├── rgb/000000.jpg ...
 │   ├── depth/000000.png                 # uint16, multiply by depth_scale for millimeters
@@ -78,6 +81,12 @@ Each source dataset becomes one self-contained BOP dataset with a single scene p
 | `dataset_name` | `sodah` | Name of the dataset, recorded in `dataset_info.json` |
 
 Colour images are always written as `.jpg` (what `bop_toolkit` expects for a `*_pbr` split), the depth images always use `depth_scale` `1.0`, i.e. one unit per millimeter, and `mask/` is always written.
+
+#### models_eval
+
+`eval_calc_errors.py` hardcodes the `eval` model type, so a `models_eval/` directory has to exist for the BOP evaluation to run at all. The official datasets put uniformly remeshed models there, because the vertices are used as sample points for the pose errors.
+
+Here it is a plain copy of `models/`. MSSD and MSPD take a *maximum* over the model vertices and the extremal points are already present in the CAD mesh, so remeshing changes nothing for the BOP19 and BOP24 scores, and VSD renders the mesh anyway. Only the averaging metrics ADD and ADI would benefit, and producing a genuine remesh needs MeshLab or Blender (`remesh_models_for_eval.py`), which is out of scope here. If you evaluate with ADD or ADI, remesh the models yourself first.
 
 #### COCO annotations
 

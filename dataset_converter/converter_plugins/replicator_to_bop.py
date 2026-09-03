@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 
 import numpy as np
 import trimesh
@@ -489,7 +490,14 @@ class ReplicatorToBop(ConverterInterface):
         obj_id_by_label = {entry["semantic_label"]: entry["obj_id"] for entry in obj_paths_labels_ids}
 
         print("Converting CAD models...")
-        bop.write_models(obj_paths_labels_ids, os.path.join(output_dir, "models"))
+        models_dir = os.path.join(output_dir, "models")
+        bop.write_models(obj_paths_labels_ids, models_dir)
+
+        # eval_calc_errors.py hardcodes the eval model type. The official datasets remesh those
+        # uniformly, but MSSD and MSPD take a max over the vertices and the extremal points are
+        # already in the CAD mesh, so a copy is equivalent for the BOP19 and BOP24 scores. Only the
+        # averaging metrics, ADD and ADI, would benefit from a real remesh.
+        shutil.copytree(models_dir, os.path.join(output_dir, "models_eval"), dirs_exist_ok=True)
 
         print("Writing camera.json...")
         ReplicatorToBop._write_camera_json(replicator_data_dir, output_dir, scene_numbers[0])
