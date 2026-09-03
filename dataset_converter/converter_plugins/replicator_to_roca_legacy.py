@@ -59,15 +59,8 @@ class ReplicatorToRoca(ConverterInterface):
             with open(os.path.join(rep_data_path, f"camera_params_{nr}.json"), 'r') as file:
                 camera_params = json.load(file)
 
-            # Extract needed parameters
-            camera_focal_length = camera_params['cameraFocalLength']
-            render_product_resolution = camera_params['renderProductResolution']
-            camera_aperture_width = camera_params['cameraAperture'][0]
-
             # Calculate f_x, f_y, c_x, c_y
-            f_x = f_y = (camera_focal_length * render_product_resolution[0]) / camera_aperture_width
-            c_x = render_product_resolution[0] / 2
-            c_y = render_product_resolution[1] / 2
+            f_x, f_y, c_x, c_y = replicator.camera_params_to_intrinsics(camera_params)
 
             # Prepare the output directory
             output_dir = os.path.join(roca_data_path, f"ScanNet25k/tasks/scannet_frames_25k/scene{nr}")

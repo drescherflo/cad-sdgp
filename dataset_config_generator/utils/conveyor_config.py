@@ -474,10 +474,11 @@ def generate_config(
                     min_x_pos_for_record_start: float,
                     render_frequency: float,
                     physics_frequency: float,
+                    intrinsics: dict,
                     args
                     ):
     data_generation_config = {
-        "camera_frame_config": {"frame_height": frame_height, "frame_width": frame_width},
+        "camera_frame_config": {"frame_height": frame_height, "frame_width": frame_width, "intrinsics": intrinsics},
         "sub_frames_per_frame": sub_frames_per_frame,
         "materials": generate_materials_conf(num_random_materials, probability_of_glass_material),
         "scenes": generate_scenes_conf(usd_models, num_random_materials,
