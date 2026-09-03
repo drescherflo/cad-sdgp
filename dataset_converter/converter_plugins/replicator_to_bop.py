@@ -242,7 +242,8 @@ class ReplicatorToBop(ConverterInterface):
         with open(os.path.join(rep_data_path, f"camera_params_{nr}.json")) as file:
             camera_params = json.load(file)
 
-        cam_K = bop.camera_params_to_cam_K(camera_params)
+        f_x, f_y, c_x, c_y = replicator.camera_params_to_intrinsics(camera_params)
+        cam_K = [f_x, 0.0, c_x, 0.0, f_y, c_y, 0.0, 0.0, 1.0]
         world_to_camera = bop.camera_params_to_world_to_camera(camera_params)
         width, height = camera_params["renderProductResolution"]
 
@@ -401,12 +402,12 @@ class ReplicatorToBop(ConverterInterface):
         with open(os.path.join(rep_data_path, f"camera_params_{nr}.json")) as file:
             camera_params = json.load(file)
 
-        cam_K = bop.camera_params_to_cam_K(camera_params)
+        f_x, f_y, c_x, c_y = replicator.camera_params_to_intrinsics(camera_params)
         width, height = camera_params["renderProductResolution"]
 
         camera = {
-            "cx": cam_K[2], "cy": cam_K[5], "depth_scale": depth_scale,
-            "fx": cam_K[0], "fy": cam_K[4], "height": height, "width": width,
+            "cx": c_x, "cy": c_y, "depth_scale": depth_scale,
+            "fx": f_x, "fy": f_y, "height": height, "width": width,
         }
 
         with open(os.path.join(output_dir, "camera.json"), "w") as file:
