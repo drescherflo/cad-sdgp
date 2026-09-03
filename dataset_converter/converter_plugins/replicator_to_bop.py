@@ -187,7 +187,7 @@ class ReplicatorToBop(ConverterInterface):
 
     @staticmethod
     def _convert_frame(rep_data_path: str, nr: str, scene_dir: str, im_id: int, meshes: dict,
-                       obj_id_by_label: dict) -> tuple[dict, list, list]:
+                       obj_id_by_label: dict) -> tuple[dict, list, list, dict, list]:
         """
         Converts a single Replicator frame to the BOP per-image annotations and images.
 
@@ -197,7 +197,9 @@ class ReplicatorToBop(ConverterInterface):
         :param im_id: BOP image ID.
         :param meshes: Vertices and faces of the CAD models, keyed by semantic label.
         :param obj_id_by_label: BOP object ID per semantic label.
-        :return: (scene_camera entry, scene_gt entries, scene_gt_info entries) for this image.
+        :return: (scene_camera entry, scene_gt entries, scene_gt_info entries, COCO image entry,
+                 COCO annotations) for this image. The annotations carry no id yet, it is assigned
+                 per scene, where the running count is known.
         """
 
         with open(os.path.join(rep_data_path, f"camera_params_{nr}.json")) as file:
@@ -216,6 +218,7 @@ class ReplicatorToBop(ConverterInterface):
 
         scene_gt = []
         scene_gt_info = []
+        coco_annotations = []
         for gt_id, obj in enumerate(ReplicatorToBop._visible_objects(rep_data_path, nr)):
             semantic_label = obj["semantic_label"]
             if semantic_label not in obj_id_by_label:
@@ -246,10 +249,23 @@ class ReplicatorToBop(ConverterInterface):
             mask_amodal |= mask_visib
             ReplicatorToBop._write_mask(mask_amodal, scene_dir, "mask", im_id, gt_id)
 
-            scene_gt_info.append(ReplicatorToBop._object_gt_info(
-                mask_visib, mask_amodal, silhouette, silhouette_area, x_origin, y_origin, depth_meters))
+            gt_info = ReplicatorToBop._object_gt_info(
+                mask_visib, mask_amodal, silhouette, silhouette_area, x_origin, y_origin, depth_meters)
+            scene_gt_info.append(gt_info)
 
-        return {"cam_K": cam_K, "depth_scale": ReplicatorToBop._DEPTH_SCALE}, scene_gt, scene_gt_info
+            # calc_gt_coco.py drops objects without a visible pixel and clips the box to the image
+            if gt_info["px_count_visib"] > 0:
+                bbox_ys, bbox_xs = mask_amodal.nonzero()
+                coco_annotations.append(bop.coco_annotation(
+                    0, im_id, obj_id_by_label[semantic_label], mask_visib,
+                    bop.calc_2d_bbox(bbox_xs, bbox_ys),
+                    gt_info["visib_fract"] < ReplicatorToBop._BOP19_MIN_VISIB_FRACT))
+
+        coco_image = {"id": im_id, "file_name": f"rgb/{im_id:06d}.{ReplicatorToBop._RGB_EXT}",
+                      "width": width, "height": height}
+
+        return ({"cam_K": cam_K, "depth_scale": ReplicatorToBop._DEPTH_SCALE},
+                scene_gt, scene_gt_info, coco_image, coco_annotations)
 
     @staticmethod
     def _object_gt_info(mask_visib: np.ndarray, mask_amodal: np.ndarray, silhouette: np.ndarray,
@@ -296,7 +312,7 @@ class ReplicatorToBop(ConverterInterface):
 
     @staticmethod
     def _convert_split(rep_data_path: str, output_dir: str, split_name: str, frame_numbers: list[str],
-                       meshes: dict, obj_id_by_label: dict) -> None:
+                       meshes: dict, obj_id_by_label: dict, dataset_name: str) -> None:
         """
         Converts all frames of one split into a single BOP scene.
 
@@ -309,6 +325,7 @@ class ReplicatorToBop(ConverterInterface):
         :param frame_numbers: Frame numbers of this split as zero-padded strings.
         :param meshes: Vertices and faces of the CAD models, keyed by semantic label.
         :param obj_id_by_label: BOP object ID per semantic label.
+        :param dataset_name: Name of the dataset, recorded in the scene_gt_coco.json header.
         """
 
         scene_dir = os.path.join(output_dir, split_name, "000000")
@@ -318,10 +335,20 @@ class ReplicatorToBop(ConverterInterface):
         scene_gt = {}
         scene_gt_info = {}
         frame_index = {}
+        coco = {"info": {"description": f"{dataset_name}_{split_name}"},
+                "licenses": [], "images": [], "annotations": [],
+                "categories": [{"id": obj_id, "name": str(obj_id), "supercategory": dataset_name}
+                               for obj_id in sorted(obj_id_by_label.values())]}
 
         for im_id, nr in enumerate(frame_numbers):
-            camera_entry, gt_entries, gt_info_entries = ReplicatorToBop._convert_frame(
-                rep_data_path, nr, scene_dir, im_id, meshes, obj_id_by_label)
+            camera_entry, gt_entries, gt_info_entries, coco_image, coco_entries = \
+                ReplicatorToBop._convert_frame(
+                    rep_data_path, nr, scene_dir, im_id, meshes, obj_id_by_label)
+
+            coco["images"].append(coco_image)
+            for entry in coco_entries:
+                entry["id"] = len(coco["annotations"]) + 1  # COCO ids start at one
+                coco["annotations"].append(entry)
 
             # Unpadded integer keys, unlike the padded file names
             scene_camera[str(im_id)] = camera_entry
@@ -333,7 +360,8 @@ class ReplicatorToBop(ConverterInterface):
                 print(f"    {split_name}: {im_id + 1}/{len(frame_numbers)} frames")
 
         for file_name, content in (("scene_camera.json", scene_camera), ("scene_gt.json", scene_gt),
-                                   ("scene_gt_info.json", scene_gt_info), ("frame_index.json", frame_index)):
+                                   ("scene_gt_info.json", scene_gt_info), ("frame_index.json", frame_index),
+                                   ("scene_gt_coco.json", coco)):
             with open(os.path.join(scene_dir, file_name), "w") as file:
                 json.dump(content, file)
 
@@ -474,7 +502,8 @@ class ReplicatorToBop(ConverterInterface):
                 print(f"  {split_name}: no frames, skipped")
                 continue
             ReplicatorToBop._convert_split(replicator_data_dir, output_dir, split_name,
-                                           frame_numbers, meshes, obj_id_by_label)
+                                           frame_numbers, meshes, obj_id_by_label,
+                                           args["dataset_name"])
 
         with open(os.path.join(replicator_data_dir, f"camera_params_{scene_numbers[0]}.json")) as file:
             im_size = tuple(json.load(file)["renderProductResolution"])

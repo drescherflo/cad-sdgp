@@ -62,6 +62,7 @@ This plugin converts the output of NVIDIA Replicator into the [BOP format](https
 │   ├── scene_camera.json
 │   ├── scene_gt.json
 │   ├── scene_gt_info.json
+│   ├── scene_gt_coco.json               # dieselbe GT im COCO-Format
 │   └── frame_index.json                 # BOP image id -> Replicator frame number
 └── val_pbr/000000/                      # same structure
 ```
@@ -77,6 +78,14 @@ Each source dataset becomes one self-contained BOP dataset with a single scene p
 | `dataset_name` | `sodah` | Name of the dataset, recorded in `dataset_info.json` |
 
 Colour images are always written as `.jpg` (what `bop_toolkit` expects for a `*_pbr` split), the depth images always use `depth_scale` `1.0`, i.e. one unit per millimeter, and `mask/` is always written.
+
+#### COCO annotations
+
+`scene_gt_coco.json` is the same ground truth in COCO format, so the dataset can be fed to a standard 2D detection framework and to the BOP Challenge 2022+ detection and segmentation evaluation (`eval_bop22_coco.py`) without a further conversion. It holds no information that is not already in `scene_gt.json`, `scene_gt_info.json` and the mask directories.
+
+Following `calc_gt_coco.py`, the `segmentation` is the visible mask as an uncompressed run length encoding, the `bbox` is the amodal one clipped to the image, and `ignore` is set for objects below `visib_fract` 0.1 so that heavily occluded instances do not distort the mAP. Objects without a single visible pixel are left out entirely.
+
+The run length encoding is byte identical to `bop_toolkit_lib/pycoco_utils.py`, which is what makes it readable by `pycocotools`.
 
 #### Test targets
 

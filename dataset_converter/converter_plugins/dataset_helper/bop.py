@@ -217,6 +217,52 @@ def silhouette_in_image(silhouette: np.ndarray, x_origin: int, y_origin: int,
     return mask
 
 
+def binary_mask_to_rle(mask: np.ndarray) -> dict:
+    """
+    Encodes a binary mask as COCO's uncompressed run length encoding.
+
+    :param mask: Boolean mask of the object.
+    :return: The mask in COCO RLE format, with the counts and the mask shape.
+    """
+
+    flat = mask.ravel(order="F").astype(np.uint8)
+    counts = [0] if flat[0] == 1 else []
+
+    # Segment boundaries, plus the two ends, give the run lengths as their differences
+    changes = np.where(np.concatenate(([True], flat[:-1] != flat[1:], [True])))[0]
+    counts.extend(np.diff(changes).tolist())
+
+    return {"counts": counts, "size": list(mask.shape)}
+
+
+def coco_annotation(annotation_id: int, im_id: int, obj_id: int, mask_visib: np.ndarray,
+                    bbox: list[int], ignore: bool) -> dict:
+    """
+    Builds the COCO annotation of a single object, following bop_toolkit create_annotation_info.
+
+    :param annotation_id: Index of the annotation within its scene, counted from one.
+    :param im_id: BOP image ID.
+    :param obj_id: BOP object ID.
+    :param mask_visib: Visible mask of the object.
+    :param bbox: Amodal bounding box as [x, y, width, height].
+    :param ignore: Whether the evaluation should skip this annotation.
+    :return: The COCO annotation entry.
+    """
+
+    return {
+        "id": annotation_id,
+        "image_id": im_id,
+        "category_id": obj_id,
+        "iscrowd": 0,
+        "area": int(mask_visib.sum()),
+        "bbox": bbox,
+        "segmentation": binary_mask_to_rle(mask_visib),
+        "width": mask_visib.shape[1],
+        "height": mask_visib.shape[0],
+        "ignore": ignore,
+    }
+
+
 def calc_diameter(vertices: np.ndarray) -> float:
     """
     Calculates the diameter of a model, i.e. the largest distance between any two of its points.
