@@ -11,21 +11,21 @@ from .dataset_helper import bop, replicator
 
 class ReplicatorToBop(ConverterInterface):
     """
-    Converts an NVIDIA Replicator dataset to the BOP format used by T-LESS, LM-O and YCB-V.
+    Converts an NVIDIA Replicator dataset to the BOP format.
     """
 
     _OBJECT_PRIM_MARKER = "/objects/object_"
 
+    # bop_toolkit expects .jpg for a *_pbr split, and one depth unit per millimeter is the BOP default
+    _RGB_EXT = "jpg"
+    _DEPTH_SCALE = 1.0
+
+    # The visibility an object needs to be worth localizing, as in bop_toolkit enumerate_test_targets.py
+    _BOP19_MIN_VISIB_FRACT = 0.1
+
     _DEFAULT_ARGS = {
         "split": "train_pbr",
         "val_split": "val_pbr",
-        "rgb_ext": "jpg",
-        "depth_scale": 1.0,
-        "amodal_masks": True,
-        "detect_symmetries": False,
-        "sym_tolerance": 0.015,
-        "sym_max_fold": 12,
-        "symmetries_file": "",
         "dataset_name": "sodah",
     }
 
@@ -46,43 +46,15 @@ class ReplicatorToBop(ConverterInterface):
         args = dict(ReplicatorToBop._DEFAULT_ARGS)
         args.update(kwargs)
 
-        if args["rgb_ext"] not in ("jpg", "png"):
-            raise RuntimeError("rgb_ext must be 'jpg' or 'png', got '{}'.".format(args["rgb_ext"]))
-        if float(args["depth_scale"]) <= 0.0:
-            raise RuntimeError("depth_scale must be positive, got {}.".format(args["depth_scale"]))
         if args["split"] == args["val_split"]:
             raise RuntimeError("split and val_split must differ, both are '{}'.".format(args["split"]))
-
-        args["depth_scale"] = float(args["depth_scale"])
-        args["sym_tolerance"] = float(args["sym_tolerance"])
-        args["sym_max_fold"] = int(args["sym_max_fold"])
 
         return args
 
     @staticmethod
-    def _load_symmetries_override(symmetries_file: str) -> dict:
-        """
-        Loads the optional symmetry override file.
-
-        :param symmetries_file: Path to the JSON file, or an empty string if there is none.
-        :return: Symmetries keyed by semantic label or object ID, empty if no file was given.
-        """
-
-        if not symmetries_file:
-            return {}
-        if not os.path.isfile(symmetries_file):
-            raise RuntimeError("The symmetries file '{}' does not exist.".format(symmetries_file))
-
-        with open(symmetries_file) as file:
-            return json.load(file)
-
-    @staticmethod
     def _load_meshes(obj_paths_labels_ids: list[dict]) -> dict:
         """
-        Loads the CAD models used for the amodal silhouettes.
-
-        The vertices are scaled from meters to millimeters and are otherwise left alone, matching
-        the models written to models/ and the frame the object poses refer to.
+        Loads the CAD models used for the amodal silhouettes, in millimeters like models/.
 
         :param obj_paths_labels_ids: OBJ paths, semantic labels and object IDs of the models.
         :return: Vertices and faces of each model, keyed by semantic label.
@@ -101,11 +73,7 @@ class ReplicatorToBop(ConverterInterface):
     @staticmethod
     def _split_frames(rep_data_path: str, scene_numbers: list[str], args: dict) -> dict:
         """
-        Assigns the Replicator frames to the BOP splits.
-
-        The generators write the train/val assignment as global frame indices to
-        train_val_scenes.json. If that file is missing, or if no validation split was requested,
-        every frame goes into the training split.
+        Assigns the Replicator frames to the BOP splits, following train_val_scenes.json.
 
         :param rep_data_path: Path to the Replicator dataset.
         :param scene_numbers: Sorted list of frame numbers as zero-padded strings.
@@ -133,8 +101,7 @@ class ReplicatorToBop(ConverterInterface):
         """
         Reads the visible objects of a frame and joins them with their instance segmentation IDs.
 
-        Objects are ordered by their index in the prim path, so that the BOP ground truth ID of an
-        object is stable and reproducible.
+        Ordered by prim path index, so that the BOP ground truth IDs are reproducible.
 
         :param rep_data_path: Path to the Replicator dataset.
         :param nr: Frame number as a zero-padded string.
@@ -167,7 +134,7 @@ class ReplicatorToBop(ConverterInterface):
         return sorted(objects, key=lambda obj: int(obj["prim_path"].rsplit("object_", 1)[-1]))
 
     @staticmethod
-    def _write_rgb(rep_data_path: str, nr: str, scene_dir: str, im_id: int, rgb_ext: str) -> None:
+    def _write_rgb(rep_data_path: str, nr: str, scene_dir: str, im_id: int) -> None:
         """
         Converts the colour image of a frame to the BOP layout.
 
@@ -175,7 +142,6 @@ class ReplicatorToBop(ConverterInterface):
         :param nr: Frame number as a zero-padded string.
         :param scene_dir: Directory of the BOP scene.
         :param im_id: BOP image ID.
-        :param rgb_ext: Extension of the colour images, 'jpg' or 'png'.
         """
 
         rgb_dir = os.path.join(scene_dir, "rgb")
@@ -183,26 +149,22 @@ class ReplicatorToBop(ConverterInterface):
 
         # The Replicator images are RGBA with a constant alpha channel
         image = Image.open(os.path.join(rep_data_path, f"rgb_{nr}.png")).convert("RGB")
-        image.save(os.path.join(rgb_dir, f"{im_id:06d}.{rgb_ext}"), quality=95)
+        image.save(os.path.join(rgb_dir, f"{im_id:06d}.{ReplicatorToBop._RGB_EXT}"), quality=95)
 
     @staticmethod
-    def _write_depth(depth_meters: np.ndarray, scene_dir: str, im_id: int, depth_scale: float) -> None:
+    def _write_depth(depth_meters: np.ndarray, scene_dir: str, im_id: int) -> None:
         """
         Writes the depth image of a frame as a 16 bit PNG.
-
-        Unlike the ROCA converter the depth is not masked to the object pixels: BOP expects the full
-        scene depth, and both px_count_valid and the visibility test of bop_toolkit depend on it.
 
         :param depth_meters: Planar depth in meters as read from the Replicator .npy file.
         :param scene_dir: Directory of the BOP scene.
         :param im_id: BOP image ID.
-        :param depth_scale: Millimeters per unit of the 16 bit depth image.
         """
 
         depth_dir = os.path.join(scene_dir, "depth")
         os.makedirs(depth_dir, exist_ok=True)
 
-        depth_units = np.clip(depth_meters * 1000.0 / depth_scale, 0, 65535).astype(np.uint16)
+        depth_units = np.clip(depth_meters * 1000.0 / ReplicatorToBop._DEPTH_SCALE, 0, 65535).astype(np.uint16)
         Image.fromarray(depth_units).save(os.path.join(depth_dir, f"{im_id:06d}.png"))
 
     @staticmethod
@@ -225,7 +187,7 @@ class ReplicatorToBop(ConverterInterface):
 
     @staticmethod
     def _convert_frame(rep_data_path: str, nr: str, scene_dir: str, im_id: int, meshes: dict,
-                       obj_id_by_label: dict, args: dict) -> tuple[dict, list, list]:
+                       obj_id_by_label: dict) -> tuple[dict, list, list]:
         """
         Converts a single Replicator frame to the BOP per-image annotations and images.
 
@@ -235,7 +197,6 @@ class ReplicatorToBop(ConverterInterface):
         :param im_id: BOP image ID.
         :param meshes: Vertices and faces of the CAD models, keyed by semantic label.
         :param obj_id_by_label: BOP object ID per semantic label.
-        :param args: The parsed plugin arguments.
         :return: (scene_camera entry, scene_gt entries, scene_gt_info entries) for this image.
         """
 
@@ -250,8 +211,8 @@ class ReplicatorToBop(ConverterInterface):
         depth_meters = np.load(os.path.join(rep_data_path, f"distance_to_image_plane_{nr}.npy"))
         instance_ids = np.array(Image.open(os.path.join(rep_data_path, f"instance_segmentation_{nr}.png")))
 
-        ReplicatorToBop._write_rgb(rep_data_path, nr, scene_dir, im_id, args["rgb_ext"])
-        ReplicatorToBop._write_depth(depth_meters, scene_dir, im_id, args["depth_scale"])
+        ReplicatorToBop._write_rgb(rep_data_path, nr, scene_dir, im_id)
+        ReplicatorToBop._write_depth(depth_meters, scene_dir, im_id)
 
         scene_gt = []
         scene_gt_info = []
@@ -280,28 +241,24 @@ class ReplicatorToBop(ConverterInterface):
             silhouette, silhouette_area, x_origin, y_origin = bop.rasterize_silhouette(
                 mesh["vertices"], mesh["faces"], cam_R_m2c, cam_t_m2c,
                 np.array(cam_K).reshape(3, 3), (width, height))
-            # The visible surface is part of the silhouette, so folding it in keeps
-            # mask_visib <= mask and bbox_visib <= bbox_obj exact despite subpixel disagreement
+            # Folding in the visible surface keeps mask_visib <= mask exact
             mask_amodal = bop.silhouette_in_image(silhouette, x_origin, y_origin, (width, height))
             mask_amodal |= mask_visib
-            if args["amodal_masks"]:
-                ReplicatorToBop._write_mask(mask_amodal, scene_dir, "mask", im_id, gt_id)
+            ReplicatorToBop._write_mask(mask_amodal, scene_dir, "mask", im_id, gt_id)
 
             scene_gt_info.append(ReplicatorToBop._object_gt_info(
                 mask_visib, mask_amodal, silhouette, silhouette_area, x_origin, y_origin, depth_meters))
 
-        return {"cam_K": cam_K, "depth_scale": args["depth_scale"]}, scene_gt, scene_gt_info
+        return {"cam_K": cam_K, "depth_scale": ReplicatorToBop._DEPTH_SCALE}, scene_gt, scene_gt_info
 
     @staticmethod
     def _object_gt_info(mask_visib: np.ndarray, mask_amodal: np.ndarray, silhouette: np.ndarray,
                         silhouette_area: float, x_origin: int, y_origin: int,
                         depth_meters: np.ndarray) -> dict:
         """
-        Calculates the scene_gt_info entry of a single object.
+        Calculates the scene_gt_info entry of a single object, following bop_toolkit calc_gt_info.py.
 
-        The fields follow bop_toolkit/scripts/calc_gt_info.py: px_count_all counts the whole
-        silhouette including the part truncated by the image border, which is why it is taken from
-        the unclipped silhouette and why bbox_obj may reach outside the image.
+        px_count_all and bbox_obj come from the unclipped silhouette, so truncated parts still count.
 
         :param mask_visib: Visible mask of the object, clipped to the image.
         :param mask_amodal: Amodal mask of the object, clipped to the image.
@@ -313,7 +270,7 @@ class ReplicatorToBop(ConverterInterface):
         :return: The scene_gt_info entry.
         """
 
-        # The subpixel area, not the mask pixel count, so small objects keep a sane visib_fract
+        # Subpixel area, not mask pixel count, so small objects keep a sane visib_fract
         px_count_visib = int(mask_visib.sum())
         px_count_all = max(int(round(silhouette_area)), px_count_visib)
         px_count_valid = int(np.count_nonzero(depth_meters[mask_amodal] > 0))
@@ -339,13 +296,12 @@ class ReplicatorToBop(ConverterInterface):
 
     @staticmethod
     def _convert_split(rep_data_path: str, output_dir: str, split_name: str, frame_numbers: list[str],
-                       meshes: dict, obj_id_by_label: dict, args: dict) -> None:
+                       meshes: dict, obj_id_by_label: dict) -> None:
         """
         Converts all frames of one split into a single BOP scene.
 
-        Every source dataset becomes one BOP scene per split. The images are renumbered from zero,
-        because the Replicator frame numbers of a split are not contiguous; frame_index.json keeps
-        the mapping back to the original frames.
+        Images are renumbered from zero, since a split's frame numbers are not contiguous;
+        frame_index.json maps back to the original frames.
 
         :param rep_data_path: Path to the Replicator dataset.
         :param output_dir: Root of the BOP dataset.
@@ -353,7 +309,6 @@ class ReplicatorToBop(ConverterInterface):
         :param frame_numbers: Frame numbers of this split as zero-padded strings.
         :param meshes: Vertices and faces of the CAD models, keyed by semantic label.
         :param obj_id_by_label: BOP object ID per semantic label.
-        :param args: The parsed plugin arguments.
         """
 
         scene_dir = os.path.join(output_dir, split_name, "000000")
@@ -366,9 +321,9 @@ class ReplicatorToBop(ConverterInterface):
 
         for im_id, nr in enumerate(frame_numbers):
             camera_entry, gt_entries, gt_info_entries = ReplicatorToBop._convert_frame(
-                rep_data_path, nr, scene_dir, im_id, meshes, obj_id_by_label, args)
+                rep_data_path, nr, scene_dir, im_id, meshes, obj_id_by_label)
 
-            # The keys are unpadded integer strings, unlike the six digit padded file names
+            # Unpadded integer keys, unlike the padded file names
             scene_camera[str(im_id)] = camera_entry
             scene_gt[str(im_id)] = gt_entries
             scene_gt_info[str(im_id)] = gt_info_entries
@@ -386,17 +341,13 @@ class ReplicatorToBop(ConverterInterface):
         print(f"  {split_name}: {len(frame_numbers)} images, {annotations} annotations")
 
     @staticmethod
-    def _write_camera_json(rep_data_path: str, output_dir: str, nr: str, depth_scale: float) -> None:
+    def _write_camera_json(rep_data_path: str, output_dir: str, nr: str) -> None:
         """
-        Writes the dataset level camera.json.
-
-        The intrinsics are constant across the dataset, so the parameters of one frame describe all
-        of them. bop_toolkit reads this file, ROCA's BopDataset does not.
+        Writes the dataset level camera.json, from one frame since the intrinsics are constant.
 
         :param rep_data_path: Path to the Replicator dataset.
         :param output_dir: Root of the BOP dataset.
         :param nr: Frame number the parameters are taken from.
-        :param depth_scale: Millimeters per unit of the 16 bit depth images.
         """
 
         with open(os.path.join(rep_data_path, f"camera_params_{nr}.json")) as file:
@@ -406,7 +357,7 @@ class ReplicatorToBop(ConverterInterface):
         width, height = camera_params["renderProductResolution"]
 
         camera = {
-            "cx": c_x, "cy": c_y, "depth_scale": depth_scale,
+            "cx": c_x, "cy": c_y, "depth_scale": ReplicatorToBop._DEPTH_SCALE,
             "fx": f_x, "fy": f_y, "height": height, "width": width,
         }
 
@@ -417,10 +368,10 @@ class ReplicatorToBop(ConverterInterface):
     def _write_dataset_info(output_dir: str, im_size: tuple[int, int], splits: dict,
                             obj_id_by_label: dict, args: dict) -> None:
         """
-        Writes dataset_info.md, the free-form description a BOP dataset ships with.
+        Writes dataset_info.json, the dataset level description of the BOP layout.
 
-        Besides describing the dataset it carries the dataset_params.py entry needed to run the
-        bop_toolkit scripts on it, filled in with this dataset's actual values.
+        Also carries the semantic label of every obj_id, which is the only place the Replicator
+        class names survive the conversion.
 
         :param output_dir: Root of the BOP dataset.
         :param im_size: Image size as (width, height).
@@ -429,87 +380,60 @@ class ReplicatorToBop(ConverterInterface):
         :param args: The parsed plugin arguments.
         """
 
-        name = args["dataset_name"]
-        objects = "\n".join(f"| {obj_id} | `{label}` |" for label, obj_id
-                             in sorted(obj_id_by_label.items(), key=lambda item: item[1]))
-        split_rows = "\n".join(f"| `{split}` | 000000 | {len(frames)} |"
-                                for split, frames in splits.items() if frames)
+        dataset_info = {
+            "name": args["dataset_name"],
+            "description": "Synthetic dataset in BOP format, generated with the SDGP and converted "
+                           "by the ReplicatorToBop converter plugin.",
+            "im_size": list(im_size),
+            "rgb_ext": ReplicatorToBop._RGB_EXT,
+            "depth_scale": ReplicatorToBop._DEPTH_SCALE,
+            "models_unit": "mm",
+            "splits": {split: {"scene_ids": [0], "im_count": len(frames)}
+                       for split, frames in splits.items() if frames},
+            "objects": {str(obj_id): label for label, obj_id in obj_id_by_label.items()},
+        }
 
-        # A pbr split type makes bop_toolkit override scene_ids with list(range(50))
-        split_hint = ""
-        if any(split.endswith("_pbr") for split, frames in splits.items() if frames):
-            split_hint = (
-                "\nNote that `get_split_params` unconditionally overrides `scene_ids` with "
-                "`list(range(50))` for a `pbr` split type. Either convert with a split name that "
-                "carries no split type, for example `split=train`, or add this dataset to that "
-                "exception as well.\n")
-
-        content = f"""# {name}
-
-Synthetic dataset in BOP format, generated with the SDGP and converted by the `ReplicatorToBop`
-converter plugin. See `dataset_converter/README.md` in the SDGP repository for the conversion
-options and the known limitations.
-
-## Splits
-
-| Split | Scene | Images |
-|---|---|---|
-{split_rows}
-
-## Objects
-
-| obj_id | Semantic label |
-|---|---|
-{objects}
-
-## Images
-
-- Resolution: {im_size[0]}x{im_size[1]}
-- Colour: `.{args["rgb_ext"]}`
-- Depth: 16 bit PNG, `depth_scale` {args["depth_scale"]}, i.e. one unit is {args["depth_scale"]} mm
-- Models: millimeters, origin at the CAD origin rather than the bounding box center
-
-## Using bop_toolkit
-
-`bop_toolkit_lib/dataset_params.py` only knows the datasets hardcoded in `get_split_params`, so add:
-
-```python
-elif dataset_name == "{name}":
-    p["scene_ids"] = [0]
-    p["im_size"] = ({im_size[0]}, {im_size[1]})
-```
-{split_hint}"""
-
-        with open(os.path.join(output_dir, "dataset_info.md"), "w") as file:
-            file.write(content)
+        with open(os.path.join(output_dir, "dataset_info.json"), "w") as file:
+            json.dump(dataset_info, file, indent=2)
 
     @staticmethod
     def _write_test_targets(output_dir: str, split_name: str) -> None:
         """
-        Writes test_targets_bop19.json for a split, listing every object instance of every image.
+        Writes the two test target files the BOP evaluation scripts iterate over.
 
-        This file is what the BOP evaluation scripts iterate over.
+        Both list the object instances per image and are built from the same split. bop19 drives the
+        6D localization evaluation and covers only objects that are visible enough, bop24 the 6D
+        detection evaluation and covers all of them. Both carry inst_count, which eval_calc_errors.py
+        asserts on in localization mode.
 
         :param output_dir: Root of the BOP dataset.
         :param split_name: Directory name of the split the targets are built from.
         """
 
-        with open(os.path.join(output_dir, split_name, "000000", "scene_gt.json")) as file:
+        scene_dir = os.path.join(output_dir, split_name, "000000")
+        with open(os.path.join(scene_dir, "scene_gt.json")) as file:
             scene_gt = json.load(file)
+        with open(os.path.join(scene_dir, "scene_gt_info.json")) as file:
+            scene_gt_info = json.load(file)
 
-        targets = []
-        for im_id_str, entries in sorted(scene_gt.items(), key=lambda item: int(item[0])):
-            instance_counts = {}
-            for entry in entries:
-                instance_counts[entry["obj_id"]] = instance_counts.get(entry["obj_id"], 0) + 1
-            for obj_id, count in sorted(instance_counts.items()):
-                targets.append({"im_id": int(im_id_str), "inst_count": count,
-                                "obj_id": obj_id, "scene_id": 0})
+        for file_name, min_visib_fract in (
+                ("test_targets_bop19.json", ReplicatorToBop._BOP19_MIN_VISIB_FRACT),
+                ("test_targets_bop24.json", 0.0)):
+            targets = []
+            for im_id, entries in sorted(scene_gt.items(), key=lambda item: int(item[0])):
+                instance_counts = {}
+                for gt_id, entry in enumerate(entries):
+                    if scene_gt_info[im_id][gt_id]["visib_fract"] < min_visib_fract:
+                        continue
+                    instance_counts[entry["obj_id"]] = instance_counts.get(entry["obj_id"], 0) + 1
+                for obj_id, count in sorted(instance_counts.items()):
+                    targets.append({"im_id": int(im_id), "inst_count": count,
+                                    "obj_id": obj_id, "scene_id": 0})
 
-        with open(os.path.join(output_dir, "test_targets_bop19.json"), "w") as file:
-            json.dump(targets, file)
+            with open(os.path.join(output_dir, file_name), "w") as file:
+                json.dump(targets, file)
 
-        print(f"  test_targets_bop19.json: {len(targets)} targets from '{split_name}'")
+            print(f"  {file_name}: {len(targets)} targets from '{split_name}'")
 
     @staticmethod
     def convert(replicator_data_dir: str, obj_files_dir: str, output_dir: str, **kwargs) -> None:
@@ -526,7 +450,7 @@ elif dataset_name == "{name}":
 
         args = ReplicatorToBop._parse_args(kwargs)
 
-        # get_scene_nrs returns them in glob order, which is not sorted
+        # get_scene_nrs returns glob order, which is unsorted
         scene_numbers = sorted(replicator.get_scene_nrs(replicator_data_dir))
         if not scene_numbers:
             raise RuntimeError("No camera_params_*.json files found in '{}'.".format(replicator_data_dir))
@@ -537,16 +461,10 @@ elif dataset_name == "{name}":
         obj_id_by_label = {entry["semantic_label"]: entry["obj_id"] for entry in obj_paths_labels_ids}
 
         print("Converting CAD models...")
-        bop.write_models(obj_paths_labels_ids, os.path.join(output_dir, "models"),
-                         args["detect_symmetries"], args["sym_tolerance"], args["sym_max_fold"],
-                         ReplicatorToBop._load_symmetries_override(args["symmetries_file"]))
-
-        with open(os.path.join(output_dir, "obj_id_map.json"), "w") as file:
-            json.dump(obj_id_by_label, file, indent=2)
+        bop.write_models(obj_paths_labels_ids, os.path.join(output_dir, "models"))
 
         print("Writing camera.json...")
-        ReplicatorToBop._write_camera_json(replicator_data_dir, output_dir, scene_numbers[0],
-                                           args["depth_scale"])
+        ReplicatorToBop._write_camera_json(replicator_data_dir, output_dir, scene_numbers[0])
 
         print("Converting frames...")
         meshes = ReplicatorToBop._load_meshes(obj_paths_labels_ids)
@@ -556,15 +474,18 @@ elif dataset_name == "{name}":
                 print(f"  {split_name}: no frames, skipped")
                 continue
             ReplicatorToBop._convert_split(replicator_data_dir, output_dir, split_name,
-                                           frame_numbers, meshes, obj_id_by_label, args)
+                                           frame_numbers, meshes, obj_id_by_label)
 
         with open(os.path.join(replicator_data_dir, f"camera_params_{scene_numbers[0]}.json")) as file:
             im_size = tuple(json.load(file)["renderProductResolution"])
         ReplicatorToBop._write_dataset_info(output_dir, im_size, splits, obj_id_by_label, args)
 
-        test_splits = [name for name in splits if "test" in name and splits[name]]
-        if test_splits:
-            print("Generating test_targets_bop19.json...")
-            ReplicatorToBop._write_test_targets(output_dir, test_splits[0])
+        # A split named test is the natural source, otherwise the validation split as the next best
+        # held out data, and only failing that the training split
+        candidates = [name for name in splits if "test" in name] + [args["val_split"], args["split"]]
+        target_split = next((name for name in candidates if splits.get(name)), None)
+        if target_split:
+            print("Generating test targets...")
+            ReplicatorToBop._write_test_targets(output_dir, target_split)
 
         print("Done!")
