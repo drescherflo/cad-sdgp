@@ -386,13 +386,14 @@ class ReplicatorToBop(ConverterInterface):
         print(f"  {split_name}: {len(frame_numbers)} images, {annotations} annotations")
 
     @staticmethod
-    def _write_camera_json(rep_data_path: str, output_dir: str, nr: str) -> None:
+    def _write_camera_json(rep_data_path: str, output_dir: str, nr: str) -> tuple[int, int]:
         """
         Writes the dataset level camera.json, from one frame since the intrinsics are constant.
 
         :param rep_data_path: Path to the Replicator dataset.
         :param output_dir: Root of the BOP dataset.
         :param nr: Frame number the parameters are taken from.
+        :return: The image size as (width, height), which dataset_info.json needs as well.
         """
 
         with open(os.path.join(rep_data_path, f"camera_params_{nr}.json")) as file:
@@ -408,6 +409,8 @@ class ReplicatorToBop(ConverterInterface):
 
         with open(os.path.join(output_dir, "camera.json"), "w") as file:
             json.dump(camera, file, indent=2)
+
+        return width, height
 
     @staticmethod
     def _write_dataset_info(output_dir: str, im_size: tuple[int, int], splits: dict,
@@ -516,21 +519,16 @@ class ReplicatorToBop(ConverterInterface):
         shutil.copytree(models_dir, os.path.join(output_dir, "models_eval"), dirs_exist_ok=True)
 
         print("Writing camera.json...")
-        ReplicatorToBop._write_camera_json(replicator_data_dir, output_dir, scene_numbers[0])
+        im_size = ReplicatorToBop._write_camera_json(replicator_data_dir, output_dir, scene_numbers[0])
 
         print("Converting frames...")
         meshes = ReplicatorToBop._load_meshes(obj_paths_labels_ids)
         splits = ReplicatorToBop._split_frames(scene_numbers, args)
         for split_name, frame_numbers in splits.items():
-            if not frame_numbers:
-                print(f"  {split_name}: no frames, skipped")
-                continue
             ReplicatorToBop._convert_split(replicator_data_dir, output_dir, split_name,
                                            frame_numbers, meshes, obj_id_by_label,
                                            args["dataset_name"])
 
-        with open(os.path.join(replicator_data_dir, f"camera_params_{scene_numbers[0]}.json")) as file:
-            im_size = tuple(json.load(file)["renderProductResolution"])
         ReplicatorToBop._write_dataset_info(output_dir, im_size, splits, obj_id_by_label, args)
 
         # A split named test is the natural source, otherwise the validation split as the next best

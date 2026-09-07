@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import trimesh
 from scipy.spatial import ConvexHull
+from scipy.spatial.transform import Rotation
 
 from . import replicator, roca
 
@@ -30,24 +31,6 @@ def obj_paths_semantic_labels_and_obj_ids(obj_dir: str) -> list[dict]:
 
     return [{"obj_file": obj_file, "semantic_label": semantic_label, "obj_id": idx + 1} for
             idx, (obj_file, semantic_label) in enumerate(files_and_labels)]
-
-
-def quaternion_to_rotation_matrix(w: float, x: float, y: float, z: float) -> np.ndarray:
-    """
-    Converts a quaternion in Isaac Sim order [w, x, y, z] to a 3x3 rotation matrix.
-
-    :param w: Real component of the quaternion.
-    :param x: First imaginary component of the quaternion.
-    :param y: Second imaginary component of the quaternion.
-    :param z: Third imaginary component of the quaternion.
-    :return: The corresponding 3x3 rotation matrix.
-    """
-
-    return np.array([
-        [1 - 2 * (y * y + z * z), 2 * (x * y - w * z), 2 * (x * z + w * y)],
-        [2 * (x * y + w * z), 1 - 2 * (x * x + z * z), 2 * (y * z - w * x)],
-        [2 * (x * z - w * y), 2 * (y * z + w * x), 1 - 2 * (x * x + y * y)],
-    ])
 
 
 def camera_params_to_world_to_camera(camera_params: dict) -> np.ndarray:
@@ -77,9 +60,9 @@ def world_pose_to_camera_frame(position: dict, orientation: dict, world_to_camer
     :return: (cam_R_m2c, cam_t_m2c) as a 3x3 rotation matrix and a translation in millimeters.
     """
 
-    rotation_world = quaternion_to_rotation_matrix(
-        orientation["w"], orientation["x"], orientation["y"], orientation["z"]
-    )
+    # Isaac Sim stores the quaternion scalar first, from_quat expects it last
+    rotation_world = Rotation.from_quat(
+        [orientation["x"], orientation["y"], orientation["z"], orientation["w"]]).as_matrix()
     translation_world = np.array([position["x"], position["y"], position["z"], 1.0])
 
     cam_R_m2c = world_to_camera[:3, :3] @ rotation_world
