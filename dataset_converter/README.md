@@ -67,17 +67,29 @@ This plugin converts the output of NVIDIA Replicator into the [BOP format](https
 │   ├── scene_gt_info.json
 │   ├── scene_gt_coco.json               # dieselbe GT im COCO-Format
 │   └── frame_index.json                 # BOP image id -> Replicator frame number
-└── val_pbr/000000/                      # same structure
+├── val_pbr/000000/                      # same structure
+└── test_pbr/000000/                     # same structure
 ```
 
-Each source dataset becomes one self-contained BOP dataset with a single scene per split. The train/validation assignment is taken from the `train_val_scenes.json` written by the dataset generators; the images are renumbered from zero per split, and `frame_index.json` maps back to the original Replicator frames.
+Each source dataset becomes one self-contained BOP dataset with a single scene per split. The images are renumbered from zero per split, and `frame_index.json` maps back to the original Replicator frames.
+
+#### Splits
+
+The frames are split into training, validation and test by fraction, 60/20/20 by default. The `train_val_scenes.json` the dataset generators write is **ignored**: it only knows a train/val assignment, while BOP expects a test split as well.
+
+Frames are assigned at random, the same way the generators build their own train/val split with `train_test_split`. The shuffle is seeded, so converting a dataset twice yields the same assignment and no frame silently moves from training to test between runs. Set `val_fraction=0` or `test_fraction=0`, or an empty `val_split=`/`test_split=`, to leave a split out.
+
+Note that on the conveyor belt the frames of one object run are consecutive and nearly identical, so a random per-frame split puts neighbouring frames of the same run into different splits. Validation and test numbers from that data are optimistic; the 6-DOF frames are independent and unaffected.
 
 #### Arguments
 
 | Argument | Default | Description |
 |---|---|---|
 | `split` | `train_pbr` | Directory name of the training split |
-| `val_split` | `val_pbr` | Directory name of the validation split. Empty puts every frame into `split` |
+| `val_split` | `val_pbr` | Directory name of the validation split. Empty drops the split |
+| `test_split` | `test_pbr` | Directory name of the test split. Empty drops the split |
+| `val_fraction` | `0.2` | Share of the frames that go into the validation split |
+| `test_fraction` | `0.2` | Share of the frames that go into the test split |
 | `dataset_name` | `sodah` | Name of the dataset, recorded in `dataset_info.json` |
 
 Colour images are always written as `.jpg` (what `bop_toolkit` expects for a `*_pbr` split), the depth images always use `depth_scale` `1.0`, i.e. one unit per millimeter, and `mask/` is always written.
