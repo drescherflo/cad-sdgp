@@ -33,13 +33,9 @@ python dataset_converter.py \
 
 ## Existing Converter Plugins
 
-### ReplicatorToRoca
+### ReplicatorToROCA
 
 This plugin converts the output of NVIDIA Replicator into the format required by [ROCA](https://github.com/drescherflo/ROCA) for training.
-
-`replicator_to_roca_legacy.py` holds the earlier version of this plugin, kept for reference. It writes neither depth images, instance masks nor `scan2cad_instances_*.json`. It declares the same class name as the current plugin, so `--converter ReplicatorToRoca` runs both of them.
-
-`ReplicatorToRocaEval` writes a flat directory of images, intrinsics, camera parameters and world poses, used by the evaluation scripts in `paper-reproduction/`.
 
 ### ReplicatorToBop
 
