@@ -1,5 +1,6 @@
 import json
 import os
+import random
 import shutil
 
 import numpy as np
@@ -24,9 +25,14 @@ class ReplicatorToBop(ConverterInterface):
     # The visibility an object needs to be worth localizing, as in bop_toolkit enumerate_test_targets.py
     _BOP19_MIN_VISIB_FRACT = 0.1
 
+    _SPLIT_SEED = 0
+
     _DEFAULT_ARGS = {
         "split": "train_pbr",
         "val_split": "val_pbr",
+        "test_split": "test_pbr",
+        "val_fraction": 0.2,
+        "test_fraction": 0.2,
         "dataset_name": "sodah",
     }
 
@@ -47,8 +53,18 @@ class ReplicatorToBop(ConverterInterface):
         args = dict(ReplicatorToBop._DEFAULT_ARGS)
         args.update(kwargs)
 
-        if args["split"] == args["val_split"]:
-            raise RuntimeError("split and val_split must differ, both are '{}'.".format(args["split"]))
+        args["val_fraction"] = float(args["val_fraction"])
+        args["test_fraction"] = float(args["test_fraction"])
+        if not 0.0 <= args["val_fraction"] + args["test_fraction"] < 1.0:
+            raise RuntimeError("val_fraction and test_fraction must be positive and leave frames for "
+                               "the training split, got {} and {}.".format(
+                                   args["val_fraction"], args["test_fraction"]))
+
+        names = [args[key] for key in ("split", "val_split", "test_split") if args[key]]
+        if len(names) != len(set(names)):
+            raise RuntimeError("split, val_split and test_split must differ, got {}.".format(names))
+        if not args["split"]:
+            raise RuntimeError("split must not be empty.")
 
         return args
 
@@ -72,30 +88,30 @@ class ReplicatorToBop(ConverterInterface):
         return meshes
 
     @staticmethod
-    def _split_frames(rep_data_path: str, scene_numbers: list[str], args: dict) -> dict:
+    def _split_frames(scene_numbers: list[str], args: dict) -> dict:
         """
-        Assigns the Replicator frames to the BOP splits, following train_val_scenes.json.
+        Splits the Replicator frames into the BOP splits by fraction.
 
-        :param rep_data_path: Path to the Replicator dataset.
         :param scene_numbers: Sorted list of frame numbers as zero-padded strings.
         :param args: The parsed plugin arguments.
-        :return: Frame numbers per split name, in ascending order.
+        :return: Frame numbers per split name, in ascending order, without the empty splits.
         """
 
-        split_file = os.path.join(rep_data_path, "train_val_scenes.json")
-        if not args["val_split"] or not os.path.isfile(split_file):
-            if args["val_split"]:
-                print(f"  Warning: {split_file} not found, putting all frames into '{args['split']}'")
-            return {args["split"]: scene_numbers}
+        total = len(scene_numbers)
+        num_val = int(round(total * args["val_fraction"]))
+        num_test = int(round(total * args["test_fraction"]))
 
-        with open(split_file) as file:
-            train_val_scenes = json.load(file)
+        shuffled = list(scene_numbers)
+        random.Random(ReplicatorToBop._SPLIT_SEED).shuffle(shuffled)
 
-        val_numbers = {int(number) for number in train_val_scenes["val_scenes"]}
-        train_frames = [nr for nr in scene_numbers if int(nr) not in val_numbers]
-        val_frames = [nr for nr in scene_numbers if int(nr) in val_numbers]
+        splits = {
+            args["val_split"]: shuffled[:num_val],
+            args["test_split"]: shuffled[num_val:num_val + num_test],
+            args["split"]: shuffled[num_val + num_test:],
+        }
 
-        return {args["split"]: train_frames, args["val_split"]: val_frames}
+        # Ascending again, the images are numbered in the order they are converted
+        return {name: sorted(frames) for name, frames in splits.items() if name and frames}
 
     @staticmethod
     def _visible_objects(rep_data_path: str, nr: str) -> list[dict]:
@@ -504,7 +520,7 @@ class ReplicatorToBop(ConverterInterface):
 
         print("Converting frames...")
         meshes = ReplicatorToBop._load_meshes(obj_paths_labels_ids)
-        splits = ReplicatorToBop._split_frames(replicator_data_dir, scene_numbers, args)
+        splits = ReplicatorToBop._split_frames(scene_numbers, args)
         for split_name, frame_numbers in splits.items():
             if not frame_numbers:
                 print(f"  {split_name}: no frames, skipped")
