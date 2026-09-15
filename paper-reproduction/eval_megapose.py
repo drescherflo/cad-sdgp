@@ -107,7 +107,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--method-name", required=True, help="csv prefix, no '_' and no '-'")
     parser.add_argument("--out-dir", required=True, help="where to write the result csv files")
-    parser.add_argument("--ds-name", default="sodah6dof.bop19")
+    parser.add_argument("--ds-name", default="custom6dof.bop19")
     parser.add_argument(
         "--refiner-run-id",
         default=None,

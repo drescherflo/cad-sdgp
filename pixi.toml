@@ -1,6 +1,6 @@
 # Defines the pixi environments for the SDGP
 [workspace]
-name = "sodah-sdgp"
+name = "sdgp"
 channels = ["conda-forge"]
 platforms = [{ platform = "linux-64", glibc = "2.35" }] # isaacsim only ships manylinux_2_35 wheels (Ubuntu 22.04+)
 

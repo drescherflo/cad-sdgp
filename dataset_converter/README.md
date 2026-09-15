@@ -86,7 +86,7 @@ Note that on the conveyor belt the frames of one object run are consecutive and 
 | `test_split` | `test_pbr` | Directory name of the test split. Empty drops the split |
 | `val_fraction` | `0.2` | Share of the frames that go into the validation split |
 | `test_fraction` | `0.2` | Share of the frames that go into the test split |
-| `dataset_name` | `sodah` | Name of the dataset, recorded in `dataset_info.json` |
+| `dataset_name` | `custom` | Name of the dataset, recorded in `dataset_info.json` |
 
 Colour images are always written as `.jpg` (what `bop_toolkit` expects for a `*_pbr` split), the depth images always use `depth_scale` `1.0`, i.e. one unit per millimeter, and `mask/` is always written.
 
@@ -129,7 +129,7 @@ BOP records the rotational symmetries of every model in `models_info.json`, and 
 The plugin writes a complete dataset, so `bop_toolkit` is optional. To run its scripts on the result, the dataset has to be registered, because `bop_toolkit_lib/dataset_params.py` is a hardcoded chain that ends in `raise ValueError("Unknown BOP dataset")`. Place the converted dataset under `bop_toolkit`'s `datasets_path` and add a branch to `get_split_params`:
 
 ```python
-elif dataset_name == "sodah":
+elif dataset_name == "custom":
     p["scene_ids"] = [0]
     p["im_size"] = (480, 360)
 ```

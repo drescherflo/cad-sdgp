@@ -33,7 +33,7 @@ class ReplicatorToBop(ConverterInterface):
         "test_split": "test_pbr",
         "val_fraction": 0.2,
         "test_fraction": 0.2,
-        "dataset_name": "sodah",
+        "dataset_name": "custom",
     }
 
     @staticmethod

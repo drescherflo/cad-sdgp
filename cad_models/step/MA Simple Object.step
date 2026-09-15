@@ -9,7 +9,7 @@ FILE_DESCRIPTION(
 /* implementation_level */ '2;1');
 
 FILE_NAME(
-/* name */ 'Testkrper Flo v1.step',
+/* name */ 'Testkrper v1.step',
 /* time_stamp */ '2023-12-28T14:08:46+01:00',
 /* author */ (''),
 /* organization */ (''),
@@ -307,17 +307,17 @@ SOLID_ANGLE_UNIT()
 #255=PRODUCT_DEFINITION_SHAPE('',$,#258);
 #256=SHAPE_REPRESENTATION('',(#162),#248);
 #257=PRODUCT_DEFINITION_CONTEXT('part definition',#262,'design');
-#258=PRODUCT_DEFINITION('Testk\X\F6rper Flo','Testk\X\F6rper Flo v1',#259,
+#258=PRODUCT_DEFINITION('Testk\X\F6rper','Testk\X\F6rper v1',#259,
 #257);
 #259=PRODUCT_DEFINITION_FORMATION('',$,#264);
-#260=PRODUCT_RELATED_PRODUCT_CATEGORY('Testk\X\F6rper Flo v1',
-'Testk\X\F6rper Flo v1',(#264));
+#260=PRODUCT_RELATED_PRODUCT_CATEGORY('Testk\X\F6rper v1',
+'Testk\X\F6rper v1',(#264));
 #261=APPLICATION_PROTOCOL_DEFINITION('international standard',
 'automotive_design',2009,#262);
 #262=APPLICATION_CONTEXT(
 'Core Data for Automotive Mechanical Design Process');
 #263=PRODUCT_CONTEXT('part definition',#262,'mechanical');
-#264=PRODUCT('Testk\X\F6rper Flo','Testk\X\F6rper Flo v1',$,(#263));
+#264=PRODUCT('Testk\X\F6rper','Testk\X\F6rper v1',$,(#263));
 #265=PRESENTATION_STYLE_ASSIGNMENT((#266));
 #266=SURFACE_STYLE_USAGE(.BOTH.,#267);
 #267=SURFACE_SIDE_STYLE('',(#268));

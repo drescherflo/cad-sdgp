@@ -101,7 +101,7 @@ def build_cfg(args: argparse.Namespace) -> TrainingConfig:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-id", default="ft-refiner", help="name of the run")
-    parser.add_argument("--ds-name", default="sodah6dof", help="registered dataset name")
+    parser.add_argument("--ds-name", default="custom6dof", help="registered dataset name")
     parser.add_argument(
         "--lr",
         type=float,
