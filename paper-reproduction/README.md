@@ -55,6 +55,65 @@ All required files can be downloaded here: https://drive.proton.me/urls/27FPHA51
 
 ---
 
+## Finetuning MegaPose
+
+### Setting Up MegaPose
+
+1. Clone [MegaPose](https://github.com/megapose6d/megapose6d) into your home directory
+2. Set up the conda environment as described in the MegaPose README
+3. Download the pretrained weights: `python -m megapose.scripts.download --megapose_models`.
+   They land in `local_data/megapose-models/`.
+4. Symlink them into `local_data/experiments/`, because `run_id_pretrain` resolves against that
+   directory and not against `megapose-models`:
+   ```bash
+   ln -s ../megapose-models/refiner-rgb-653307694 local_data/experiments/
+   ln -s ../megapose-models/coarse-rgb-906902141  local_data/experiments/
+   ```
+
+### Registering the Dataset
+
+`create_dataset.sh` already writes a BOP-format copy of each scenario through the
+`ReplicatorToBop` converter, with `train_pbr`, `val_pbr` and `test_pbr` splits. Three steps make
+it usable:
+
+1. Symlink it into `local_data/bop_datasets/`, under a name containing **neither `_` nor `-`** -
+   the BOP toolkit parses result filenames as `{method}_{dataset}-{split}-{split_type}.csv`.
+2. Register that name in `src/megapose/datasets/datasets_cfg.py`. MegaPose has no dataset
+   configuration. Datasets are hardcoded in three `if`/`elif` chains, one per factory function.
+3. Register the dataset with the BOP toolkit as well, so the scoring stage can resolve object
+   ids, symmetries and image size.
+
+### Finetuning the Refiner
+
+Start from the released RGB refiner weights and train on `<name>.pbr`,
+validating on `<name>.val`. Only the refiner is finetuned. The coarse network keeps the released
+weights.
+
+| Setting | Value |
+| --- | --- |
+| Epochs | 10 |
+| Samples per epoch | 6000 |
+| Batch size | 8 |
+| Optimizer | Adam |
+| Learning rate | `5e-6` |
+| Warmup epochs | 2 |
+| `init_trans_std` | `[0.02, 0.02, 0.20]` |
+| `input_resize` | `(360, 480)` |
+
+
+### Evaluating
+
+Evaluation runs in two stages. Detections are ground-truth boxes, since MegaPose ships no
+detector for these objects.
+
+1. Inference over `test_pbr`, writing BOP-format result CSVs. A single pass produces both the
+   RGB-only result (`refiner-final`) and the ICP-refined one (`depth-refiner`), with ICP run at
+   `n_min_points=100`.
+2. Scoring with the BOP toolkit (`scripts/eval_bop19_pose.py`, `--renderer_type vispy`), using
+   the target list matching the evaluated frames.
+
+---
+
 ## Physics Calibration
 
 The `physics-calibration` directory in the downloaded files contains all files needed to run `plot_physics_frequency.py` and regenerate the plot from the paper. The scene description JSON files are also included, so the experiments can be rerun by loading them with `../dataset_generator/conveyor_belt_dataset_generator.py`.
