@@ -80,15 +80,7 @@ it usable:
    the BOP toolkit parses result filenames as `{method}_{dataset}-{split}-{split_type}.csv`.
 2. Register that name in `src/megapose/datasets/datasets_cfg.py`. MegaPose has no dataset
    configuration. Datasets are hardcoded in three `if`/`elif` chains, one per factory function.
-   The suffixes below are part of the name string, not files on disk:
 
-   | Name | Resolves to |
-   | --- | --- |
-   | `<name>.pbr` | `train_pbr/` |
-   | `<name>.val` | `val_pbr/` |
-   | `<name>.bop19` | `test_pbr/`, restricted to the images listed in `test_targets_bop19.json` |
-
-   That target list is written by the converter alongside the splits.
 3. Register the dataset with the BOP toolkit as well, so the scoring stage can resolve it:
    * `bop_toolkit_lib/dataset_params.py`: add the dataset to `obj_ids`, add it to
      `symmetric_obj_ids` as an empty list, and add an `elif` case to `get_split_params` setting
