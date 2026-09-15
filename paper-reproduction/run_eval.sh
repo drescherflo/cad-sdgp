@@ -9,6 +9,8 @@ EVAL_DATASET_BASE_DIR="$HOME/eval_dataset"
 ROCA_DIR="$HOME/ROCA"
 ROCA_NETWORK_DIR="$ROCA_DIR/network"
 ROCA_MODELS_AND_CONF_BASE="$CUSTOM_DATASET_DIR/ROCA_Outputs"
+EVALUATION_OUTPUT_DIR="$EVAL_DATASET_BASE_DIR/evaluation_output"
+EVAL_IOU_THRESHOLD="0.5"
 
 # Create evaluation raw data
 for model_dir in "$ROCA_MODELS_AND_CONF_BASE/"*; do
@@ -29,3 +31,17 @@ for model_dir in "$ROCA_MODELS_AND_CONF_BASE/"*; do
     done
   done
 done
+
+# Run evaluation over all models/datasets found under EVAL_DATASET_BASE_DIR
+echo "Running evaluation..."
+(
+  cd "$(dirname "${BASH_SOURCE[0]}")"
+  pixi run -e paper-repro python -m src.evaluation.evaluation \
+    --eval-dataset-path "$EVAL_DATASET_BASE_DIR" \
+    --cad-dir "$EVAL_DATASET_BASE_DIR/cad_models/OBJ" \
+    --output-dir "$EVALUATION_OUTPUT_DIR" \
+    --iou-threshold "$EVAL_IOU_THRESHOLD" \
+    --exclude-suffix glass \
+    --exclude-suffix default \
+    --project-boxes
+)

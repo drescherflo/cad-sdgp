@@ -41,17 +41,17 @@ All required files can be downloaded here: https://drive.proton.me/urls/27FPHA51
 6. Set up the SDGP environment as described in the root `README.md` (`pixi install`)
 7. Run `create_eval_dataset.sh` - depending on your hardware, this may take up to five days
 
-### Generating Raw Evaluation Data
+### Generating Raw Evaluation Data and Running the Evaluation
 
 1. Clone [ROCA](https://github.com/drescherflo/ROCA) into your home directory
 2. `cd` into `ROCA` and run `setup.sh` to set up the environment
 3. Copy the contents of `trained-models` from the downloaded files into `~/custom_dataset`
-4. Run `run_eval.sh`
-
-### Running the Evaluation
-
-1. Open `evaluation.py` and set the path to the evaluation dataset at the end of the file
-2. Run it in the `paper-repro` environment: `pixi run -e paper-repro python evaluation.py`
+4. Run `run_eval.sh` - this generates the raw evaluation data for every model under
+   `~/custom_dataset/ROCA_Outputs`, then runs `evaluation.py` (in the `paper-repro`
+   environment) once over the whole evaluation dataset, writing CSVs, plots and a
+   `summary.json` to `~/eval_dataset/evaluation_output`. It reuses the CAD `OBJ`
+   directory placed under `~/eval_dataset/cad_models` in the previous section, so
+   no further manual setup is needed.
 
 ---
 
