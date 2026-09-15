@@ -192,6 +192,7 @@ def evaluate_frame(
     pred_centroids_world: List[np.ndarray] = []
     pred_quats_world: List[np.ndarray] = []
     pred_names: List[str] = []
+    pred_scales: List[np.ndarray] = []
     for inst in instances:
         name = inst["semantic_label"]
         if not meshes.has(name):
@@ -215,6 +216,7 @@ def evaluate_frame(
         pred_centroids_world.append(centroid_world)
         pred_quats_world.append(matrix_to_quaternion(R_cw @ R_co))
         pred_names.append(name)
+        pred_scales.append(scale)
 
     n_gt = len(gt_boxes)
     n_pred = len(pred_boxes)
@@ -238,7 +240,9 @@ def evaluate_frame(
         R_g = torch.tensor(quaternion_to_matrix(gt_quats_world[gt_idx]), dtype=torch.float32)
         rotation_errors_deg.append(float(rotation_error_deg(R_p, R_g)))
         rotation_errors_huynh.append(1.0 - float(abs(np.dot(pred_quats_world[pred_idx], gt_quats_world[gt_idx]))))
-        scale_errors.append(0.0)  # this model does not predict scale (scale == 1)
+        # CAD meshes are at the true physical scale, so the ground-truth scale
+        # is implicitly 1 along every axis.
+        scale_errors.append(float(np.linalg.norm(1.0 - pred_scales[pred_idx])))
         if pred_names[pred_idx] == gt_names[gt_idx]:
             correct += 1
         else:
