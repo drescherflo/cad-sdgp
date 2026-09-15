@@ -18,6 +18,10 @@ import functools
 import time
 from pathlib import Path
 
+# MegaPose, imported first: it sets the CUDA and EGL environment and pulls in cv2, which has to
+# be loaded before torch.
+import megapose  # noqa: F401
+
 # Third Party
 import numpy as np
 import torch
