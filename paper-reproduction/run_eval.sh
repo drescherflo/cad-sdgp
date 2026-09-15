@@ -34,6 +34,8 @@ done
 
 # Run evaluation over all models/datasets found under EVAL_DATASET_BASE_DIR
 echo "Running evaluation..."
+# default material looks like metal -> no benefit -> exclude
+# glass rendered errournous -> exclude
 (
   cd "$(dirname "${BASH_SOURCE[0]}")"
   pixi run -e paper-repro python -m src.evaluation.evaluation \
