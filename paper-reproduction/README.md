@@ -80,14 +80,35 @@ it usable:
    the BOP toolkit parses result filenames as `{method}_{dataset}-{split}-{split_type}.csv`.
 2. Register that name in `src/megapose/datasets/datasets_cfg.py`. MegaPose has no dataset
    configuration. Datasets are hardcoded in three `if`/`elif` chains, one per factory function.
-3. Register the dataset with the BOP toolkit as well, so the scoring stage can resolve object
-   ids, symmetries and image size.
+   The suffixes below are part of the name string, not files on disk:
+
+   | Name | Resolves to |
+   | --- | --- |
+   | `<name>.pbr` | `train_pbr/` |
+   | `<name>.val` | `val_pbr/` |
+   | `<name>.bop19` | `test_pbr/`, restricted to the images listed in `test_targets_bop19.json` |
+
+   That target list is written by the converter alongside the splits.
+3. Register the dataset with the BOP toolkit as well, so the scoring stage can resolve it:
+   * `bop_toolkit_lib/dataset_params.py`: add the dataset to `obj_ids`, add it to
+     `symmetric_obj_ids` as an empty list, and add an `elif` case to `get_split_params` setting
+     `scene_ids` and `im_size`.
+   * `scripts/eval_bop19_pose.py`: add a `vsd_deltas` entry for the dataset, set to 15.
+   * Symlink the dataset under the path the toolkit resolves as `BOP_PATH`.
 
 ### Finetuning the Refiner
 
-Start from the released RGB refiner weights and train on `<name>.pbr`,
-validating on `<name>.val`. Only the refiner is finetuned. The coarse network keeps the released
-weights.
+Start from the released RGB refiner weights and train on `<name>.pbr`, validating on
+`<name>.val`. Only the refiner is finetuned. The coarse network keeps the released weights.
+
+MegaPose provides no finetuning entrypoint, so `finetune_megapose.py` in this directory
+assembles the configuration and calls `train_megapose()`. Its defaults are the settings below,
+so running it in the MegaPose environment reproduces the run:
+
+```bash
+python finetune_megapose.py --run-id ft-refiner
+```
+
 
 | Setting | Value |
 | --- | --- |
@@ -100,17 +121,46 @@ weights.
 | `init_trans_std` | `[0.02, 0.02, 0.20]` |
 | `input_resize` | `(360, 480)` |
 
+Training writes to `local_data/experiments/<run-id>/`: `config.yaml` with the fully resolved
+configuration, `log.txt` with one JSON line per epoch holding training and validation loss,
+learning rate and timings, and `checkpoint.pth.tar` alongside periodic
+`checkpoint_epoch=*.pth.tar`.
 
 ### Evaluating
 
 Evaluation runs in two stages. Detections are ground-truth boxes, since MegaPose ships no
 detector for these objects.
 
-1. Inference over `test_pbr`, writing BOP-format result CSVs. A single pass produces both the
-   RGB-only result (`refiner-final`) and the ICP-refined one (`depth-refiner`), with ICP run at
-   `n_min_points=100`.
-2. Scoring with the BOP toolkit (`scripts/eval_bop19_pose.py`, `--renderer_type vispy`), using
-   the target list matching the evaluated frames.
+1. **Inference** with `eval_megapose.py` from this directory, over `<name>.bop19`. Omitting
+   `--refiner-run-id` evaluates the released weights, which produces the baseline:
+
+   ```bash
+   python eval_megapose.py --method-name megaposebase --out-dir <results directory>
+   python eval_megapose.py --method-name megaposeft   --out-dir <results directory> \
+       --refiner-run-id ft-refiner
+   ```
+
+   One pass writes two BOP result files, so the RGB-only and the depth-refined numbers come from
+   the same inference:
+
+   ```
+   <method>-refiner-final_<dataset>-test-pbr.csv
+   <method>-depth-refiner_<dataset>-test-pbr.csv
+   ```
+
+2. **Scoring** with the BOP toolkit, passing both result files:
+
+   ```bash
+   python scripts/eval_bop19_pose.py \
+       --renderer_type vispy \
+       --targets_filename test_targets_bop19.json \
+       --results_path <directory holding the csv files> \
+       --eval_path <output directory> \
+       --result_filenames <csv>,<csv>
+   ```
+
+   For each result file the toolkit writes a directory containing `scores_bop19.json` with the
+   average recall and its VSD, MSSD and MSPD components.
 
 ---
 
