@@ -287,11 +287,15 @@ def _empty_pool() -> Dict[str, list]:
 
 
 def evaluate_run(eval_dataset_path: str, meshes: CadMeshes, iou_threshold: float,
-                 exclude_suffixes: Optional[List[str]] = None) -> Dict:
+                 exclude_suffixes: Optional[List[str]] = None,
+                 include_nets: Optional[List[str]] = None) -> Dict:
     """Walk converted/{type}/{dataset}/ReplicatorToRocaEval/eval_raw_data/{net}.
 
     Dataset directories whose name ends with one of ``exclude_suffixes`` are
     skipped entirely (e.g. to drop known-uninteresting material variants).
+    When ``include_nets`` is given, only nets whose folder name is in that
+    list are evaluated; other nets found on disk are left untouched and simply
+    excluded from the results.
 
     Returns nested results keyed by dataset_type -> dataset -> net.
     """
@@ -312,6 +316,8 @@ def evaluate_run(eval_dataset_path: str, meshes: CadMeshes, iou_threshold: float
             results[dataset_type][dataset] = {}
             for net_dir in net_dirs:
                 net = os.path.basename(net_dir)
+                if include_nets and net not in include_nets:
+                    continue
                 raw_json = os.path.join(net_dir, "eval_raw_data.json")
                 if not os.path.exists(raw_json):
                     continue
@@ -671,13 +677,17 @@ def parse_args():
     parser.add_argument("--iou-threshold", type=float, default=0.5, help="IoU threshold for matching")
     parser.add_argument("--exclude-suffix", action="append", default=[], metavar="SUFFIX",
                         help="Skip dataset directories whose name ends with SUFFIX (repeatable)")
+    parser.add_argument("--include-net", action="append", default=[], metavar="NET",
+                        help="Only evaluate nets whose eval_raw_data folder name is NET "
+                             "(repeatable; default: evaluate every net found)")
     return parser.parse_args()
 
 
 def main():
     args = parse_args()
     meshes = CadMeshes(args.cad_dir)
-    results = evaluate_run(args.eval_dataset_path, meshes, args.iou_threshold, args.exclude_suffix)
+    results = evaluate_run(args.eval_dataset_path, meshes, args.iou_threshold, args.exclude_suffix,
+                           args.include_net)
     summarize_and_plot(results, args.output_dir)
 
 
