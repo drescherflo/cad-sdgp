@@ -13,7 +13,7 @@ All required files can be downloaded here: https://drive.proton.me/urls/27FPHA51
 3. Copy the contents of the `training` directory from the downloaded files into `~/custom_dataset/`
 4. Set up the SDGP environment as described in the root `README.md` (`pixi install`)
 5. Run `create_train_dataset.sh` - depending on your hardware, this may take one to two days
-6. Clone [ROCA](https://github.com/drescherflo/ROCA) into your home directory
+6. Clone [ROCA](https://anonymous.4open.science/r/ROCA-5B00) into your home directory
 7. `cd` into `ROCA` and run `setup.sh` to set up the environment
 8. `cd` into `renderer` and open `env.sh`
 9. Set `BASE_DIR` to the path of the generated dataset (default: `conveyor_belt`)
@@ -43,7 +43,7 @@ All required files can be downloaded here: https://drive.proton.me/urls/27FPHA51
 
 ### Generating Raw Evaluation Data and Running the Evaluation
 
-1. Clone [ROCA](https://github.com/drescherflo/ROCA) into your home directory
+1. Clone [ROCA](https://anonymous.4open.science/r/ROCA-5B00) into your home directory
 2. `cd` into `ROCA` and run `setup.sh` to set up the environment
 3. Copy the contents of `trained-models` from the downloaded files into `~/custom_dataset`
 4. Run `run_eval.sh` - this generates the raw evaluation data for every model under

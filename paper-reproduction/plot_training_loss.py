@@ -5,7 +5,7 @@ import matplotlib.ticker as mticker
 from pathlib import Path
 from scipy.ndimage import uniform_filter1d
 
-base = Path("/home/flo/custom_dataset/ROCA_Outputs")
+base = Path.home() / "custom_dataset" / "ROCA_Outputs"
 out  = Path(__file__).parent / "figures" / "training_loss.pdf"
 
 models = [

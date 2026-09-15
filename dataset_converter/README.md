@@ -35,7 +35,7 @@ python dataset_converter.py \
 
 ### ReplicatorToROCA
 
-This plugin converts the output of NVIDIA Replicator into the format required by [ROCA](https://github.com/drescherflo/ROCA) for training.
+This plugin converts the output of NVIDIA Replicator into the format required by [ROCA](https://anonymous.4open.science/r/ROCA-5B00) for training.
 
 ### ReplicatorToBop
 
