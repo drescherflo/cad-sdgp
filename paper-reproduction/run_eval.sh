@@ -42,6 +42,5 @@ echo "Running evaluation..."
     --output-dir "$EVALUATION_OUTPUT_DIR" \
     --iou-threshold "$EVAL_IOU_THRESHOLD" \
     --exclude-suffix glass \
-    --exclude-suffix default \
-    --project-boxes
+    --exclude-suffix default
 )

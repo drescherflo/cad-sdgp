@@ -151,13 +151,11 @@ def evaluate_frame(
     img_w: int,
     img_h: int,
     iou_threshold: float,
-    project_boxes: bool = False,
 ) -> Dict:
     """Match a frame's detections to GT objects and compute per-match errors.
 
-    When ``project_boxes`` is True, stored detection boxes are ignored and a box
-    is projected from every prediction's pose, giving a consistent box source
-    across models (e.g. to compare against legacy raw data that has no boxes).
+    Detection boxes are always projected from each prediction's pose: ROCA raw
+    data never carries a stored box.
     """
     world_to_cam = np.linalg.inv(cam_to_world)
     R_cw = cam_to_world[:3, :3]
@@ -205,16 +203,13 @@ def evaluate_frame(
         centroid_cam = R_co @ (meshes.centroid(name) * scale) + t_co
         centroid_world = R_cw @ centroid_cam + cam_to_world[:3, 3]
 
-        box = None if project_boxes else inst.get("box")
+        # Synthesise the box by projecting the predicted CAD mesh at its
+        # predicted camera-frame pose. Note this is a pose-derived box, not
+        # the model's real detection box.
+        verts_cam = (R_co @ (meshes.verts(name) * scale).T).T + t_co
+        box = project_to_box(verts_cam, K, img_w, img_h)
         if box is None:
-            # No usable stored box (legacy ROCA outputs, or --project-boxes):
-            # synthesise one by projecting the predicted CAD mesh at its
-            # predicted camera-frame pose. Note this is a pose-derived box, not
-            # the model's real detection box.
-            verts_cam = (R_co @ (meshes.verts(name) * scale).T).T + t_co
-            box = project_to_box(verts_cam, K, img_w, img_h)
-            if box is None:
-                continue  # pose projects out of view -> cannot be matched
+            continue  # pose projects out of view -> cannot be matched
         pred_boxes.append(box)
         pred_scores.append(float(inst.get("score", 1.0)))
         pred_centroids_world.append(centroid_world)
@@ -292,7 +287,7 @@ def _empty_pool() -> Dict[str, list]:
 
 
 def evaluate_run(eval_dataset_path: str, meshes: CadMeshes, iou_threshold: float,
-                 project_boxes: bool = False, exclude_suffixes: Optional[List[str]] = None) -> Dict:
+                 exclude_suffixes: Optional[List[str]] = None) -> Dict:
     """Walk converted/{type}/{dataset}/ReplicatorToRocaEval/eval_raw_data/{net}.
 
     Dataset directories whose name ends with one of ``exclude_suffixes`` are
@@ -322,13 +317,12 @@ def evaluate_run(eval_dataset_path: str, meshes: CadMeshes, iou_threshold: float
                     continue
                 print(f"Processing {dataset_type}/{dataset}/{net}")
                 results[dataset_type][dataset][net] = _evaluate_net(
-                    raw_json, gt_dir, meshes, iou_threshold, project_boxes
+                    raw_json, gt_dir, meshes, iou_threshold
                 )
     return results
 
 
-def _evaluate_net(raw_json: str, gt_dir: str, meshes: CadMeshes, iou_threshold: float,
-                  project_boxes: bool = False) -> dict:
+def _evaluate_net(raw_json: str, gt_dir: str, meshes: CadMeshes, iou_threshold: float) -> dict:
     with open(raw_json) as f:
         raw = json.load(f)
 
@@ -350,7 +344,7 @@ def _evaluate_net(raw_json: str, gt_dir: str, meshes: CadMeshes, iou_threshold: 
         img_w, img_h = int(cam["renderProductResolution"][0]), int(cam["renderProductResolution"][1])
 
         m = evaluate_frame(frame["instances"], gt, cam_to_world, K, meshes, img_w, img_h,
-                           iou_threshold, project_boxes)
+                           iou_threshold)
         inference_time = frame["inference_end_time"] - frame["inference_start_time"]
 
         found_ratio = _ratio(m["n_pred"], m["n_gt"])
@@ -675,10 +669,6 @@ def parse_args():
     parser.add_argument("--cad-dir", required=True, help="Directory with the per-category OBJ files")
     parser.add_argument("--output-dir", default="eval_output", help="Where to write CSVs, plots and summary.json")
     parser.add_argument("--iou-threshold", type=float, default=0.5, help="IoU threshold for matching")
-    parser.add_argument("--project-boxes", action="store_true",
-                        help="Ignore stored detection boxes and project a box from each prediction's "
-                             "pose instead, for a consistent box source across all models (fair "
-                             "comparison with legacy raw data that has no boxes)")
     parser.add_argument("--exclude-suffix", action="append", default=[], metavar="SUFFIX",
                         help="Skip dataset directories whose name ends with SUFFIX (repeatable)")
     return parser.parse_args()
@@ -687,8 +677,7 @@ def parse_args():
 def main():
     args = parse_args()
     meshes = CadMeshes(args.cad_dir)
-    results = evaluate_run(args.eval_dataset_path, meshes, args.iou_threshold, args.project_boxes,
-                           args.exclude_suffix)
+    results = evaluate_run(args.eval_dataset_path, meshes, args.iou_threshold, args.exclude_suffix)
     summarize_and_plot(results, args.output_dir)
 
 

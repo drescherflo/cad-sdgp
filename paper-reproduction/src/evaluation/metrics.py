@@ -66,8 +66,3 @@ def camera_to_world_from_view_transform(view_transform) -> torch.Tensor:
     V = torch.tensor(view_transform, dtype=torch.float64).reshape(4, 4).T
     flip = torch.diag(torch.tensor([1.0, -1.0, -1.0, 1.0], dtype=torch.float64))
     return torch.linalg.inv(flip @ V).float()
-
-
-def transform_points(T: torch.Tensor, points: torch.Tensor) -> torch.Tensor:
-    """Apply a 4x4 rigid transform to [N, 3] points. Returns [N, 3]."""
-    return points @ T[:3, :3].T + T[:3, 3]
