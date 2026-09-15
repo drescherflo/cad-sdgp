@@ -16,7 +16,7 @@ pixi run python dataset_generator/6_dof_dataset_generator.py \
    --output_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" \
    --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" \
    --config_file "$CUSTOM_DATASET_DIR/dataset_generator_configs/6_dof_generator_config.json" \
-   --writer ResumableBasicWriter rgb=True camera_params=True \
+   --writer ResumableBasicWriter rgb=True camera_params=True distance_to_image_plane=True instance_segmentation=True colorize_instance_segmentation=False \
    --writer WorldPoseWriter
 
 ## Generate conveyor dataset
@@ -26,7 +26,7 @@ pixi run python dataset_generator/conveyor_belt_dataset_generator.py \
   --output_dir "$CUSTOM_DATASET_DIR/replicator_dataset/conveyor_belt/" \
   --usd_dir "$CUSTOM_DATASET_DIR/cad_models/OBJ_converted/" \
   --config_file "$CUSTOM_DATASET_DIR/dataset_generator_configs/conveyor_generator_config.json" \
-  --writer ResumableBasicWriter rgb=True camera_params=True \
+  --writer ResumableBasicWriter rgb=True camera_params=True distance_to_image_plane=True instance_segmentation=True colorize_instance_segmentation=False \
   --writer WorldPoseWriter
 
 ## Convert dataset
@@ -36,4 +36,5 @@ pixi run python dataset_converter/dataset_converter.py \
   --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/6_dof/" \
   --replicator_data_dir "$CUSTOM_DATASET_DIR/replicator_dataset/conveyor_belt/" \
   --output_dir "$CUSTOM_DATASET_DIR/converted/" \
-  --converter ReplicatorToRoca
+  --converter ReplicatorToRoca \
+  --converter ReplicatorToBop
